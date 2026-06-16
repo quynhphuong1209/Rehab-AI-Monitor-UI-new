@@ -17241,9 +17241,8 @@ def _inject_auth_demo_css(is_light: bool):
     .auth-topbar .brand-name b{color:var(--teal)}
     .auth-topbar .brand-sub{font-size:11px;color:var(--ink-3);letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .auth-topbar .spacer{flex:1}
-    .auth-topbar .theme-toggle-btn{width:40px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink-2);text-decoration:none;transition:.18s;cursor:pointer;flex:none}
-    .auth-topbar .theme-toggle-btn:hover{border-color:var(--teal);color:var(--teal);transform:scale(1.08)}
-    .auth-topbar .theme-toggle-btn .icon{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    .auth-topbar .theme-visual{width:40px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink-2)}
+    .auth-topbar .theme-visual .icon{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
     .auth-stage{padding:0 clamp(38px,3.2vw,64px)}
     .auth-stage [data-testid="stHorizontalBlock"],
     .block-container [data-testid="stHorizontalBlock"]:has(.demo-auth-hero){min-height:calc(100vh - 58px);align-items:center;padding:0 clamp(38px,3.2vw,64px)}
@@ -17372,7 +17371,6 @@ def _html_auth_hero(is_light: bool) -> str:
 
 def _html_auth_topbar(is_light: bool) -> str:
     theme_icon = "i-moon" if is_light else "i-sun"
-    theme_label = "Bật chế độ Tối" if is_light else "Bật chế độ Sáng"
     return (
         '<div class="auth-topbar">'
         '<div class="brand">'
@@ -17382,9 +17380,7 @@ def _html_auth_topbar(is_light: bool) -> str:
         '<span class="brand-sub">Hệ sinh thái lâm sàng · HUPH × BV Phạm Ngọc Thạch · 2026</span>'
         '</div></div>'
         '<div class="spacer"></div>'
-        f'<a href="?auth_action=toggle_theme" class="theme-toggle-btn" title="{theme_label}">'
-        f'<svg class="icon"><use href="#{theme_icon}"/></svg>'
-        f'</a>'
+        f'<div class="theme-visual"><svg class="icon"><use href="#{theme_icon}"/></svg></div>'
         '</div>'
     )
 
@@ -17411,11 +17407,6 @@ def _handle_auth_component_actions():
     payload = _decode_auth_payload(st.query_params.get("auth_payload", ""))
     if not action:
         return
-
-    if action == "toggle_theme":
-        st.session_state.theme = 'light' if st.session_state.get('theme', 'light') == 'dark' else 'dark'
-        _clear_auth_query_params()
-        st.rerun()
 
     if action == "forgot":
         st.session_state["_auth_component_success"] = "Liên hệ Quản trị viên để cấp lại mật khẩu."
@@ -17621,9 +17612,9 @@ function fillUser(u){{
   if(!u)return;
   document.getElementById('accInput').value=u;
   document.getElementById('pwInput').value='';
-  document.getElementById('pwInput').focus();
   const sel=document.getElementById('patSel');
   if(sel)sel.value='';
+  document.getElementById('pwInput').focus();
 }}
 function fillDemo(role){{
   const map={{
@@ -17636,7 +17627,7 @@ function fillDemo(role){{
   if(!d)return;
   document.getElementById('accInput').value=d.u;
   document.getElementById('pwInput').value=d.p;
-  document.getElementById('accInput').focus();
+  submitAuth();
 }}
 </script>
 </body>
@@ -17649,6 +17640,18 @@ def hien_thi_dang_nhap_dang_ky():
     is_light = st.session_state.get('theme') == 'light'
     _inject_auth_demo_css(is_light)
     _handle_auth_component_actions()
+    # Nút toggle theme — đặt fixed góc trên phải đè lên topbar
+    _theme_lbl = "☀️" if not is_light else "🌙"
+    st.markdown("""<style>
+    .st-key-login_theme_btn{position:fixed;top:9px;right:24px;z-index:200}
+    .st-key-login_theme_btn button{width:40px!important;height:38px!important;border-radius:11px!important;
+      padding:0!important;font-size:16px!important;min-height:0!important;border:1px solid var(--line)!important;
+      background:var(--surface)!important;box-shadow:none!important}
+    .st-key-login_theme_btn button:hover{border-color:var(--teal)!important;transform:scale(1.08)}
+    </style>""", unsafe_allow_html=True)
+    if st.button(_theme_lbl, key="login_theme_btn"):
+        st.session_state.theme = 'dark' if is_light else 'light'
+        st.rerun()
     st.markdown(_html_auth_topbar(is_light), unsafe_allow_html=True)
     st.markdown('<div class="auth-stage">', unsafe_allow_html=True)
     col_hero, col_form = st.columns([1.05, 0.95], gap="large")
