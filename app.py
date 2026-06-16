@@ -17596,10 +17596,17 @@ function enc(obj){{
   return b64;
 }}
 function sendAction(action,data){{
-  const url=new URL(window.parent.location.href);
-  url.searchParams.set('auth_action',action);
-  url.searchParams.set('auth_payload',enc(data));
-  window.parent.location.href=url.toString();
+  try{{
+    const url=new URL(window.top.location.href);
+    url.searchParams.set('auth_action',action);
+    url.searchParams.set('auth_payload',enc(data));
+    window.top.location.href=url.toString();
+  }}catch(e){{
+    const url=new URL(window.location.href);
+    url.searchParams.set('auth_action',action);
+    url.searchParams.set('auth_payload',enc(data));
+    window.location.href=url.toString();
+  }}
 }}
 function submitAuth(){{
   if(mode==='login'){{
@@ -17640,15 +17647,19 @@ def hien_thi_dang_nhap_dang_ky():
     is_light = st.session_state.get('theme') == 'light'
     _inject_auth_demo_css(is_light)
     _handle_auth_component_actions()
-    # Nút toggle theme — đặt fixed góc trên phải đè lên topbar
-    _theme_lbl = "☀️" if not is_light else "🌙"
+    # Ẩn Streamlit header + collapse space của nút theme toggle
     st.markdown("""<style>
+    [data-testid="stHeader"]{display:none!important}
+    [data-testid="stAppViewContainer"]>.main{padding-top:0!important}
     .st-key-login_theme_btn{position:fixed;top:9px;right:24px;z-index:200}
     .st-key-login_theme_btn button{width:40px!important;height:38px!important;border-radius:11px!important;
       padding:0!important;font-size:16px!important;min-height:0!important;border:1px solid var(--line)!important;
-      background:var(--surface)!important;box-shadow:none!important}
+      background:var(--surface)!important;box-shadow:none!important;color:var(--ink)!important}
     .st-key-login_theme_btn button:hover{border-color:var(--teal)!important;transform:scale(1.08)}
+    [data-testid="element-container"]:has(>.stButton.st-key-login_theme_btn){
+      height:0!important;min-height:0!important;overflow:visible!important;padding:0!important;margin:0!important}
     </style>""", unsafe_allow_html=True)
+    _theme_lbl = "☀️" if not is_light else "🌙"
     if st.button(_theme_lbl, key="login_theme_btn"):
         st.session_state.theme = 'dark' if is_light else 'light'
         st.rerun()
