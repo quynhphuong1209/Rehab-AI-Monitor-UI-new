@@ -488,7 +488,8 @@
         "bai_tap": "Bài tập với gậy (Pulley Exercise)",
         "accuracy": 51.2,
         "f1": 0.0,
-        "thoi_gian_tap": null
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
     },
     {
         "ngay": "11:16 - 29/05/2026",
@@ -508,7 +509,8 @@
         "bai_tap": "Bài tập con lắc Codman",
         "accuracy": 100.0,
         "f1": 0.0,
-        "thoi_gian_tap": null
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
     },
     {
         "ngay": "09:56 - 15/06/2026",
@@ -518,7 +520,8 @@
         "bai_tap": "Bài tập với gậy (Pulley Exercise)",
         "accuracy": 43.6,
         "f1": 0.5,
-        "thoi_gian_tap": null
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
     },
     {
         "ngay": "04:29 - 04/06/2026",
@@ -527,8 +530,9 @@
         "video_name": "Cao Thị Thường - Bài tập với gậy.mov",
         "bai_tap": "Bài tập với gậy (Pulley Exercise)",
         "accuracy": 38.5,
-        "f1": 0.0,
-        "thoi_gian_tap": null
+        "f1": 0.46,
+        "thoi_gian_tap": 2173.3,
+        "source": "ai_eval"
     },
     {
         "ngay": "06:14 - 15/06/2026",
@@ -639,7 +643,7 @@
         "video_name": "Nguyễn Thị Nga - Codman.mp4",
         "bai_tap": "Bài tập con lắc Codman",
         "accuracy": 99.9,
-        "f1": null,
+        "f1": 0.82,
         "thoi_gian_tap": null,
         "source": "ai_eval"
     },
@@ -650,7 +654,7 @@
         "video_name": "Cao Thị Thường -  Codman.mov",
         "bai_tap": "Bài tập con lắc Codman",
         "accuracy": 82.2,
-        "f1": null,
+        "f1": 0.42,
         "thoi_gian_tap": null,
         "source": "ai_eval"
     },
@@ -694,7 +698,7 @@
         "video_name": "042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4",
         "bai_tap": "Bài tập với gậy (Pulley Exercise)",
         "accuracy": 46.9,
-        "f1": null,
+        "f1": 0.53,
         "thoi_gian_tap": null,
         "source": "ai_eval"
     },
@@ -705,8 +709,8 @@
         "video_name": "Nguyễn Thị Nga - Bài tập với gậy.mp4",
         "bai_tap": "Bài tập với gậy (Pulley Exercise)",
         "accuracy": 53.0,
-        "f1": null,
-        "thoi_gian_tap": null,
+        "f1": 0.41,
+        "thoi_gian_tap": 7024.8,
         "source": "ai_eval"
     }
 ]
