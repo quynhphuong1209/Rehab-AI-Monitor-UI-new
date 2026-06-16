@@ -19,11 +19,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 65.5,
-        "ml_accuracy_g1": 85.8,
-        "ml_accuracy_g2": 78.1,
-        "ml_accuracy_g3": 32.4
+        }
     },
     {
         "patient_username": "Hoàng Hạnh Nguyên",
@@ -45,11 +41,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 65.5,
-        "ml_accuracy_g1": 85.8,
-        "ml_accuracy_g2": 78.1,
-        "ml_accuracy_g3": 32.4
+        }
     },
     {
         "patient_username": "Hoàng Hạnh Nguyên",
@@ -71,8 +63,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 6.2
+        }
     },
     {
         "patient_username": "Hoàng Hạnh Nguyên",
@@ -94,8 +85,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 6.2
+        }
     },
     {
         "patient_username": "Nguyễn Thị Nga",
@@ -117,11 +107,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 77.8,
-        "ml_accuracy_g1": 91.6,
-        "ml_accuracy_g2": 94.2,
-        "ml_accuracy_g3": 47.6
+        }
     },
     {
         "patient_username": "Nguyễn Thị Nga",
@@ -143,11 +129,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 77.8,
-        "ml_accuracy_g1": 91.6,
-        "ml_accuracy_g2": 94.2,
-        "ml_accuracy_g3": 47.6
+        }
     },
     {
         "patient_username": "Vũ Thị Hòa",
@@ -169,11 +151,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 77.4,
-        "ml_accuracy_g1": 94.2,
-        "ml_accuracy_g2": 99.6,
-        "ml_accuracy_g3": 38.4
+        }
     },
     {
         "patient_username": "Vũ Thị Hòa",
@@ -195,11 +173,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 77.4,
-        "ml_accuracy_g1": 94.2,
-        "ml_accuracy_g2": 99.6,
-        "ml_accuracy_g3": 38.4
+        }
     },
     {
         "patient_username": "Vũ Thị Hòa",
@@ -221,8 +195,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 14.2
+        }
     },
     {
         "patient_username": "Vũ Thị Hòa",
@@ -244,8 +217,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 14.2
+        }
     },
     {
         "patient_username": "Hoàng Hạnh Nguyên",
@@ -267,11 +239,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 65.5,
-        "ml_accuracy_g1": 85.8,
-        "ml_accuracy_g2": 78.1,
-        "ml_accuracy_g3": 32.4
+        }
     },
     {
         "patient_username": "Cao Thị Thường",
@@ -289,8 +257,7 @@
         "doctor_name": "NCV: Nghiên cứu viên",
         "time": "10:41 - 04/06/2026",
         "giai_doan": "Phân tích Tổng quan",
-        "sai_so": 30,
-        "ml_accuracy": 37.8
+        "sai_so": 30
     },
     {
         "patient_username": "Cao Thị Thường",
@@ -308,8 +275,7 @@
         "doctor_name": "NCV: Nghiên cứu viên",
         "time": "10:41 - 04/06/2026",
         "giai_doan": "Phân tích Tổng quan",
-        "sai_so": 30,
-        "ml_accuracy": 37.8
+        "sai_so": 30
     },
     {
         "patient_username": "Hoàng Hạnh Nguyên",
@@ -331,11 +297,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 65.5,
-        "ml_accuracy_g1": 85.8,
-        "ml_accuracy_g2": 78.1,
-        "ml_accuracy_g3": 32.4
+        }
     },
     {
         "patient_username": "Hoàng Hạnh Nguyên",
@@ -357,11 +319,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 65.5,
-        "ml_accuracy_g1": 85.8,
-        "ml_accuracy_g2": 78.1,
-        "ml_accuracy_g3": 32.4
+        }
     },
     {
         "patient_username": "Hoàng Hạnh Nguyên",
@@ -383,11 +341,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 65.5,
-        "ml_accuracy_g1": 85.8,
-        "ml_accuracy_g2": 78.1,
-        "ml_accuracy_g3": 32.4
+        }
     },
     {
         "patient_username": "Vũ Thị Hòa",
@@ -409,11 +363,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 77.4,
-        "ml_accuracy_g1": 94.2,
-        "ml_accuracy_g2": 99.6,
-        "ml_accuracy_g3": 38.4
+        }
     },
     {
         "patient_username": "Vũ Thị Hòa",
@@ -435,11 +385,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 77.4,
-        "ml_accuracy_g1": 94.2,
-        "ml_accuracy_g2": 99.6,
-        "ml_accuracy_g3": 38.4
+        }
     },
     {
         "patient_username": "Vũ Thị Hòa",
@@ -461,11 +407,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 77.4,
-        "ml_accuracy_g1": 94.2,
-        "ml_accuracy_g2": 99.6,
-        "ml_accuracy_g3": 38.4
+        }
     },
     {
         "patient_username": "Vũ Thị Hòa",
@@ -487,11 +429,7 @@
             "giai_doan_1": 45,
             "giai_doan_2": 30,
             "giai_doan_3": 15
-        },
-        "ml_accuracy": 77.4,
-        "ml_accuracy_g1": 94.2,
-        "ml_accuracy_g2": 99.6,
-        "ml_accuracy_g3": 38.4
+        }
     },
     {
         "patient_username": "Nguyễn Thị Nga",
@@ -509,8 +447,7 @@
         "doctor_name": "NCV: Nghiên cứu viên",
         "time": "13:38 - 04/06/2026",
         "giai_doan": "Phân tích Tổng quan",
-        "sai_so": 30,
-        "ml_accuracy": 32.0
+        "sai_so": 30
     },
     {
         "patient_username": "Nguyễn Thị Nga",
@@ -528,8 +465,7 @@
         "doctor_name": "NCV: Nghiên cứu viên",
         "time": "13:39 - 04/06/2026",
         "giai_doan": "Phân tích Tổng quan",
-        "sai_so": 30,
-        "ml_accuracy": 32.0
+        "sai_so": 30
     },
     {
         "patient_username": "Nguyễn Thị Nga",
@@ -547,8 +483,7 @@
         "doctor_name": "NCV: Nghiên cứu viên",
         "time": "13:39 - 04/06/2026",
         "giai_doan": "Phân tích Tổng quan",
-        "sai_so": 30,
-        "ml_accuracy": 32.0
+        "sai_so": 30
     },
     {
         "patient_username": "Nguyễn Thị Nga",
@@ -566,8 +501,7 @@
         "doctor_name": "NCV: Nghiên cứu viên",
         "time": "13:39 - 04/06/2026",
         "giai_doan": "Phân tích Tổng quan",
-        "sai_so": 30,
-        "ml_accuracy": 32.0
+        "sai_so": 30
     },
     {
         "patient_username": "Hoàng Hạnh Nguyên",
@@ -585,8 +519,7 @@
         "doctor_name": "NCV: Nghiên cứu viên",
         "time": "23:50 - 05/06/2026",
         "giai_doan": "Phân tích Tổng quan",
-        "sai_so": 30,
-        "ml_accuracy": 6.2
+        "sai_so": 30
     },
     {
         "patient_username": "Hoàng Hạnh Nguyên",
@@ -604,8 +537,7 @@
         "doctor_name": "NCV: Nghiên cứu viên",
         "time": "23:50 - 05/06/2026",
         "giai_doan": "Phân tích Tổng quan",
-        "sai_so": 30,
-        "ml_accuracy": 6.2
+        "sai_so": 30
     },
     {
         "patient_username": "Hoàng Hạnh Nguyên",
@@ -723,5 +655,615 @@
         "comments_ncv": "",
         "plan": "Tiếp tục",
         "time": "2026-06-08 12:00:25"
+    },
+    {
+        "patient_username": "Hoàng Hạnh Nguyên",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Hoàng Hạnh Nguyên - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 94.7,
+        "ai_accuracy_g1": 98.2,
+        "ai_accuracy_g2": 94.7,
+        "ai_accuracy_g3": 44.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số 45°): 98.2% | Đúng: 927/944 frames\n📈 GĐ 2 (Hồi phục - Sai số 30°): 94.7% | Đúng: 1243/1313 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số 15°): 44.1% | Đúng: 477/1081 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số 45°): Đạt 98.2% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số 30°): Đạt 94.7% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số 15°): Đạt 44.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "19:55 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Hoàng Hạnh Nguyên",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Hoàng Hạnh Nguyên - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.5,
+        "ai_accuracy_g1": 99.9,
+        "ai_accuracy_g2": 99.5,
+        "ai_accuracy_g3": 64.8,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 99.9% | Đúng: 943/944 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.5% | Đúng: 1306/1313 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 64.8% | Đúng: 700/1081 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.5% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 64.8% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "22:10 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Hoàng Hạnh Nguyên",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Hoàng Hạnh Nguyên - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.5,
+        "ai_accuracy_g1": 99.9,
+        "ai_accuracy_g2": 99.5,
+        "ai_accuracy_g3": 64.8,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 99.9% | Đúng: 943/944 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.5% | Đúng: 1306/1313 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 64.8% | Đúng: 700/1081 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.5% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 64.8% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "22:10 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Hoàng Hạnh Nguyên",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Hoàng Hạnh Nguyên - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.5,
+        "ai_accuracy_g1": 99.9,
+        "ai_accuracy_g2": 99.5,
+        "ai_accuracy_g3": 64.8,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 99.9% | Đúng: 943/944 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.5% | Đúng: 1306/1313 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 64.8% | Đúng: 700/1081 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.5% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 64.8% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "22:10 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.9,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 99.9,
+        "ai_accuracy_g3": 75.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 738/738 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.9% | Đúng: 1030/1031 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 75.1% | Đúng: 645/859 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 75.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:14 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.9,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 99.9,
+        "ai_accuracy_g3": 75.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 738/738 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.9% | Đúng: 1030/1031 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 75.1% | Đúng: 645/859 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 75.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:14 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.9,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 99.9,
+        "ai_accuracy_g3": 75.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 738/738 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.9% | Đúng: 1030/1031 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 75.1% | Đúng: 645/859 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 75.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:14 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.9,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 99.9,
+        "ai_accuracy_g3": 75.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 738/738 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.9% | Đúng: 1030/1031 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 75.1% | Đúng: 645/859 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 75.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:14 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Hoàng Hạnh Nguyên",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Hoàng Hạnh Nguyên - Bài tập với gậy.mp4",
+        "exercise": "Bài tập với gậy (Pulley Exercise)",
+        "ai_accuracy": 51.2,
+        "ai_accuracy_g1": 51.2,
+        "ai_accuracy_g2": 51.2,
+        "ai_accuracy_g3": 51.2,
+        "doctor_result": "Gần đúng",
+        "errors": [],
+        "comments": "BÁO CÁO PHÂN TÍCH BÀI TẬP VỚI GẬY (TỔNG QUAN):\n🏒 Độ chính xác: 51.2% | Đúng: 794/1550 frames\n🤖 AI đề xuất: Tập khá, lưu ý cùi chỏ.",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập với gậy: Đạt 51.2% - Cần rèn luyện thêm để giảm sai số.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:16 - 09/06/2026",
+        "giai_doan": "Phân tích Tổng quan",
+        "sai_so": 30
+    },
+    {
+        "patient_username": "Hoàng Hạnh Nguyên",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Hoàng Hạnh Nguyên - Bài tập với gậy.mp4",
+        "exercise": "Bài tập với gậy (Pulley Exercise)",
+        "ai_accuracy": 51.2,
+        "ai_accuracy_g1": 51.2,
+        "ai_accuracy_g2": 51.2,
+        "ai_accuracy_g3": 51.2,
+        "doctor_result": "Gần đúng",
+        "errors": [],
+        "comments": "BÁO CÁO PHÂN TÍCH BÀI TẬP VỚI GẬY (TỔNG QUAN):\n🏒 Độ chính xác: 51.2% | Đúng: 794/1550 frames\n🤖 AI đề xuất: Tập khá, lưu ý cùi chỏ.",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập với gậy: Đạt 51.2% - Cần rèn luyện thêm để giảm sai số.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:16 - 09/06/2026",
+        "giai_doan": "Phân tích Tổng quan",
+        "sai_so": 30
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.9,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 99.9,
+        "ai_accuracy_g3": 75.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 738/738 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.9% | Đúng: 1030/1031 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 75.1% | Đúng: 645/859 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 75.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:17 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.9,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 99.9,
+        "ai_accuracy_g3": 75.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 738/738 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.9% | Đúng: 1030/1031 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 75.1% | Đúng: 645/859 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 75.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:18 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.9,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 99.9,
+        "ai_accuracy_g3": 75.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 738/738 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.9% | Đúng: 1030/1031 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 75.1% | Đúng: 645/859 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 75.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:18 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.9,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 99.9,
+        "ai_accuracy_g3": 75.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 738/738 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.9% | Đúng: 1030/1031 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 75.1% | Đúng: 645/859 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 75.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:18 - 09/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Cao Thị Thường",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Cao Thị Thường -  Codman.mov",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 82.2,
+        "ai_accuracy_g1": 99.8,
+        "ai_accuracy_g2": 82.2,
+        "ai_accuracy_g3": 53.8,
+        "doctor_result": "Gần đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 99.8% | Đúng: 802/804 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 82.2% | Đúng: 944/1148 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 53.8% | Đúng: 436/811 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 99.8% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 82.2% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 53.8% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "00:32 - 10/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Cao Thị Thường",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Cao Thị Thường -  Codman.mov",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 82.2,
+        "ai_accuracy_g1": 99.8,
+        "ai_accuracy_g2": 82.2,
+        "ai_accuracy_g3": 53.8,
+        "doctor_result": "Gần đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 99.8% | Đúng: 802/804 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 82.2% | Đúng: 944/1148 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 53.8% | Đúng: 436/811 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 99.8% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 82.2% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 53.8% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "00:33 - 10/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Cao Thị Thường",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Cao Thị Thường -  Codman.mov",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 82.2,
+        "ai_accuracy_g1": 99.8,
+        "ai_accuracy_g2": 82.2,
+        "ai_accuracy_g3": 53.8,
+        "doctor_result": "Gần đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 99.8% | Đúng: 802/804 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 82.2% | Đúng: 944/1148 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 53.8% | Đúng: 436/811 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 99.8% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 82.2% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 53.8% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "00:33 - 10/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Vũ Thị Hòa",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Vũ Thị Hoà - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 100.0,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 100.0,
+        "ai_accuracy_g3": 83.8,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 797/797 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 100.0% | Đúng: 1135/1135 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 83.8% | Đúng: 677/808 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 83.8% - Ổn định khớp hoàn toàn.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "00:33 - 10/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Vũ Thị Hòa",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Vũ Thị Hoà - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 100.0,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 100.0,
+        "ai_accuracy_g3": 83.8,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 797/797 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 100.0% | Đúng: 1135/1135 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 83.8% | Đúng: 677/808 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 83.8% - Ổn định khớp hoàn toàn.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "00:33 - 10/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Vũ Thị Hòa",
+        "doctor_username": "AI_Researcher",
+        "video_name": "165504_Vũ Thị Hoà - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 100.0,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 100.0,
+        "ai_accuracy_g3": 83.8,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 797/797 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 100.0% | Đúng: 1135/1135 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 83.8% | Đúng: 677/808 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 83.8% - Ổn định khớp hoàn toàn.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "22:56 - 12/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Vũ Thị Hòa",
+        "doctor_username": "AI_Researcher",
+        "video_name": "165504_Vũ Thị Hoà - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 100.0,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 100.0,
+        "ai_accuracy_g3": 83.8,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 797/797 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 100.0% | Đúng: 1135/1135 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 83.8% | Đúng: 677/808 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 83.8% - Ổn định khớp hoàn toàn.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "22:56 - 12/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Vũ Thị Hòa",
+        "doctor_username": "AI_Researcher",
+        "video_name": "165504_Vũ Thị Hoà - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 100.0,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 100.0,
+        "ai_accuracy_g3": 83.8,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 797/797 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 100.0% | Đúng: 1135/1135 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 83.8% | Đúng: 677/808 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 83.8% - Ổn định khớp hoàn toàn.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "22:57 - 12/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "162458_Nguyễn Thị Nga - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.9,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 99.9,
+        "ai_accuracy_g3": 75.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 738/738 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.9% | Đúng: 1030/1031 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 75.1% | Đúng: 645/859 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 75.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:53 - 12/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "162458_Nguyễn Thị Nga - Codman.mp4",
+        "exercise": "Bài tập con lắc Codman",
+        "ai_accuracy": 99.9,
+        "ai_accuracy_g1": 100.0,
+        "ai_accuracy_g2": 99.9,
+        "ai_accuracy_g3": 75.1,
+        "doctor_result": "Đúng",
+        "errors": [],
+        "comments": "BÁO CÁO TỔNG HỢP NCV - ĐẦY ĐỦ 3 GIAI ĐOẠN:\n🌱 GĐ 1 (Khởi đầu - Sai số ±45°): 100.0% | Đúng: 738/738 frames\n📈 GĐ 2 (Hồi phục - Sai số ±30°): 99.9% | Đúng: 1030/1031 frames\n🎯 GĐ 3 (Chuẩn xác - Sai số ±15°): 75.1% | Đúng: 645/859 frames\n🤖 AI đề xuất: Phù hợp tập luyện ở giai đoạn 3",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- GĐ1 (Sai số ±45°): Đạt 100.0% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ2 (Sai số ±30°): Đạt 99.9% - Đạt yêu cầu chuyển giai đoạn.\n- GĐ3 (Sai số ±15°): Đạt 75.1% - Khớp còn cứng hoặc lệch biên độ.",
+        "doctor_name": "NCV: Nghiên cứu viên",
+        "time": "23:53 - 12/06/2026",
+        "giai_doan": "Phân tích 3 Giai đoạn",
+        "sai_so": {
+            "giai_doan_1": 45,
+            "giai_doan_2": 30,
+            "giai_doan_3": 15
+        }
+    },
+    {
+        "patient_username": "Cao Thị Thường",
+        "doctor_username": "AI_Researcher",
+        "video_name": "042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4",
+        "exercise": "Bài tập với gậy (Pulley Exercise)",
+        "ai_accuracy": 46.9,
+        "ai_accuracy_g1": 46.9,
+        "ai_accuracy_g2": 46.9,
+        "ai_accuracy_g3": 46.9,
+        "doctor_result": "Sai",
+        "errors": [],
+        "comments": "BÁO CÁO PHÂN TÍCH BÀI TẬP VỚI GẬY (TỔNG QUAN):\n🏒 Độ chính xác: 46.9% | Đúng: 1683/3591 frames\n🤖 AI đề xuất: Cần chuyên gia y tế hướng dẫn.",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập với gậy: Đạt 46.9% - Cần rèn luyện thêm để giảm sai số.",
+        "doctor_name": "NCV: Đinh Lê Quỳnh Phương",
+        "time": "16:15 - 14/06/2026",
+        "giai_doan": "Phân tích Tổng quan",
+        "sai_so": 30
+    },
+    {
+        "patient_username": "Cao Thị Thường",
+        "doctor_username": "AI_Researcher",
+        "video_name": "042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4",
+        "exercise": "Bài tập với gậy (Pulley Exercise)",
+        "ai_accuracy": 46.9,
+        "ai_accuracy_g1": 46.9,
+        "ai_accuracy_g2": 46.9,
+        "ai_accuracy_g3": 46.9,
+        "doctor_result": "Sai",
+        "errors": [],
+        "comments": "BÁO CÁO PHÂN TÍCH BÀI TẬP VỚI GẬY (TỔNG QUAN):\n🏒 Độ chính xác: 46.9% | Đúng: 1683/3591 frames\n🤖 AI đề xuất: Cần chuyên gia y tế hướng dẫn.",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập với gậy: Đạt 46.9% - Cần rèn luyện thêm để giảm sai số.",
+        "doctor_name": "NCV: Đinh Lê Quỳnh Phương",
+        "time": "16:15 - 14/06/2026",
+        "giai_doan": "Phân tích Tổng quan",
+        "sai_so": 30
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Bài tập với gậy.mp4",
+        "exercise": "Bài tập với gậy (Pulley Exercise)",
+        "ai_accuracy": 53.0,
+        "ai_accuracy_g1": 53.0,
+        "ai_accuracy_g2": 53.0,
+        "ai_accuracy_g3": 53.0,
+        "doctor_result": "Gần đúng",
+        "errors": [],
+        "comments": "BÁO CÁO PHÂN TÍCH BÀI TẬP VỚI GẬY (TỔNG QUAN):\n🏒 Độ chính xác: 53.0% | Đúng: 4806/9069 frames\n🤖 AI đề xuất: Tập khá, lưu ý cùi chỏ.",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập với gậy: Đạt 53.0% - Cần rèn luyện thêm để giảm sai số.",
+        "doctor_name": "NCV: Đinh Lê Quỳnh Phương",
+        "time": "08:50 - 15/06/2026",
+        "giai_doan": "Phân tích Tổng quan",
+        "sai_so": 30
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Bài tập với gậy.mp4",
+        "exercise": "Bài tập với gậy (Pulley Exercise)",
+        "ai_accuracy": 53.0,
+        "ai_accuracy_g1": 53.0,
+        "ai_accuracy_g2": 53.0,
+        "ai_accuracy_g3": 53.0,
+        "doctor_result": "Gần đúng",
+        "errors": [],
+        "comments": "BÁO CÁO PHÂN TÍCH BÀI TẬP VỚI GẬY (TỔNG QUAN):\n🏒 Độ chính xác: 53.0% | Đúng: 4806/9069 frames\n🤖 AI đề xuất: Tập khá, lưu ý cùi chỏ.",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập với gậy: Đạt 53.0% - Cần rèn luyện thêm để giảm sai số.",
+        "doctor_name": "NCV: Đinh Lê Quỳnh Phương",
+        "time": "08:50 - 15/06/2026",
+        "giai_doan": "Phân tích Tổng quan",
+        "sai_so": 30
+    },
+    {
+        "patient_username": "Nguyễn Thị Nga",
+        "doctor_username": "AI_Researcher",
+        "video_name": "Nguyễn Thị Nga - Bài tập với gậy.mp4",
+        "exercise": "Bài tập với gậy (Pulley Exercise)",
+        "ai_accuracy": 53.0,
+        "ai_accuracy_g1": 53.0,
+        "ai_accuracy_g2": 53.0,
+        "ai_accuracy_g3": 53.0,
+        "doctor_result": "Gần đúng",
+        "errors": [],
+        "comments": "BÁO CÁO PHÂN TÍCH BÀI TẬP VỚI GẬY (TỔNG QUAN):\n🏒 Độ chính xác: 53.0% | Đúng: 4806/9069 frames\n🤖 AI đề xuất: Tập khá, lưu ý cùi chỏ.",
+        "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập với gậy: Đạt 53.0% - Cần rèn luyện thêm để giảm sai số.",
+        "doctor_name": "NCV: Đinh Lê Quỳnh Phương",
+        "time": "08:50 - 15/06/2026",
+        "giai_doan": "Phân tích Tổng quan",
+        "sai_so": 30
     }
 ]

@@ -237,7 +237,7 @@
         "video_name": "Vũ Thị Hoà - Bài tập với gậy.mp4",
         "bai_tap": "Bài tập với gậy (Pulley Exercise)",
         "accuracy": 18.8,
-        "f1": null,
+        "f1": 0.34,
         "thoi_gian_tap": null,
         "source": "ai_eval"
     },
@@ -259,7 +259,7 @@
         "video_name": "Cao Thị Thường - Bài tập với gậy.mov",
         "bai_tap": "Bài tập với gậy (Pulley Exercise)",
         "accuracy": 38.5,
-        "f1": null,
+        "f1": 0.0,
         "thoi_gian_tap": null,
         "source": "ai_eval"
     },
@@ -325,7 +325,7 @@
         "video_name": "Nguyễn Thị Nga - Bài tập với gậy.mp4",
         "bai_tap": "Bài tập với gậy (Pulley Exercise)",
         "accuracy": 32.7,
-        "f1": null,
+        "f1": 0.0,
         "thoi_gian_tap": null,
         "source": "ai_eval"
     },
@@ -419,5 +419,294 @@
         "accuracy": 38.5,
         "f1": 0.0,
         "thoi_gian_tap": null
+    },
+    {
+        "ngay": "22:10 - 09/06/2026",
+        "username": "Hoàng Hạnh Nguyên",
+        "full_name": "Hoàng Hạnh Nguyên",
+        "video_name": "Hoàng Hạnh Nguyên - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 94.8,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "23:16 - 09/06/2026",
+        "username": "Hoàng Hạnh Nguyên",
+        "full_name": "Hoàng Hạnh Nguyên",
+        "video_name": "Hoàng Hạnh Nguyên - Bài tập với gậy.mp4",
+        "bai_tap": "Bài tập với gậy (Pulley Exercise)",
+        "accuracy": 48.3,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "23:18 - 09/06/2026",
+        "username": "Nguyễn Thị Nga",
+        "full_name": "Nguyễn Thị Nga",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 64.0,
+        "f1": 0.82,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "00:33 - 10/06/2026",
+        "username": "Vũ Thị Hòa",
+        "full_name": "Vũ Thị Hòa",
+        "video_name": "Vũ Thị Hoà - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 100.0,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "00:33 - 10/06/2026",
+        "username": "Cao Thị Thường",
+        "full_name": "Cao Thị Thường",
+        "video_name": "Cao Thị Thường -  Codman.mov",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 34.3,
+        "f1": 0.42,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "10:42 - 29/05/2026",
+        "username": "Hoàng Hạnh Nguyên",
+        "full_name": "Hoàng Hạnh Nguyên",
+        "video_name": "Hoàng Hạnh Nguyên - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 99.5,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "10:47 - 29/05/2026",
+        "username": "Hoàng Hạnh Nguyên",
+        "full_name": "Hoàng Hạnh Nguyên",
+        "video_name": "Hoàng Hạnh Nguyên - Bài tập với gậy.mp4",
+        "bai_tap": "Bài tập với gậy (Pulley Exercise)",
+        "accuracy": 51.2,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "11:16 - 29/05/2026",
+        "username": "Nguyễn Thị Nga",
+        "full_name": "Nguyễn Thị Nga",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 99.9,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "14:31 - 01/06/2026",
+        "username": "Vũ Thị Hòa",
+        "full_name": "Vũ Thị Hòa",
+        "video_name": "Vũ Thị Hoà - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 100.0,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "09:56 - 15/06/2026",
+        "username": "Vũ Thị Hòa",
+        "full_name": "Vũ Thị Hòa",
+        "video_name": "Vũ Thị Hoà - Bài tập với gậy.mp4",
+        "bai_tap": "Bài tập với gậy (Pulley Exercise)",
+        "accuracy": 43.6,
+        "f1": 0.5,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "04:29 - 04/06/2026",
+        "username": "Cao Thị Thường",
+        "full_name": "Cao Thị Thường",
+        "video_name": "Cao Thị Thường - Bài tập với gậy.mov",
+        "bai_tap": "Bài tập với gậy (Pulley Exercise)",
+        "accuracy": 38.5,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "06:14 - 15/06/2026",
+        "username": "Nguyễn Thị Nga",
+        "full_name": "Nguyễn Thị Nga",
+        "video_name": "Nguyễn Thị Nga - Bài tập với gậy.mp4",
+        "bai_tap": "Bài tập với gậy (Pulley Exercise)",
+        "accuracy": 53.0,
+        "f1": 0.58,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "04:25 - 04/06/2026",
+        "username": "Cao Thị Thường",
+        "full_name": "Cao Thị Thường",
+        "video_name": "Cao Thị Thường -  Codman.mov",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 82.2,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "16:55 - 02/06/2026",
+        "username": "Vũ Thị Hòa",
+        "full_name": "Vũ Thị Hòa",
+        "video_name": "165504_Vũ Thị Hoà - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 100.0,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "16:24 - 02/06/2026",
+        "username": "Nguyễn Thị Nga",
+        "full_name": "Nguyễn Thị Nga",
+        "video_name": "162458_Nguyễn Thị Nga - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 99.9,
+        "f1": 0.0,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "18:27 - 14/06/2026",
+        "username": "Cao Thị Thường",
+        "full_name": "Cao Thị Thường",
+        "video_name": "042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4",
+        "bai_tap": "Bài tập với gậy (Pulley Exercise)",
+        "accuracy": 46.9,
+        "f1": 0.53,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "16:47 - 14/06/2026",
+        "username": "Hoàng Hạnh Nguyên",
+        "full_name": "Hoàng Hạnh Nguyên",
+        "video_name": "160754_Hoàng Hạnh Nguyên - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 88.3,
+        "f1": 0.9,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "16:47 - 14/06/2026",
+        "username": "Cao Thị Thường",
+        "full_name": "Cao Thị Thường",
+        "video_name": "042541_Cao Thị Thường -  Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 79.0,
+        "f1": 0.82,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "18:43 - 14/06/2026",
+        "username": "Nguyễn Thị Nga",
+        "full_name": "Nguyễn Thị Nga",
+        "video_name": "163003_Nguyễn Thị Nga - Bài tập với gậy_ftmp.mp4",
+        "bai_tap": "Bài tập với gậy (Pulley Exercise)",
+        "accuracy": 48.4,
+        "f1": 0.55,
+        "thoi_gian_tap": null
+    },
+    {
+        "ngay": "19:55 - 09/06/2026",
+        "username": "Hoàng Hạnh Nguyên",
+        "full_name": "Hoàng Hạnh Nguyên",
+        "video_name": "Hoàng Hạnh Nguyên - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 94.7,
+        "f1": null,
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
+    },
+    {
+        "ngay": "23:14 - 09/06/2026",
+        "username": "Nguyễn Thị Nga",
+        "full_name": "Nguyễn Thị Nga",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 99.9,
+        "f1": null,
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
+    },
+    {
+        "ngay": "23:17 - 09/06/2026",
+        "username": "Nguyễn Thị Nga",
+        "full_name": "Nguyễn Thị Nga",
+        "video_name": "Nguyễn Thị Nga - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 99.9,
+        "f1": null,
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
+    },
+    {
+        "ngay": "00:32 - 10/06/2026",
+        "username": "Cao Thị Thường",
+        "full_name": "Cao Thị Thường",
+        "video_name": "Cao Thị Thường -  Codman.mov",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 82.2,
+        "f1": null,
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
+    },
+    {
+        "ngay": "22:56 - 12/06/2026",
+        "username": "Vũ Thị Hòa",
+        "full_name": "Vũ Thị Hòa",
+        "video_name": "165504_Vũ Thị Hoà - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 100.0,
+        "f1": null,
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
+    },
+    {
+        "ngay": "22:57 - 12/06/2026",
+        "username": "Vũ Thị Hòa",
+        "full_name": "Vũ Thị Hòa",
+        "video_name": "165504_Vũ Thị Hoà - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 100.0,
+        "f1": null,
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
+    },
+    {
+        "ngay": "23:53 - 12/06/2026",
+        "username": "Nguyễn Thị Nga",
+        "full_name": "Nguyễn Thị Nga",
+        "video_name": "162458_Nguyễn Thị Nga - Codman.mp4",
+        "bai_tap": "Bài tập con lắc Codman",
+        "accuracy": 99.9,
+        "f1": null,
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
+    },
+    {
+        "ngay": "16:15 - 14/06/2026",
+        "username": "Cao Thị Thường",
+        "full_name": "Cao Thị Thường",
+        "video_name": "042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4",
+        "bai_tap": "Bài tập với gậy (Pulley Exercise)",
+        "accuracy": 46.9,
+        "f1": null,
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
+    },
+    {
+        "ngay": "08:50 - 15/06/2026",
+        "username": "Nguyễn Thị Nga",
+        "full_name": "Nguyễn Thị Nga",
+        "video_name": "Nguyễn Thị Nga - Bài tập với gậy.mp4",
+        "bai_tap": "Bài tập với gậy (Pulley Exercise)",
+        "accuracy": 53.0,
+        "f1": null,
+        "thoi_gian_tap": null,
+        "source": "ai_eval"
     }
 ]
