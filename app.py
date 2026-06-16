@@ -4888,8 +4888,7 @@ def _get_cached_users_dict(mtime):
         "2216030122": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Thị Thơm", "role": "Nghiên cứu viên", "email": "2216030122@studenthuph.edu.vn", "mssv": "2216030122"},
         "2317010071": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Thị Thu Hương", "role": "Nghiên cứu viên", "email": "2317010071@studenthuph.edu.vn", "mssv": "2317010071"},
         "2211090031": {"password": hash_password("ncv123@"), "full_name": "Đinh Lê Quỳnh Phương", "role": "Nghiên cứu viên", "email": "2211090031@studenthuph.edu.vn", "mssv": "2211090031"},
-        "Đinh Lê Quỳnh Phương (NCV)": {"password": hash_password("ncv123@"), "full_name": "Đinh Lê Quỳnh Phương", "role": "Nghiên cứu viên", "email": "2211090031@studenthuph.edu.vn", "mssv": "2211090031"},
-        "bn_demo": {"password": hash_password("bn123@"), "full_name": "Bệnh nhân Demo", "role": "Bệnh nhân", "email": "bndemo@rehab.ai"}
+        "Đinh Lê Quỳnh Phương (NCV)": {"password": hash_password("ncv123@"), "full_name": "Đinh Lê Quỳnh Phương", "role": "Nghiên cứu viên", "email": "2211090031@studenthuph.edu.vn", "mssv": "2211090031"}
     }
     
     # Cập nhật hoặc thêm mới các tài khoản cố định (Luôn đảm bảo vai trò và pass đúng)
@@ -17232,7 +17231,8 @@ def _inject_auth_demo_css(is_light: bool):
     [data-testid="stSidebar"], [data-testid="collapsedControl"]{display:none !important}
     [data-testid="stAppViewContainer"] > .main{margin-left:0 !important}
     .block-container{max-width:100% !important;padding:0 !important}
-    .auth-topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;padding:8px 26px 9px;background:rgba(255,255,255,.72);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line)}
+    .auth-topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;padding:8px 26px 9px;background:rgba(255,255,255,.72);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid #dfe6f1}
+    .dark-mode .auth-topbar{background:rgba(16,26,39,.82) !important;border-bottom-color:#1f2c3b !important}
     .auth-topbar .brand{display:flex;align-items:center;gap:11px;min-width:0}
     .auth-topbar .brand-mark{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,var(--teal),var(--teal-strong));box-shadow:0 6px 16px var(--teal-50)}
     .auth-topbar .brand-mark .icon{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -17241,8 +17241,9 @@ def _inject_auth_demo_css(is_light: bool):
     .auth-topbar .brand-name b{color:var(--teal)}
     .auth-topbar .brand-sub{font-size:11px;color:var(--ink-3);letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .auth-topbar .spacer{flex:1}
-    .auth-topbar .theme-visual{width:40px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink-2)}
-    .auth-topbar .theme-visual .icon{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    .auth-topbar .theme-toggle-btn{width:40px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink-2);text-decoration:none;transition:.18s;cursor:pointer;flex:none}
+    .auth-topbar .theme-toggle-btn:hover{border-color:var(--teal);color:var(--teal);transform:scale(1.08)}
+    .auth-topbar .theme-toggle-btn .icon{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
     .auth-stage{padding:0 clamp(38px,3.2vw,64px)}
     .auth-stage [data-testid="stHorizontalBlock"],
     .block-container [data-testid="stHorizontalBlock"]:has(.demo-auth-hero){min-height:calc(100vh - 58px);align-items:center;padding:0 clamp(38px,3.2vw,64px)}
@@ -17326,7 +17327,12 @@ def _inject_auth_demo_css(is_light: bool):
     .st-key-authcard .demo-pill{border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
     .st-key-authcard .demo-pill .icon{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
     """
-    st.markdown("<style>" + tokens + css + "</style>", unsafe_allow_html=True)
+    dark_topbar = "" if is_light else (
+        ".auth-topbar{background:rgba(16,26,39,.82)!important;border-bottom-color:#1f2c3b!important}"
+        ".auth-topbar .brand-name{color:#e8eef7}"
+        ".auth-topbar .brand-sub{color:#7c8b9b}"
+    )
+    st.markdown("<style>" + tokens + css + dark_topbar + "</style>", unsafe_allow_html=True)
 
 
 def _html_auth_hero(is_light: bool) -> str:
@@ -17366,6 +17372,7 @@ def _html_auth_hero(is_light: bool) -> str:
 
 def _html_auth_topbar(is_light: bool) -> str:
     theme_icon = "i-moon" if is_light else "i-sun"
+    theme_label = "Bật chế độ Tối" if is_light else "Bật chế độ Sáng"
     return (
         '<div class="auth-topbar">'
         '<div class="brand">'
@@ -17375,7 +17382,9 @@ def _html_auth_topbar(is_light: bool) -> str:
         '<span class="brand-sub">Hệ sinh thái lâm sàng · HUPH × BV Phạm Ngọc Thạch · 2026</span>'
         '</div></div>'
         '<div class="spacer"></div>'
-        f'<div class="theme-visual"><svg class="icon"><use href="#{theme_icon}"/></svg></div>'
+        f'<a href="?auth_action=toggle_theme" class="theme-toggle-btn" title="{theme_label}">'
+        f'<svg class="icon"><use href="#{theme_icon}"/></svg>'
+        f'</a>'
         '</div>'
     )
 
@@ -17402,6 +17411,11 @@ def _handle_auth_component_actions():
     payload = _decode_auth_payload(st.query_params.get("auth_payload", ""))
     if not action:
         return
+
+    if action == "toggle_theme":
+        st.session_state.theme = 'light' if st.session_state.get('theme', 'light') == 'dark' else 'dark'
+        _clear_auth_query_params()
+        st.rerun()
 
     if action == "forgot":
         st.session_state["_auth_component_success"] = "Liên hệ Quản trị viên để cấp lại mật khẩu."
@@ -17448,9 +17462,21 @@ def _handle_auth_component_actions():
         st.rerun()
 
 
-def _html_auth_card_component(error_msg="", success_msg="") -> str:
+def _html_auth_card_component(error_msg="", success_msg="", patients=None) -> str:
     error_html = f'<div class="msg err">{error_msg}</div>' if error_msg else ""
     success_html = f'<div class="msg ok">{success_msg}</div>' if success_msg else ""
+    # Build patient select options từ tài khoản thực đã đăng ký
+    if patients:
+        _pat_opts = "\n".join(
+            f'<option value="{u}">{info.get("full_name", u)}</option>'
+            for u, info in patients.items()
+        )
+        patient_select_html = (
+            f'<select id="patSel" class="demo-pat-sel" onchange="fillUser(this.value)">'
+            f'<option value="">❤️ Bệnh nhân...</option>{_pat_opts}</select>'
+        )
+    else:
+        patient_select_html = '<span class="demo-no-pat">Chưa có Bệnh nhân</span>'
     return f"""
 <!doctype html>
 <html lang="vi">
@@ -17494,6 +17520,9 @@ h2{{font-family:var(--display);font-weight:600;font-size:25px;line-height:1.18;m
 .demo-btns button{{border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.16s}}
 .demo-btns button:hover{{border-color:var(--teal);color:var(--teal);transform:translateY(-1px)}}
 .demo-btns button .icon{{width:13px;height:13px}}
+.demo-pat-sel{{border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:600;cursor:pointer;outline:none;transition:.16s;max-width:140px}}
+.demo-pat-sel:hover,.demo-pat-sel:focus{{border-color:var(--teal);color:var(--teal)}}
+.demo-no-pat{{font-size:11px;color:var(--ink-3);font-style:italic}}
 .role-label{{font-size:12.5px;font-weight:600;color:var(--ink-2);margin:4px 0 9px}}
 .role-grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:18px}}
 .role-opt{{display:flex;align-items:center;gap:10px;text-align:left;background:var(--surface-2);border:1.5px solid var(--line);border-radius:13px;padding:11px;transition:.16s}}
@@ -17549,7 +17578,7 @@ body.register .login-only{{display:none}}
     <div class="demo-strip">
       <div class="dt">Xem nhanh demo theo vai trò</div>
       <div class="demo-btns">
-        <button type="button" onclick="fillDemo('patient')"><svg class="icon"><use href="#i-heart"/></svg>Bệnh nhân</button>
+        {patient_select_html}
         <button type="button" onclick="fillDemo('doctor')"><svg class="icon"><use href="#i-stetho"/></svg>Bác sĩ</button>
         <button type="button" onclick="fillDemo('ktv')"><svg class="icon"><use href="#i-tools"/></svg>KTV</button>
         <button type="button" onclick="fillDemo('ncv')"><svg class="icon"><use href="#i-micro"/></svg>NCV</button>
@@ -17588,9 +17617,16 @@ function submitAuth(){{
     sendAction('register',{{full_name:document.getElementById('regName').value.trim(),username:document.getElementById('accInput').value.trim(),email:document.getElementById('emailInput').value.trim(),password:document.getElementById('pwInput').value,confirm_password:document.getElementById('pw2Input').value}});
   }}
 }}
+function fillUser(u){{
+  if(!u)return;
+  document.getElementById('accInput').value=u;
+  document.getElementById('pwInput').value='';
+  document.getElementById('pwInput').focus();
+  const sel=document.getElementById('patSel');
+  if(sel)sel.value='';
+}}
 function fillDemo(role){{
   const map={{
-    patient:{{u:'bn_demo',p:'bn123@'}},
     doctor:{{u:'doctor1',p:'bs123@'}},
     ktv:{{u:'doctor2',p:'bs123@'}},
     ncv:{{u:'2211090016',p:'ncv123@'}},
@@ -17622,8 +17658,11 @@ def hien_thi_dang_nhap_dang_ky():
     with col_form:
         _auth_error = st.session_state.pop("_auth_component_error", "")
         _auth_success = st.session_state.pop("_auth_component_success", "")
+        # Lấy tài khoản bệnh nhân thực từ DB
+        _all_users = load_users()
+        _patients = {u: d for u, d in _all_users.items() if d.get("role") == "Bệnh nhân"}
         import streamlit.components.v1 as components
-        components.html(_html_auth_card_component(_auth_error, _auth_success), height=650, scrolling=False)
+        components.html(_html_auth_card_component(_auth_error, _auth_success, patients=_patients), height=650, scrolling=False)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================
@@ -19727,9 +19766,9 @@ def main():
         
         # 1. Chế độ Sáng/Tối
         current_theme = st.session_state.get('theme', 'light')
-        label = "🌙 Chế độ Tối" if current_theme == 'dark' else "☀️ Chế độ Sáng"
-        st.toggle(label, value=(current_theme == 'dark'), 
-                  key="theme_toggle_top", 
+        label = "☀️ Bật chế độ Sáng" if current_theme == 'dark' else "🌙 Bật chế độ Tối"
+        st.toggle(label, value=(current_theme == 'dark'),
+                  key="theme_toggle_top",
                   on_change=update_theme_callback)
         
         # 2. Thông tin người dùng & Đăng xuất
