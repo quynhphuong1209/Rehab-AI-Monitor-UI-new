@@ -22,7 +22,7 @@ toolbarMode = "minimal"
 fastReruns = true
 
 [theme]
-# Nền tối mặc định — tránh khoảng trắng/đen khi F5 trước khi CSS tùy chỉnh nạp xong
-base = "dark"
+# Nền sáng mặc định — đồng bộ với demo "clinical-teal" (light-first)
+base = "light"
 # Màu nhấn teal đồng bộ với design system "clinical-teal" của demo (sliders, checkbox, focus, link)
 primaryColor = "#1f6fe0"

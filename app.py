@@ -34,6 +34,9 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Theme mac dinh: SANG (light-first) — dong bo design demo "clinical-teal"
+st.session_state.setdefault('theme', 'light')
+
 
 class _LazyCV2:
     """Lazy-load OpenCV chỉ khi lần đầu tiên gọi cv2.anything() — tránh chậm cold start."""
@@ -6163,9 +6166,9 @@ _st_components.html("""<script>
 # === CSS CHO CHẾ ĐỘ TỐI (DARK MODE FORCED) ===
 # Ép giao diện luôn tối kể cả khi Chrome/Hệ thống đang ở chế độ Sáng
 # Inject mỗi rerun — DOM được rebuild nên cần inject lại
-_current_theme = st.session_state.get('theme', 'dark')
+_current_theme = st.session_state.get('theme', 'light')
 _last_injected_theme = st.session_state.get('_last_injected_theme', '')
-if st.session_state.get('theme', 'dark') == 'dark':
+if st.session_state.get('theme', 'light') == 'dark':
     st.markdown("""
     <style>
         /* Khai báo hệ màu tối cho toàn bộ trình duyệt - Đã loại bỏ color-scheme để k ảnh hưởng Chrome */
@@ -14067,7 +14070,7 @@ def _hien_thi_tab_phan_tich_noi_dung(key_suffix="", stats_ext=None, df_ext=None,
 
     if user_role == "Nghiên cứu viên":
         st.markdown("<br>", unsafe_allow_html=True)
-        is_light = st.session_state.get('theme', 'dark') == 'light'
+        is_light = st.session_state.get('theme', 'light') == 'light'
         cta_bg = "linear-gradient(135deg, rgba(22, 87, 188, 0.1) 0%, rgba(31, 111, 224, 0.1) 100%)" if not is_light else "linear-gradient(135deg, rgba(22, 87, 188, 0.05) 0%, rgba(31, 111, 224, 0.05) 100%)"
         cta_border = "rgba(31, 111, 224, 0.4)"
         
@@ -17120,28 +17123,103 @@ def update_theme_callback():
 # ============================================
 # GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ
 # ============================================
+def _inject_auth_demo_css(is_light: bool):
+    """Design-system 'clinical-teal' cho man Login — port tu demo HTML."""
+    if is_light:
+        tokens = (".demo-auth-hero,.st-key-authcard{--surface:#ffffff;--surface-2:#f4f7fc;"
+                  "--ink:#0f1a26;--ink-2:#39506a;--ink-3:#6c7e92;--teal:#1f6fe0;--teal-strong:#1657bc;"
+                  "--teal-50:rgba(31,111,224,.12);--teal-12:rgba(31,111,224,.10);--ai:#5a63d8;"
+                  "--line:#dfe6f1;--shadow:0 4px 14px rgba(15,28,24,.08);--shadow-lg:0 24px 60px rgba(15,28,24,.16);}")
+    else:
+        tokens = (".demo-auth-hero,.st-key-authcard{--surface:#101a27;--surface-2:#152130;"
+                  "--ink:#e8eef7;--ink-2:#a9bccf;--ink-3:#7c8b9b;--teal:#5b9bff;--teal-strong:#8bb6ff;"
+                  "--teal-50:rgba(91,155,255,.16);--teal-12:rgba(91,155,255,.10);--ai:#8b93f8;"
+                  "--line:#1f2c3b;--shadow:0 6px 22px rgba(0,0,0,.45);--shadow-lg:0 28px 70px rgba(0,0,0,.6);}")
+    css = """
+    /* ===== HERO (cot trai) ===== */
+    .demo-auth-hero{position:relative;padding:8px 18px 8px 4px;display:flex;flex-direction:column;gap:20px;min-height:520px;justify-content:center}
+    .demo-auth-hero .eyebrow{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:6px 13px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.3px;background:var(--teal-50);color:var(--teal-strong);border:1px solid var(--teal-50)}
+    .demo-auth-hero .auth-h1{font-family:'Fraunces',Georgia,serif !important;font-weight:600;font-size:clamp(28px,3.6vw,46px);line-height:1.06;margin:0;letter-spacing:-.5px;color:var(--ink) !important;text-shadow:none}
+    .demo-auth-hero .auth-h1 em{font-style:italic;color:var(--teal) !important}
+    .demo-auth-hero .auth-lede{font-size:15.5px;color:var(--ink-2) !important;max-width:46ch;margin:0;line-height:1.6}
+    .demo-auth-hero .hero-stats{display:flex;gap:12px;flex-wrap:wrap}
+    .demo-auth-hero .hstat{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:13px 16px;min-width:120px;box-shadow:var(--shadow)}
+    .demo-auth-hero .hstat .n{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--teal-strong)}
+    .demo-auth-hero .hstat .l{font-size:11.5px;color:var(--ink-3);margin-top:3px}
+    .demo-auth-hero .pose-card{align-self:center;width:min(70%,300px);margin-top:4px;opacity:.95}
+    .demo-auth-hero .pose-svg{width:100%;height:auto;overflow:visible}
+    .demo-auth-hero .pose-bone{stroke:var(--teal);stroke-width:5;stroke-linecap:round;fill:none}
+    .demo-auth-hero .pose-bone.dim{stroke:var(--ink-3);opacity:.35}
+    .demo-auth-hero .pose-joint{fill:var(--surface);stroke:var(--teal);stroke-width:3.4}
+    .demo-auth-hero .pose-joint.dim{stroke:var(--ink-3);opacity:.45}
+    .demo-auth-hero .pose-arc{stroke:var(--ai);stroke-width:4;fill:none;stroke-linecap:round;opacity:.85}
+    .demo-auth-hero #poseArm{transform-box:fill-box;transform-origin:right top;animation:_armswing 4.4s ease-in-out infinite}
+    @keyframes _armswing{0%,100%{transform:rotate(8deg)}50%{transform:rotate(-86deg)}}
+    /* ===== AUTH CARD (cot phai) ===== */
+    .st-key-authcard{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow-lg);padding:26px 24px !important}
+    .st-key-authcard [data-testid="stWidgetLabel"] p{font-size:12.5px !important;font-weight:600 !important;color:var(--ink-2) !important}
+    .st-key-authcard [data-baseweb="input"],.st-key-authcard [data-baseweb="select"]>div{border-radius:11px !important;border:1px solid var(--line) !important;background:var(--surface-2) !important}
+    .st-key-authcard [data-baseweb="input"]:focus-within{border-color:var(--teal) !important;box-shadow:0 0 0 3px var(--teal-50) !important}
+    .st-key-authcard button[kind="primary"]{background:linear-gradient(145deg,var(--teal),var(--teal-strong)) !important;border:none !important;border-radius:12px !important;font-weight:600 !important;box-shadow:0 8px 20px var(--teal-50) !important}
+    .st-key-authcard button[kind="secondary"]{border-radius:11px !important;border:1px solid var(--line) !important}
+    """
+    st.markdown("<style>" + tokens + css + "</style>", unsafe_allow_html=True)
+
+
+def _html_auth_hero(is_light: bool) -> str:
+    """HTML hero man Login — port tu demo (1 dong, khong de dong trong)."""
+    return (
+        '<div class="demo-auth-hero">'
+        '<span class="eyebrow">🛡️ Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>'
+        '<div class="auth-h1">Giám sát tập <em>phục hồi chức năng</em> bằng AI, ngay tại nhà.</div>'
+        '<p class="auth-lede">Bệnh nhân khai báo triệu chứng (VAS) → AI phân tích khung xương &amp; góc khớp theo thời gian thực → Chuyên gia đối chiếu và đưa ra phác đồ. Một luồng lâm sàng khép kín.</p>'
+        '<div class="hero-stats">'
+        '<div class="hstat"><div class="n">33</div><div class="l">điểm khung xương / khung hình</div></div>'
+        '<div class="hstat"><div class="n">±15°</div><div class="l">sai số mục tiêu giai đoạn 3</div></div>'
+        '<div class="hstat"><div class="n">5</div><div class="l">vai trò người dùng</div></div>'
+        '</div>'
+        '<div class="pose-card"><svg class="pose-svg" viewBox="0 0 240 260">'
+        '<line x1="120" y1="92" x2="210" y2="92" stroke="currentColor" stroke-width="2" stroke-dasharray="5 6" opacity=".35"/>'
+        '<path class="pose-arc" d="M150 92 A30 30 0 0 0 132 64"/>'
+        '<circle cx="120" cy="40" r="16" class="pose-joint"/>'
+        '<line x1="120" y1="56" x2="120" y2="150" class="pose-bone"/>'
+        '<line x1="120" y1="92" x2="86" y2="138" class="pose-bone dim"/>'
+        '<line x1="86" y1="138" x2="74" y2="178" class="pose-bone dim"/>'
+        '<circle cx="86" cy="138" r="6" class="pose-joint dim"/>'
+        '<g id="poseArm"><line x1="120" y1="92" x2="170" y2="118" class="pose-bone"/>'
+        '<line x1="170" y1="118" x2="206" y2="132" class="pose-bone"/>'
+        '<circle cx="170" cy="118" r="6" class="pose-joint"/>'
+        '<circle cx="206" cy="132" r="5.5" class="pose-joint"/></g>'
+        '<circle cx="120" cy="92" r="7" class="pose-joint"/>'
+        '<line x1="120" y1="150" x2="100" y2="214" class="pose-bone"/>'
+        '<line x1="120" y1="150" x2="140" y2="214" class="pose-bone"/>'
+        '<circle cx="120" cy="150" r="6" class="pose-joint"/>'
+        '<circle cx="100" cy="214" r="5.5" class="pose-joint"/>'
+        '<circle cx="140" cy="214" r="5.5" class="pose-joint"/>'
+        '</svg></div>'
+        '</div>'
+    )
+
+
 def hien_thi_dang_nhap_dang_ky():
     with st.sidebar:
         st.markdown("### 🛠️ CẤU HÌNH GIAO DIỆN")
-        current_theme = st.session_state.get('theme', 'dark')
+        current_theme = st.session_state.get('theme', 'light')
         t_label = "🌙 Chế độ Tối" if current_theme == 'dark' else "☀️ Chế độ Sáng"
         st.toggle(t_label, value=(current_theme == 'dark'), 
                   key="theme_toggle_login", 
                   on_change=lambda: st.session_state.update({"theme": "dark" if st.session_state.get("theme_toggle_login", True) else "light"}))
         st.markdown("---")
 
-    # Định nghĩa màu sắc tiêu đề theo theme để tránh lỗi nền trắng chữ trắng
+    # === GIAO DIỆN HERO theo design demo (clinical-teal) ===
     is_light = st.session_state.get('theme') == 'light'
-    header_color = "#ffffff" if not is_light else "#1a1a2e"
-    sub_color = "#ffffff" if not is_light else "#333333"
-    _hien_thi_header_chinh(header_color, sub_color, is_light=is_light, extra_style="margin-bottom: 1.5rem;")
-    
-    # Sử dụng cột để tạo khung hình vuông ở giữa màn hình
-    _, col_mid, _ = st.columns([1, 1.8, 1])
-    
-    with col_mid:
-        # Dùng container với border=True để tạo ô vuông bao quanh chuẩn web
-        with st.container(border=True):
+    _inject_auth_demo_css(is_light)
+    col_hero, col_form = st.columns([1.05, 0.95], gap="large")
+    with col_hero:
+        st.markdown(_html_auth_hero(is_light), unsafe_allow_html=True)
+
+    with col_form:
+        with st.container(key="authcard"):
             # CHẾ ĐỘ QUÊN MẬT KHẨU
             if st.session_state.get('forgot_password_mode', False):
                 st.markdown("### 🔄 KHÔI PHỤC MẬT KHẨU")
@@ -19128,7 +19206,7 @@ def main():
         st.markdown("### 🛠️ HỆ THỐNG")
         
         # 1. Chế độ Sáng/Tối
-        current_theme = st.session_state.get('theme', 'dark')
+        current_theme = st.session_state.get('theme', 'light')
         label = "🌙 Chế độ Tối" if current_theme == 'dark' else "☀️ Chế độ Sáng"
         st.toggle(label, value=(current_theme == 'dark'), 
                   key="theme_toggle_top", 

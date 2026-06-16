@@ -1,0 +1,379 @@
+# -*- coding: utf-8 -*-
+"""
+demo_ui.py — Thư viện UI "clinical-teal" port nguyên từ rehab_ai_monitor_demo.html.
+
+Mục tiêu: dựng lại giao diện Streamlit cho TẤT CẢ vai trò (BN/BS/KTV/NCV/QTV) +
+màn đăng nhập GIỐNG Y bản HTML demo. Tất cả component (card, stat, ring, chart,
+bảng, pill, note, VAS...) được tái hiện bằng HTML/SVG + CSS giống hệt demo.
+
+Cách dùng trong app.py:
+    from demo_ui import inject_design_system, page_head, stat, ring, ...
+    inject_design_system(is_light=True)   # gọi mỗi rerun, sớm
+    st.markdown(page_head("Tiêu đề","Phụ đề", actions_html), unsafe_allow_html=True)
+    st.markdown(stat("i-users","Đang điều trị","18","+2","up","tuần này"), unsafe_allow_html=True)
+"""
+import math
+import streamlit as st
+
+# ============================================================ ICON SPRITE
+# Bộ icon line (stroke) port nguyên từ demo — dùng qua <svg class="icon"><use href="#i-..."/></svg>
+_ICON_SPRITE = """
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h3l2.5-7 4 14 2.5-9 1.5 2H21"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="11" width="15" height="9" rx="2.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></symbol>
+<symbol id="i-stetho" viewBox="0 0 24 24"><path d="M6 3v5a4 4 0 0 0 8 0V3M5 3h2M13 3h2M10 16v1a4 4 0 0 0 8 0v-2"/><circle cx="18" cy="11" r="2.2"/></symbol>
+<symbol id="i-tools" viewBox="0 0 24 24"><path d="M14.5 5.5a3.5 3.5 0 0 0-4.6 4.4L3 16.7 5.3 19l6.8-6.9a3.5 3.5 0 0 0 4.4-4.6l-2.2 2.2-2-2 2.2-2.2Z"/></symbol>
+<symbol id="i-micro" viewBox="0 0 24 24"><path d="M6 18h12M9 18V9l3-1.5M9 13l4-2"/><circle cx="14.5" cy="6.5" r="2.5"/><path d="M13 16a5 5 0 0 0 5-5"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6Z"/></symbol>
+<symbol id="i-shield-c" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6Z"/><path d="m9 11.5 2 2 4-4"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.6-9.2-9C1.3 8 3 4.5 6.4 4.5c2 0 3.2 1.2 3.6 2 .4-.8 1.6-2 3.6-2 3.4 0 5.1 3.5 3.6 6.5C19 15.4 12 20 12 20Z"/></symbol>
+<symbol id="i-dumbbell" viewBox="0 0 24 24"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5L16 9.5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M8 14l3-3 3 2 4-5"/></symbol>
+<symbol id="i-bars" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20h-20"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2.2"/><path d="M3.5 9.5h17M8 3v3M16 3v3"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+<symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2.2"/><path d="m16 10 5-3v10l-5-3z"/></symbol>
+<symbol id="i-vas" viewBox="0 0 24 24"><path d="M3 12h18M3 12c2-4 4-6 9-6s7 2 9 6c-2 4-4 6-9 6s-7-2-9-6Z"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.4M21 20c0-2.6-1.6-4.8-4-5.6"/></symbol>
+<symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></symbol>
+<symbol id="i-cog" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1M18.4 18.4l-2.1-2.1M7.7 7.7 5.6 5.6"/></symbol>
+<symbol id="i-log" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM9 4v4h7"/><path d="M8 13h8M8 16.5h5"/></symbol>
+<symbol id="i-broom" viewBox="0 0 24 24"><path d="M14 4 9.5 8.5M19 9l-9.5 9.5L5 20l1-4.5L15.5 6M9 14l1 1"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l4-4-4-4M14 12H3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+<symbol id="i-bone" viewBox="0 0 24 24"><path d="M7 7a2.5 2.5 0 1 0-2 4l6 6a2.5 2.5 0 1 0 4 2 2.5 2.5 0 1 0 2-4l-6-6a2.5 2.5 0 1 0-4-2Z"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/><path d="M7.5 14h9"/></symbol>
+<symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4"/><path d="M9 12h6M9 15.5h6M9 8.5h3"/></symbol>
+</svg>
+"""
+
+_ICON_FIX = {"i-scale2": "i-target"}
+def _ic(i): return _ICON_FIX.get(i, i)
+
+# ============================================================ TOKENS (light/dark)
+_TOKENS_LIGHT = (
+    ":root{--ui:'Inter','Be Vietnam Pro',system-ui,sans-serif;--display:'Fraunces',Georgia,serif;"
+    "--mono:'IBM Plex Mono',ui-monospace,monospace;--bg:#e8edf5;--surface:#ffffff;--surface-2:#f4f7fc;"
+    "--surface-3:#edf2fa;--ink:#0f1a26;--ink-2:#39506a;--ink-3:#6c7e92;--teal:#1f6fe0;--teal-strong:#1657bc;"
+    "--teal-50:rgba(31,111,224,.12);--teal-12:rgba(31,111,224,.10);--ai:#5a63d8;--ai-50:rgba(90,99,216,.12);"
+    "--danger:#d2453a;--danger-50:rgba(210,69,58,.12);--warn:#c9820e;--warn-50:rgba(201,130,14,.14);--ok:#16a34a;"
+    "--line:#dfe6f1;--line-2:#edf1f9;--shadow-sm:0 1px 2px rgba(15,28,24,.06),0 1px 3px rgba(15,28,24,.05);"
+    "--shadow:0 4px 14px rgba(15,28,24,.07),0 2px 5px rgba(15,28,24,.05);--shadow-lg:0 24px 60px rgba(15,28,24,.16),0 8px 24px rgba(15,28,24,.10);"
+    "--r-xs:8px;--r-sm:11px;--r:15px;--r-lg:22px;--r-xl:28px;}"
+)
+_TOKENS_DARK = (
+    ":root{--ui:'Inter','Be Vietnam Pro',system-ui,sans-serif;--display:'Fraunces',Georgia,serif;"
+    "--mono:'IBM Plex Mono',ui-monospace,monospace;--bg:#0a1119;--surface:#101a27;--surface-2:#152130;"
+    "--surface-3:#1a2839;--ink:#e8eef7;--ink-2:#a9bccf;--ink-3:#7c8b9b;--teal:#5b9bff;--teal-strong:#8bb6ff;"
+    "--teal-50:rgba(91,155,255,.16);--teal-12:rgba(91,155,255,.10);--ai:#8b93f8;--ai-50:rgba(139,147,248,.16);"
+    "--danger:#f0786c;--danger-50:rgba(240,120,108,.16);--warn:#e7b15a;--warn-50:rgba(231,177,90,.16);--ok:#34d399;"
+    "--line:#1f2c3b;--line-2:#18222f;--shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow:0 6px 22px rgba(0,0,0,.45);"
+    "--shadow-lg:0 28px 70px rgba(0,0,0,.6);--r-xs:8px;--r-sm:11px;--r:15px;--r-lg:22px;--r-xl:28px;}"
+)
+
+# ============================================================ COMPONENT CSS (port nguyên demo)
+_COMPONENT_CSS = """
+.duk *{box-sizing:border-box}
+.duk .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.duk .muted{color:var(--ink-3)}
+.duk .icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+.duk .icon.sm{width:15px;height:15px}
+.duk .icon.lg{width:26px;height:26px}
+/* page head */
+.duk .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.duk .page-head h1{font-family:var(--display);font-weight:600;font-size:clamp(22px,3vw,30px);margin:0;letter-spacing:-.3px;color:var(--ink)}
+.duk .page-head .sub{font-size:13.5px;color:var(--ink-3);margin-top:3px}
+.duk .page-head .actions{display:flex;gap:9px;flex-wrap:wrap}
+/* grid */
+.duk .grid{display:grid;gap:16px}
+.duk .g-3{grid-template-columns:repeat(3,1fr)}
+.duk .g-2{grid-template-columns:repeat(2,1fr)}
+.duk .g-21{grid-template-columns:1.4fr 1fr}
+.duk .g-12{grid-template-columns:1fr 1.6fr}
+/* card */
+.duk .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm);overflow:hidden}
+.duk .card.pad{padding:18px}
+.duk .card-h{display:flex;align-items:center;gap:9px;padding:15px 18px;border-bottom:1px solid var(--line-2)}
+.duk .card-h .icon{width:17px;height:17px;color:var(--teal)}
+.duk .card-h h3{font-size:14.5px;font-weight:600;margin:0;flex:1;color:var(--ink)}
+.duk .card-h .tag{font-size:11px;color:var(--ink-3);font-weight:600}
+.duk .card-b{padding:18px;color:var(--ink-2)}
+.duk .section-label{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-3);margin-bottom:13px}
+.duk .section-label .icon{width:15px;height:15px;color:var(--teal)}
+/* stat */
+.duk .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow-sm)}
+.duk .stat .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.duk .stat .top .ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--teal-12);color:var(--teal-strong)}
+.duk .stat .top .ico .icon{width:18px;height:18px}
+.duk .stat .top .trend{font-size:11.5px;font-weight:600;font-family:var(--mono)}
+.duk .stat .trend.up{color:var(--ok)} .duk .stat .trend.down{color:var(--danger)}
+.duk .stat .v{font-family:var(--mono);font-size:27px;font-weight:600;letter-spacing:-.5px;color:var(--ink)}
+.duk .stat .l{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+/* pill */
+.duk .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:600}
+.duk .pill .icon{width:12px;height:12px}
+.duk .pill.ok{background:var(--teal-50);color:var(--teal-strong)}
+.duk .pill.bad{background:var(--danger-50);color:var(--danger)}
+.duk .pill.warn{background:var(--warn-50);color:var(--warn)}
+.duk .pill.ai{background:var(--ai-50);color:var(--ai)}
+.duk .pill.neu{background:var(--surface-3);color:var(--ink-2)}
+/* meter */
+.duk .meter{height:8px;border-radius:99px;background:var(--surface-3);overflow:hidden;margin:7px 0}
+.duk .meter i{display:block;height:100%;border-radius:99px;background:var(--teal)}
+.duk .meter.bad i{background:var(--danger)} .duk .meter.warn i{background:var(--warn)} .duk .meter.ai i{background:var(--ai)}
+/* tables */
+.duk .tbl{width:100%;border-collapse:collapse;font-size:13px}
+.duk .tbl th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--ink-3);padding:10px 14px;border-bottom:1px solid var(--line)}
+.duk .tbl td{padding:12px 14px;border-bottom:1px solid var(--line-2);color:var(--ink-2)}
+.duk .tbl tr:last-child td{border-bottom:none}
+.duk .tbl tr.hl:hover td{background:var(--surface-2)}
+.duk .tbl .who{display:flex;align-items:center;gap:10px}
+.duk .tbl .who .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:var(--ink-3)}
+.duk .tbl .who b{color:var(--ink);font-weight:600}
+.duk .tbl .who span{font-size:11px;color:var(--ink-3)}
+/* lists */
+.duk .listrow{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line-2)}
+.duk .listrow:last-child{border-bottom:none}
+.duk .listrow .lh{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none;background:var(--surface-2);border:1px solid var(--line);color:var(--teal)}
+.duk .listrow .lh .icon{width:18px;height:18px}
+.duk .listrow .lb{flex:1;min-width:0}
+.duk .listrow .lb b{font-size:13.5px;font-weight:600;display:block;color:var(--ink)}
+.duk .listrow .lb span{font-size:12px;color:var(--ink-3)}
+.duk .listrow .lr{text-align:right;flex:none}
+/* note */
+.duk .note{border-left:3px solid var(--teal);background:var(--surface-2);border-radius:0 12px 12px 0;padding:13px 15px;font-size:13.5px;color:var(--ink-2);line-height:1.6}
+.duk .note.ai{border-left-color:var(--ai)}
+.duk .note .nh{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--ink);margin-bottom:5px;font-size:13px}
+.duk .note .nh .icon{width:15px;height:15px}
+.duk .note.ai .nh .icon,.duk .note.ai .nh{color:var(--ai)}
+/* VAS */
+.duk .vas-wrap{padding:6px 2px}
+.duk .vas-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.duk .vas-num{font-family:var(--mono);font-size:46px;font-weight:600;line-height:1;color:var(--ink)}
+.duk .vas-face{font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;color:#fff}
+.duk .vas-bar{width:100%;height:10px;border-radius:99px;background:linear-gradient(90deg,#16a34a,#c9820e 55%,#d2453a);position:relative}
+.duk .vas-bar i{position:absolute;top:50%;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--teal);box-shadow:var(--shadow);transform:translate(-50%,-50%)}
+.duk .vas-scale{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-top:8px}
+/* gauge ring */
+.duk .gauge{display:flex;align-items:center;gap:18px}
+.duk .ring{position:relative;width:128px;height:128px;flex:none}
+.duk .ring svg{transform:rotate(-90deg)}
+.duk .ring .rtxt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.duk .ring .rtxt b{font-family:var(--mono);font-size:28px;font-weight:600;line-height:1;color:var(--ink)}
+.duk .ring .rtxt span{font-size:11px;color:var(--ink-3);margin-top:2px}
+/* bars */
+.duk .bars{display:flex;align-items:flex-end;gap:10px;height:130px;padding-top:8px}
+.duk .bars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end}
+.duk .bars .col .bar{width:62%;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,var(--teal),var(--teal-strong));min-height:6px}
+.duk .bars .col .bar.ai{background:linear-gradient(180deg,var(--ai),#3b45b8)}
+.duk .bars .col small{font-size:11px;color:var(--ink-3)}
+/* line chart */
+.duk .linechart{width:100%;height:auto;display:block}
+.duk .lc-area{fill:var(--teal-12)}
+.duk .lc-line{fill:none;stroke:var(--teal);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.duk .lc-dot{fill:var(--surface);stroke:var(--teal);stroke-width:2.4}
+.duk .lc-grid{stroke:var(--line-2);stroke-width:1}
+.duk .lc-lbl{fill:var(--ink-3);font-size:10px;font-family:var(--mono)}
+/* config rows */
+.duk .cfg{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line-2)}
+.duk .cfg:last-child{border-bottom:none}
+.duk .cfg .cl b{font-size:13.5px;font-weight:600;display:block;color:var(--ink)}
+.duk .cfg .cl span{font-size:11.5px;color:var(--ink-3)}
+.duk .chips{display:flex;gap:6px;flex-wrap:wrap}
+.duk .chip{padding:6px 12px;border-radius:9px;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)}
+.duk .chip.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.duk .switch{width:46px;height:26px;border-radius:99px;background:var(--surface-3);border:1px solid var(--line);position:relative;flex:none}
+.duk .switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:var(--shadow-sm)}
+.duk .switch.on{background:var(--teal)}
+.duk .switch.on::after{left:auto;right:2px}
+/* btn */
+.duk .btn-s{height:36px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;text-decoration:none}
+.duk .btn-s.solid{background:linear-gradient(145deg,var(--teal),var(--teal-strong));color:#fff;border-color:transparent;box-shadow:0 6px 16px var(--teal-50)}
+.duk .btn-s.danger{color:var(--danger);border-color:var(--danger-50)}
+.duk .btn-s .icon{width:16px;height:16px}
+/* dot */
+.duk .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.duk .dot.g{background:#16a34a} .duk .dot.r{background:var(--danger)} .duk .dot.y{background:var(--warn)}
+/* log line */
+.duk .log-line{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--line-2);font-size:12.5px}
+.duk .log-line:last-child{border-bottom:none}
+.duk .log-line .t{font-family:var(--mono);color:var(--ink-3);flex:none;font-size:11.5px}
+.duk .log-line .m{color:var(--ink-2)}
+.duk .log-line .m b{color:var(--ink)}
+/* rolebadge */
+.duk .rolebadge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid transparent}
+.duk .rolebadge .icon{width:13px;height:13px}
+.duk .rb-doctor{background:var(--teal-50);color:var(--teal-strong)}
+.duk .rb-ktv{background:rgba(2,132,199,.12);color:#0284c7}
+.duk .rb-ncv{background:var(--ai-50);color:var(--ai)}
+.duk .rb-qtv{background:var(--warn-50);color:var(--warn)}
+.duk .rb-patient{background:rgba(22,163,74,.12);color:#16a34a}
+@media (max-width:980px){.duk .g-3{grid-template-columns:repeat(2,1fr)}.duk .g-21,.duk .g-12{grid-template-columns:1fr}}
+@media (max-width:760px){.duk .g-3,.duk .g-2{grid-template-columns:1fr}}
+"""
+
+def inject_design_system(is_light: bool = True):
+    """Inject tokens + component CSS + icon sprite. Gọi mỗi rerun (sau _inject_base_css_once)."""
+    tokens = _TOKENS_LIGHT if is_light else _TOKENS_DARK
+    st.markdown("<style>" + tokens + _COMPONENT_CSS + "</style>" + _ICON_SPRITE, unsafe_allow_html=True)
+
+
+# ============================================================ HTML HELPERS (port từ JS demo)
+def _icon(i, cls="icon"):
+    return f'<svg class="{cls}"><use href="#{_ic(i)}"/></svg>'
+
+def block(inner_html: str) -> str:
+    """Bọc nội dung trong wrapper .duk để CSS có hiệu lực. Dùng cho mỗi st.markdown."""
+    return f'<div class="duk">{inner_html}</div>'
+
+def page_head(title, sub, actions="") -> str:
+    return (f'<div class="duk"><div class="page-head"><div><h1>{title}</h1>'
+            f'<div class="sub">{sub}</div></div><div class="actions">{actions}</div></div></div>')
+
+def stat(icon, label, val, trend="", dir="", sub="") -> str:
+    tri = "▲" if dir == "up" else "▼"
+    trend_html = f'<span class="trend {dir}">{tri} {trend}</span>' if trend else ""
+    sub_html = f" · {sub}" if sub else ""
+    return (f'<div class="stat"><div class="top"><div class="ico">{_icon(icon)}</div>{trend_html}</div>'
+            f'<div class="v">{val}</div><div class="l">{label}{sub_html}</div></div>')
+
+def pill(text, cls="neu", icon="") -> str:
+    return f'<span class="pill {cls}">{_icon(icon) if icon else ""} {text}</span>'
+
+def ring(pct, label, sub, cls="") -> str:
+    r = 54
+    c = 2 * math.pi * r
+    off = c * (1 - pct / 100)
+    col = {"ai": "var(--ai)", "warn": "var(--warn)", "bad": "var(--danger)"}.get(cls, "var(--teal)")
+    return (f'<div class="ring"><svg width="128" height="128" viewBox="0 0 128 128">'
+            f'<circle cx="64" cy="64" r="{r}" fill="none" stroke="var(--surface-3)" stroke-width="11"/>'
+            f'<circle cx="64" cy="64" r="{r}" fill="none" stroke="{col}" stroke-width="11" stroke-linecap="round" '
+            f'stroke-dasharray="{c:.1f}" stroke-dashoffset="{off:.1f}"/></svg>'
+            f'<div class="rtxt"><b>{label}</b><span>{sub}</span></div></div>')
+
+def line_chart(pts, labels) -> str:
+    W, H, pad = 520, 170, 26
+    mx = max(pts) * 1.12 if pts else 1
+    mn = 0
+    n = len(pts)
+    x = lambda i: pad + (i * (W - pad * 2) / (n - 1)) if n > 1 else pad
+    y = lambda v: H - pad - ((v - mn) / (mx - mn)) * (H - pad * 1.6) if mx > mn else H - pad
+    line = " ".join(f'{"M" if i == 0 else "L"}{x(i):.1f} {y(p):.1f}' for i, p in enumerate(pts))
+    area = f'{line} L{x(n-1):.1f} {H-pad} L{pad} {H-pad} Z'
+    grid = "".join(f'<line class="lc-grid" x1="{pad}" y1="{pad*.6+g*(H-pad*1.6):.1f}" x2="{W-pad}" y2="{pad*.6+g*(H-pad*1.6):.1f}"/>' for g in (0, .5, 1))
+    dots = "".join(f'<circle class="lc-dot" cx="{x(i):.1f}" cy="{y(p):.1f}" r="3.6"/>' for i, p in enumerate(pts))
+    labs = "".join(f'<text class="lc-lbl" x="{x(i):.1f}" y="{H-7}" text-anchor="middle">{l}</text>' for i, l in enumerate(labels))
+    return f'<svg class="linechart" viewBox="0 0 {W} {H}">{grid}<path class="lc-area" d="{area}"/><path class="lc-line" d="{line}"/>{dots}{labs}</svg>'
+
+def bar_chart(data) -> str:
+    mx = max(d["v"] for d in data) if data else 1
+    cols = "".join(
+        f'<div class="col"><div class="bar {"ai" if d.get("ai") else ""}" style="height:{d["v"]/mx*100:.0f}%" title="{d["v"]}"></div>'
+        f'<small>{d["l"]}</small></div>' for d in data)
+    return f'<div class="bars">{cols}</div>'
+
+def note(title, body, icon="i-stetho", ai=False) -> str:
+    return (f'<div class="note {"ai" if ai else ""}"><div class="nh">{_icon(icon)} {title}</div>{body}</div>')
+
+def section_label(text, icon) -> str:
+    return f'<div class="section-label">{_icon(icon)} {text}</div>'
+
+def card_open(title, icon="i-chart", right="") -> str:
+    return f'<div class="card"><div class="card-h">{_icon(icon)}<h3>{title}</h3>{right}</div><div class="card-b">'
+
+def card_close() -> str:
+    return "</div></div>"
+
+def seg_row(t, d, cls, pct) -> str:
+    try:
+        w = int("".join(ch for ch in str(pct) if ch.isdigit()) or 70)
+    except ValueError:
+        w = 70
+    mcls = "" if cls == "ok" else cls
+    return (f'<div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
+            f'<b style="font-size:13.5px;color:var(--ink)">{t}</b><span class="pill {cls}">{pct}</span></div>'
+            f'<div class="meter {mcls}"><i style="width:{w}%"></i></div>'
+            f'<span class="muted" style="font-size:12px">{d}</span></div>')
+
+def vas_row(date, v, face, cls) -> str:
+    return (f'<div class="listrow"><div class="lh">{_icon("i-vas")}</div>'
+            f'<div class="lb"><b>{date}</b><span>{face}</span></div>'
+            f'<div class="lr"><span class="pill {cls}" style="font-family:var(--mono)">{v}/10</span></div></div>')
+
+def sched_row(day, time, ex, state) -> str:
+    m = {"done": ("ok", "Đã tập", "i-check"), "today": ("ai", "Hôm nay", "i-clock"), "soon": ("neu", "Sắp tới", "i-bell")}
+    c, l, i = m.get(state, m["soon"])
+    return (f'<div class="listrow"><div class="lh">{_icon("i-cal")}</div>'
+            f'<div class="lb"><b>{day} · {time}</b><span>{ex}</span></div>'
+            f'<div class="lr"><span class="pill {c}">{_icon(i)} {l}</span></div></div>')
+
+def pat_row(name, ini, dx, vas, rom, cls, status) -> str:
+    scls = "ok" if cls == "ok" else "neu"
+    return (f'<tr class="hl"><td><div class="who"><div class="av" style="background:var(--teal)">{ini}</div>'
+            f'<div><b>{name}</b><br><span>{dx}</span></div></div></td><td>{dx}</td>'
+            f'<td><span class="pill {cls}" style="font-family:var(--mono)">{vas}</span></td>'
+            f'<td class="mono">{rom}</td><td><span class="pill {scls}">{status}</span></td>'
+            f'<td><span class="btn-s">{_icon("i-arrow")}</span></td></tr>')
+
+def cmp_row(name, ex, clin, ai, diff, cls) -> str:
+    return (f'<tr class="hl"><td><b style="color:var(--ink)">{name}</b></td><td>{ex}</td>'
+            f'<td class="mono">{clin}</td><td class="mono" style="color:var(--ai)">{ai}</td>'
+            f'<td class="mono">{diff}</td><td><span class="pill {cls}">{"Khớp tốt" if cls == "ok" else "Cần xem"}</span></td></tr>')
+
+def proto(name, desc, freq) -> str:
+    return (f'<div class="listrow"><div class="lh">{_icon("i-dumbbell")}</div>'
+            f'<div class="lb"><b>{name}</b><span>{desc}</span></div>'
+            f'<div class="lr"><span class="pill neu">{freq}</span></div></div>')
+
+def queue_row(name, ex, vas, cls, ago) -> str:
+    return (f'<div class="listrow"><div class="lh">{_icon("i-video")}</div>'
+            f'<div class="lb"><b>{name}</b><span>{ex} · {ago}</span></div>'
+            f'<div class="lr" style="display:flex;gap:8px;align-items:center"><span class="pill {cls}" style="font-family:var(--mono)">{vas}</span>'
+            f'<span class="btn-s solid">{_icon("i-arrow")}</span></div></div>')
+
+def svc_row(name, status, dot="g") -> str:
+    return (f'<div class="listrow"><div class="lb"><b>{name}</b><span>{status}</span></div>'
+            f'<div class="lr"><span class="pill ok"><span class="dot {dot}"></span> Online</span></div></div>')
+
+def log_row(t, who, action, target) -> str:
+    return f'<div class="log-line"><span class="t">{t}</span><span class="m"><b>@{who}</b> {action} <b>{target}</b></span></div>'
+
+def acc_row(name, acc, role, badge, icon, dot, last) -> str:
+    ini = "".join(w[0] for w in name.split(".")[-1].strip().split(" ")[-2:]).upper()
+    act = "Hoạt động" if dot == "g" else "Chờ duyệt"
+    btn = (f'<span class="btn-s solid">{_icon("i-check")}Duyệt</span>' if dot == "y"
+           else f'<span class="btn-s">{_icon("i-cog")}</span>')
+    return (f'<tr class="hl"><td><div class="who"><div class="av">{ini}</div>'
+            f'<div><b>{name}</b><br><span class="mono">@{acc}</span></div></div></td>'
+            f'<td><span class="rolebadge {badge}">{_icon(icon)} {role}</span></td>'
+            f'<td><span class="dot {dot}"></span> {act}</td><td class="muted">{last}</td><td>{btn}</td></tr>')
+
+def vas_display(value: int) -> str:
+    faces = [("Không đau", "#16a34a"), ("Rất nhẹ", "#16a34a"), ("Nhẹ", "#16a34a"), ("Nhẹ", "#65a30d"),
+             ("Đau vừa", "#c9820e"), ("Đau vừa", "#c9820e"), ("Đau nhiều", "#ea580c"), ("Đau nhiều", "#dc2626"),
+             ("Dữ dội", "#dc2626"), ("Dữ dội", "#b91c1c"), ("Tối đa", "#991b1b")]
+    value = max(0, min(10, int(value)))
+    txt, col = faces[value]
+    return (f'<div class="vas-wrap"><div class="vas-top"><div class="vas-num" style="color:{col}">{value}</div>'
+            f'<div class="vas-face" style="background:{col}">{txt}</div></div>'
+            f'<div class="vas-bar"><i style="left:{value/10*100:.0f}%"></i></div>'
+            f'<div class="vas-scale"><span>0 · Không đau</span><span>10 · Đau dữ dội</span></div></div>')
+
+def table(headers, rows_html) -> str:
+    th = "".join(f"<th>{h}</th>" for h in headers)
+    return f'<table class="tbl"><thead><tr>{th}</tr></thead><tbody>{rows_html}</tbody></table>'
+
+def kv(label, value, color="") -> str:
+    style = f' style="color:{color}"' if color else ""
+    return f'<div class="kv"><span>{label}</span><b{style}>{value}</b></div>'
