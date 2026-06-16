@@ -17325,6 +17325,21 @@ def _inject_auth_demo_css(is_light: bool):
     .st-key-authcard .demo-btns{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
     .st-key-authcard .demo-pill{border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
     .st-key-authcard .demo-pill .icon{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    /* ── Native Streamlit demo buttons ── */
+    .st-key-authcard [class*="st-key-demo_"] button{
+      border:1px solid var(--line)!important;background:var(--surface-2)!important;
+      color:var(--ink-2)!important;border-radius:999px!important;font-size:11.5px!important;
+      font-weight:600!important;min-height:32px!important;padding:4px 6px!important;
+      box-shadow:none!important;line-height:1.2}
+    .st-key-authcard [class*="st-key-demo_"] button:hover{border-color:var(--teal)!important;color:var(--teal)!important}
+    .st-key-authcard .st-key-demo_pat_sel [data-baseweb="select"]>div{
+      border-radius:999px!important;border:1px solid var(--line)!important;
+      background:var(--surface-2)!important;font-size:11.5px!important;font-weight:600!important;
+      color:var(--ink-2)!important;min-height:32px!important;padding:0 8px!important}
+    .st-key-authcard .st-key-demo_pat_sel [data-testid="stWidgetLabel"]{display:none}
+    .st-key-authcard [data-testid="stHorizontalBlock"]{gap:6px!important}
+    .st-key-authcard .st-key-auth_msg_err,.st-key-authcard .st-key-auth_msg_ok{
+      border-radius:11px;padding:9px 11px;font-size:12.5px;margin-bottom:12px;line-height:1.35}
     """
     dark_topbar = "" if is_light else (
         ".auth-topbar{background:rgba(16,26,39,.82)!important;border-bottom-color:#1f2c3b!important}"
@@ -17450,6 +17465,17 @@ def _handle_auth_component_actions():
                 save_users(users)
                 st.session_state["_auth_component_success"] = "Đăng ký thành công! Bạn có thể đăng nhập ngay."
         _clear_auth_query_params()
+        st.rerun()
+
+
+def _quick_login(username: str, password: str):
+    """Đăng nhập nhanh (dùng cho nút demo). Chạy hoàn toàn trong Python — không qua JS."""
+    users = load_users()
+    if username in users and verify_password(password, users[username]["password"]):
+        _hoan_tat_dang_nhap(username, users[username])
+        _rerun_toan_bo_app()
+    else:
+        st.session_state["_auth_component_error"] = f"Lỗi tài khoản demo ({username})"
         st.rerun()
 
 
@@ -17672,11 +17698,96 @@ def hien_thi_dang_nhap_dang_ky():
     with col_form:
         _auth_error = st.session_state.pop("_auth_component_error", "")
         _auth_success = st.session_state.pop("_auth_component_success", "")
-        # Lấy tài khoản bệnh nhân thực từ DB
         _all_users = load_users()
-        _patients = {u: d for u, d in _all_users.items() if d.get("role") == "Bệnh nhân"}
-        import streamlit.components.v1 as components
-        components.html(_html_auth_card_component(_auth_error, _auth_success, patients=_patients), height=650, scrolling=False)
+        _patients = {u: d.get("full_name", u) for u, d in _all_users.items() if d.get("role") == "Bệnh nhân"}
+
+        with st.container(key="authcard"):
+            st.markdown('<h2 class="auth-card-title">Đăng nhập hệ thống</h2>', unsafe_allow_html=True)
+            st.markdown('<p class="auth-card-sub">Truy cập bảng điều khiển theo vai trò của bạn.</p>', unsafe_allow_html=True)
+
+            if _auth_error:
+                st.error(_auth_error, icon="🚫")
+            if _auth_success:
+                st.success(_auth_success, icon="✅")
+
+            _auth_mode = st.radio("", ["Đăng nhập", "Đăng ký"], key="auth_mode_widget",
+                                  horizontal=True, label_visibility="collapsed")
+
+            if _auth_mode == "Đăng nhập":
+                # Pre-fill nếu user chọn bệnh nhân từ dropdown
+                if st.session_state.get("_prefill_u"):
+                    st.session_state["login_u"] = st.session_state.pop("_prefill_u")
+
+                _uname = st.text_input("Tài khoản", placeholder="Tên đăng nhập", key="login_u")
+                _pw    = st.text_input("Mật khẩu", placeholder="••••••••", type="password", key="login_p")
+
+                if st.button("Đăng nhập →", type="primary", use_container_width=True, key="login_submit"):
+                    _u = _uname.strip()
+                    if _u and _u in _all_users and verify_password(_pw, _all_users[_u]["password"]):
+                        _hoan_tat_dang_nhap(_u, _all_users[_u])
+                        _rerun_toan_bo_app()
+                    else:
+                        st.session_state["_auth_component_error"] = "Tài khoản hoặc mật khẩu không đúng"
+                        st.rerun()
+
+                st.markdown('<div class="auth-foot">Quên mật khẩu? <b>Liên hệ Quản trị viên</b></div>',
+                            unsafe_allow_html=True)
+
+            else:  # Đăng ký
+                st.markdown('<div class="auth-role-label">Bạn đăng ký với tư cách</div>', unsafe_allow_html=True)
+                st.markdown('<div class="auth-role-static"><div class="ri">❤️</div>'
+                            '<div class="rt"><b>Bệnh nhân</b>'
+                            '<span>Tài khoản theo dõi tập luyện</span></div></div>',
+                            unsafe_allow_html=True)
+                _rn  = st.text_input("Họ và tên", placeholder="VD: Nguyễn Văn A", key="reg_n")
+                _ru  = st.text_input("Tên đăng nhập", placeholder="VD: nguyen_van_a", key="reg_u")
+                _re  = st.text_input("Email / Số điện thoại", placeholder="email@huph.edu.vn", key="reg_e")
+                _rp  = st.text_input("Mật khẩu", placeholder="••••••••", type="password", key="reg_p")
+                _rcp = st.text_input("Nhập lại mật khẩu", placeholder="••••••••", type="password", key="reg_cp")
+
+                if st.button("Đăng ký →", type="primary", use_container_width=True, key="reg_submit"):
+                    if not _ru or not _re or len(_rp) < 6:
+                        st.session_state["_auth_component_error"] = "Điền đầy đủ thông tin, mật khẩu tối thiểu 6 ký tự"
+                    elif _rp != _rcp:
+                        st.session_state["_auth_component_error"] = "Mật khẩu xác nhận không khớp"
+                    elif _ru in _all_users:
+                        st.session_state["_auth_component_error"] = "Tên đăng nhập đã tồn tại"
+                    else:
+                        _all_users[_ru] = {
+                            "password": hash_password(_rp), "email": _re,
+                            "full_name": _rn, "role": "Bệnh nhân",
+                            "created_at": get_vn_now().isoformat()
+                        }
+                        save_users(_all_users)
+                        st.session_state["_auth_component_success"] = "Đăng ký thành công! Hãy đăng nhập."
+                    st.rerun()
+
+            # ── Demo strip ──
+            st.markdown('<div class="demo-strip"><div class="dt">Xem nhanh demo theo vai trò</div></div>',
+                        unsafe_allow_html=True)
+            _dc1, _dc2, _dc3, _dc4 = st.columns(4)
+            with _dc1:
+                if st.button("🩺 Bác sĩ",  key="demo_bsi", use_container_width=True):
+                    _quick_login("doctor1", "bs123@")
+            with _dc2:
+                if st.button("🔧 KTV",      key="demo_ktv", use_container_width=True):
+                    _quick_login("doctor2", "bs123@")
+            with _dc3:
+                if st.button("🔬 NCV",      key="demo_ncv", use_container_width=True):
+                    _quick_login("2211090016", "ncv123@")
+            with _dc4:
+                if st.button("⚙️ QTV",      key="demo_qtv", use_container_width=True):
+                    _quick_login("admin", "admin123@")
+
+            if _patients:
+                _pat_names = [""] + list(_patients.keys())
+                _sel = st.selectbox("", _pat_names,
+                                    format_func=lambda x: "❤️ Chọn Bệnh nhân..." if not x else _patients.get(x, x),
+                                    key="demo_pat_sel", label_visibility="collapsed")
+                if _sel:
+                    st.session_state["_prefill_u"] = _sel
+                    st.rerun()
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================
