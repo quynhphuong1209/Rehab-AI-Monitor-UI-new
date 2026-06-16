@@ -4888,7 +4888,8 @@ def _get_cached_users_dict(mtime):
         "2216030122": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Thị Thơm", "role": "Nghiên cứu viên", "email": "2216030122@studenthuph.edu.vn", "mssv": "2216030122"},
         "2317010071": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Thị Thu Hương", "role": "Nghiên cứu viên", "email": "2317010071@studenthuph.edu.vn", "mssv": "2317010071"},
         "2211090031": {"password": hash_password("ncv123@"), "full_name": "Đinh Lê Quỳnh Phương", "role": "Nghiên cứu viên", "email": "2211090031@studenthuph.edu.vn", "mssv": "2211090031"},
-        "Đinh Lê Quỳnh Phương (NCV)": {"password": hash_password("ncv123@"), "full_name": "Đinh Lê Quỳnh Phương", "role": "Nghiên cứu viên", "email": "2211090031@studenthuph.edu.vn", "mssv": "2211090031"}
+        "Đinh Lê Quỳnh Phương (NCV)": {"password": hash_password("ncv123@"), "full_name": "Đinh Lê Quỳnh Phương", "role": "Nghiên cứu viên", "email": "2211090031@studenthuph.edu.vn", "mssv": "2211090031"},
+        "bn_demo": {"password": hash_password("bn123@"), "full_name": "Bệnh nhân Demo", "role": "Bệnh nhân", "email": "bndemo@rehab.ai"}
     }
     
     # Cập nhật hoặc thêm mới các tài khoản cố định (Luôn đảm bảo vai trò và pass đúng)
@@ -17588,9 +17589,18 @@ function submitAuth(){{
   }}
 }}
 function fillDemo(role){{
-  const map={{patient:'patient01',doctor:'bsi01',ktv:'ktv01',ncv:'ncv01',qtv:'admin'}};
-  document.getElementById('accInput').value=map[role]||'';
-  document.getElementById('pwInput').focus();
+  const map={{
+    patient:{{u:'bn_demo',p:'bn123@'}},
+    doctor:{{u:'doctor1',p:'bs123@'}},
+    ktv:{{u:'doctor2',p:'bs123@'}},
+    ncv:{{u:'2211090016',p:'ncv123@'}},
+    qtv:{{u:'admin',p:'admin123@'}}
+  }};
+  const d=map[role];
+  if(!d)return;
+  document.getElementById('accInput').value=d.u;
+  document.getElementById('pwInput').value=d.p;
+  document.getElementById('accInput').focus();
 }}
 </script>
 </body>
@@ -19779,7 +19789,35 @@ def main():
     header_h1_color = "#ffffff" if not is_light else "#1a1a2e"
     header_p_color = "#ffffff" if not is_light else "#333333"
     _hien_thi_header_chinh(header_h1_color, header_p_color, show_badge=True, is_light=is_light)
-    
+
+    # === THANH NGƯỜI DÙNG: hiển thị vai trò + nút đăng xuất ngay trong nội dung chính ===
+    _role_colors = {
+        "Bệnh nhân": ("#e8f5e9", "#2e7d32", "#1b5e20"),
+        "Bác sĩ / KTV PHCN": ("#e3f2fd", "#1565c0", "#0d47a1"),
+        "Nghiên cứu viên": ("#ede7f6", "#4527a0", "#311b92"),
+        "Quản trị viên": ("#fce4ec", "#c62828", "#b71c1c"),
+    }
+    _rc = _role_colors.get(user_role, ("#f5f5f5", "#333", "#000"))
+    _bg_rc, _clr_rc, _border_rc = (_rc[0], _rc[1], _rc[2]) if is_light else ("rgba(255,255,255,0.07)", "#ccc", "rgba(255,255,255,0.15)")
+    _full_name_disp = st.session_state.user_info.get("full_name", user_role) if st.session_state.user_info else user_role
+    _col_info, _col_logout = st.columns([5, 1])
+    with _col_info:
+        st.markdown(f"""
+        <div style="background:{_bg_rc};border:1px solid {_border_rc};border-radius:10px;
+                    padding:8px 14px;display:inline-flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <span style="color:{_clr_rc};font-weight:700;font-size:0.88rem;">👤 {_full_name_disp}</span>
+          <span style="color:{_border_rc};font-size:0.78rem;background:rgba(0,0,0,0.06);
+                border-radius:20px;padding:2px 8px;">{user_role}</span>
+        </div>""", unsafe_allow_html=True)
+    with _col_logout:
+        if st.button("🚪 Đăng xuất", key="logout_main_bar", type="secondary"):
+            if st.session_state.user_info and st.session_state.user_info.get("auth_type") == "google":
+                st.logout()
+            st.query_params.clear()
+            for _k in list(st.session_state.keys()):
+                del st.session_state[_k]
+            st.rerun()
+
     # --- KHỞI TẠO MẶC ĐỊNH ĐỂ TRÁNH LỖI UNBOUNDLOCALERROR ---
     ma_bai_tap = list(BAI_TAP.keys())[0]
     bai_tap = BAI_TAP[ma_bai_tap]
