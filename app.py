@@ -123,6 +123,40 @@ from checkpoint_utils import (
     save_checkpoint,
     serialize_pass1_item,
 )
+# Thư viện UI "clinical-teal" port từ rehab_ai_monitor_demo.html (đồng bộ qua sys.path .../utils)
+from demo_ui import (
+    inject_design_system,
+    inject_streamlit_skin,
+    inject_auth_nav_css,
+    block,
+    page_head,
+    stat,
+    pill,
+    ring,
+    line_chart,
+    bar_chart,
+    note,
+    section_label,
+    card_open,
+    card_close,
+    seg_row,
+    table,
+    pat_row,
+    cmp_row,
+    proto,
+    queue_row,
+    svc_row,
+    log_row,
+    acc_row,
+    vas_row,
+    sched_row,
+    kv,
+    vas_display,
+    auth_screen_html,
+    topbar_html,
+    sidebar_nav_html,
+    side_info_html,
+)
 
 
 def get_clean_rel_path(path):
@@ -573,8 +607,13 @@ def _html_header_chinh(title_color, subtitle_color, *, show_badge=False, is_ligh
 
 
 def _hien_thi_header_chinh(title_color, subtitle_color, *, show_badge=False, is_light=False, extra_style=""):
-    # st.markdown (không dùng st.html) để kế thừa font/CSS trang và không che nội dung tab bên dưới
-    st.markdown(_html_header_chinh(title_color, subtitle_color, show_badge=show_badge, is_light=is_light, extra_style=extra_style), unsafe_allow_html=True)
+    # Sử dụng topbar_html từ demo_ui khi user đã đăng nhập để đồng bộ giao diện demo
+    if st.session_state.get("logged_in") and st.session_state.get("user_info"):
+        user_info = st.session_state.get("user_info", {})
+        st.markdown(block(topbar_html(user_info=user_info, is_light=is_light)), unsafe_allow_html=True)
+    else:
+        # Giữ nguyên header cũ cho màn hình đăng nhập
+        st.markdown(_html_header_chinh(title_color, subtitle_color, show_badge=show_badge, is_light=is_light, extra_style=extra_style), unsafe_allow_html=True)
 
 
 def hien_thi_hang_logo_header():
@@ -4133,6 +4172,9 @@ def hien_thi_ket_qua_gan_nhat_va_lich_su(
     if doc_eval:
         latest_doc = doc_eval
         t_doc = _format_vn_time(latest_doc.get("time"), default="N/A")
+        _is_light = st.session_state.get('theme', 'light') == 'light'
+        _txt_main = "#1a1a2e" if _is_light else "#fff"
+        _txt_sub = "#555" if _is_light else "#ccc"
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, rgba(90, 99, 216,0.12) 0%, rgba(255,165,0,0.08) 100%);
             border: 1px solid rgba(90, 99, 216,0.35); border-left: 5px solid #5a63d8; border-radius: 14px;
@@ -4140,13 +4182,13 @@ def hien_thi_ket_qua_gan_nhat_va_lich_su(
             <p style="margin:0 0 6px 0; font-size:0.8rem; color:#888; text-transform:uppercase; letter-spacing:1px;">
                 👨‍⚕️ Đánh giá Bác sĩ / KTV gần nhất
             </p>
-            <p style="margin:0; font-size:1.05rem; color:#fff; font-weight:600;">
+            <p style="margin:0; font-size:1.05rem; color:{_txt_main}; font-weight:600;">
                 🕒 {t_doc} — {latest_doc.get('exercise', 'N/A')}
             </p>
             <p style="margin:6px 0 0; font-size:0.95rem; color:#5a63d8;">
                 Kết quả: <b>{latest_doc.get('doctor_result', 'N/A')}</b>
             </p>
-            <p style="margin:6px 0 0; font-size:0.88rem; color:#ccc;">
+            <p style="margin:6px 0 0; font-size:0.88rem; color:{_txt_sub};">
                 {latest_doc.get('comments', '')[:200]}{'...' if len(latest_doc.get('comments', '') or '') > 200 else ''}
             </p>
         </div>
@@ -4167,6 +4209,9 @@ def hien_thi_ket_qua_gan_nhat_va_lich_su(
     if len(latest.get("comments") or "") > 200:
         ai_comment += "..."
 
+    _is_light = st.session_state.get('theme', 'light') == 'light'
+    _txt_main = "#1a1a2e" if _is_light else "#fff"
+    _txt_sub = "#555" if _is_light else "#ccc"
     if chi_nhan_xet:
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, rgba(31, 111, 224,0.12) 0%, rgba(22, 87, 188,0.08) 100%);
@@ -4175,13 +4220,13 @@ def hien_thi_ket_qua_gan_nhat_va_lich_su(
             <p style="margin:0 0 6px 0; font-size:0.8rem; color:#888; text-transform:uppercase; letter-spacing:1px;">
                 🤖 Nhận xét NCV / AI gần nhất
             </p>
-            <p style="margin:0; font-size:1.05rem; color:#fff; font-weight:600;">
+            <p style="margin:0; font-size:1.05rem; color:{_txt_main}; font-weight:600;">
                 🕒 {t_latest} — {ex_latest}
             </p>
             <p style="margin:6px 0 0; font-size:0.95rem; color:#1f6fe0;">
                 Kết quả: <b>{verdict}</b>
             </p>
-            <p style="margin:6px 0 0; font-size:0.88rem; color:#ccc;">
+            <p style="margin:6px 0 0; font-size:0.88rem; color:{_txt_sub};">
                 {ai_comment}
             </p>
         </div>
@@ -4196,7 +4241,7 @@ def hien_thi_ket_qua_gan_nhat_va_lich_su(
         <p style="margin:0 0 6px 0; font-size:0.8rem; color:#888; text-transform:uppercase; letter-spacing:1px;">
             📌 Kết quả gần đây nhất
         </p>
-        <p style="margin:0; font-size:1.05rem; color:#fff; font-weight:600;">
+        <p style="margin:0; font-size:1.05rem; color:{_txt_main}; font-weight:600;">
             🕒 {t_latest} — {ex_latest}
         </p>
         <p style="margin:6px 0 0; font-size:0.95rem; color:#1f6fe0;">
@@ -5821,75 +5866,78 @@ def _inject_base_css_once():
         }
     }
 
-    /* === ÉP MÀU NÚT BẤM LUÔN CÓ CHỮ TRẮNG (DÙ LÀ THEME SÁNG HAY TỐI) === */
+    /* === NÚT BẤM theo demo "clinical-teal": secondary = outline, primary = gradient === */
     .stButton button, .stDownloadButton button, [data-testid="stBaseButton-secondary"],
-    [data-testid="stFormSubmitButton"] button, [data-testid="stBaseButton-primary"] {
-        color: white !important;
-        background: linear-gradient(135deg, #1657bc 0%, #1f6fe0 100%) !important;
-        border: none !important;
-        border-radius: 30px !important; /* Bo tròn pill-shape như ảnh BN gửi */
-        padding: 0.5rem 2rem !important;
-        font-weight: bold !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1) !important;
+    [data-testid="stFormSubmitButton"] button {
+        color: var(--ink-2) !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--line) !important;
+        border-radius: 11px !important;
+        padding: 0.45rem 1.15rem !important;
+        font-weight: 600 !important;
+        transition: border-color .16s ease, color .16s ease, transform .16s ease, box-shadow .16s ease !important;
+        box-shadow: var(--shadow-sm) !important;
     }
-    
-    .stButton button:hover, .stDownloadButton button:hover, [data-testid="stBaseButton-secondary"]:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(31, 111, 224, 0.4) !important;
-        background: linear-gradient(135deg, #0056b3 0%, #1f6fe0 100%) !important;
-        color: white !important;
+    /* primary → gradient teal (chữ trắng) */
+    .stButton button[kind="primary"], [data-testid="stBaseButton-primary"],
+    [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"],
+    [data-testid="stBaseButton-primaryFormSubmit"] {
+        color: #fff !important;
+        background: linear-gradient(145deg, var(--teal), var(--teal-strong)) !important;
+        border: 1px solid transparent !important;
+        box-shadow: 0 6px 16px var(--teal-50) !important;
     }
 
-    /* Chặn flash trắng khi bấm / focus nút */
-    .stButton button:active,
-    .stButton button:focus,
-    .stButton button:focus-visible,
-    .stDownloadButton button:active,
-    .stDownloadButton button:focus,
-    .stDownloadButton button:focus-visible,
-    [data-testid="stBaseButton-primary"]:active,
-    [data-testid="stBaseButton-primary"]:focus,
-    [data-testid="stBaseButton-primary"]:focus-visible,
-    [data-testid="stFormSubmitButton"] button:active,
-    [data-testid="stFormSubmitButton"] button:focus,
-    [data-testid="stFormSubmitButton"] button:focus-visible {
-        background: linear-gradient(135deg, #004494 0%, #0099cc 100%) !important;
+    /* hover: secondary → viền + chữ teal nhấc nhẹ; primary → nhấc + bóng đậm */
+    .stButton button:hover, .stDownloadButton button:hover,
+    [data-testid="stBaseButton-secondary"]:hover, [data-testid="stFormSubmitButton"] button:hover {
+        transform: translateY(-1px) !important;
+        border-color: var(--teal) !important;
+        color: var(--teal) !important;
+    }
+    .stButton button[kind="primary"]:hover, [data-testid="stBaseButton-primary"]:hover,
+    [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"]:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 10px 22px var(--teal-50) !important;
+        color: #fff !important;
+    }
+
+    /* === Trạng thái active/focus (demo): primary giữ gradient + ring; secondary giữ outline + ring === */
+    .stButton button[kind="primary"]:active, .stButton button[kind="primary"]:focus, .stButton button[kind="primary"]:focus-visible,
+    [data-testid="stBaseButton-primary"]:active, [data-testid="stBaseButton-primary"]:focus, [data-testid="stBaseButton-primary"]:focus-visible,
+    [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"]:active,
+    [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"]:focus,
+    [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"]:focus-visible {
+        background: linear-gradient(145deg, var(--teal-strong), var(--teal)) !important;
         color: #ffffff !important;
         outline: none !important;
-        box-shadow: 0 2px 8px rgba(31, 111, 224, 0.35) !important;
+        box-shadow: 0 0 0 3px var(--teal-50) !important;
         transform: none !important;
     }
-    .stButton button[kind="secondary"]:active,
-    .stButton button[kind="secondary"]:focus,
-    .stButton button[kind="secondary"]:focus-visible,
-    [data-testid="stBaseButton-secondary"]:active,
-    [data-testid="stBaseButton-secondary"]:focus,
-    [data-testid="stBaseButton-secondary"]:focus-visible {
-        background: rgba(255, 255, 255, 0.16) !important;
-        color: #ffffff !important;
-        border-color: rgba(31, 111, 224, 0.45) !important;
+    .stButton button[kind="secondary"]:active, .stButton button[kind="secondary"]:focus, .stButton button[kind="secondary"]:focus-visible,
+    [data-testid="stBaseButton-secondary"]:active, [data-testid="stBaseButton-secondary"]:focus, [data-testid="stBaseButton-secondary"]:focus-visible,
+    .stDownloadButton button:active, .stDownloadButton button:focus, .stDownloadButton button:focus-visible,
+    [data-testid="stFormSubmitButton"] button:active, [data-testid="stFormSubmitButton"] button:focus, [data-testid="stFormSubmitButton"] button:focus-visible {
+        background: var(--surface) !important;
+        color: var(--teal) !important;
+        border-color: var(--teal) !important;
         outline: none !important;
-    }
-    .stButton button:active p,
-    .stButton button:focus p,
-    .stDownloadButton button:active p,
-    .stDownloadButton button:focus p {
-        color: #ffffff !important;
+        box-shadow: 0 0 0 3px var(--teal-50) !important;
+        transform: none !important;
     }
 
-    /* Nút secondary — tách khỏi primary để bấm đúng vai trò */
+    /* Nút secondary — outline theo demo (surface + viền + chữ token) */
     .stButton button[kind="secondary"],
     [data-testid="stBaseButton-secondary"] {
-        background: rgba(255, 255, 255, 0.08) !important;
-        color: #e8e8e8 !important;
-        border: 1px solid rgba(255, 255, 255, 0.25) !important;
-        box-shadow: none !important;
+        background: var(--surface) !important;
+        color: var(--ink-2) !important;
+        border: 1px solid var(--line) !important;
+        box-shadow: var(--shadow-sm) !important;
     }
     .stButton button[kind="secondary"]:hover,
     [data-testid="stBaseButton-secondary"]:hover {
-        background: rgba(255, 255, 255, 0.14) !important;
-        color: #ffffff !important;
+        border-color: var(--teal) !important;
+        color: var(--teal) !important;
     }
 
     /* Sửa nút bị mờ/không bấm được khi Streamlit rerun */
@@ -6112,6 +6160,10 @@ def _inject_base_css_once():
 
 
 _inject_base_css_once()
+
+# Bơm design system "clinical-teal" (tokens :root + component CSS + icon sprite) từ demo_ui.
+# Gọi mỗi rerun vì Streamlit rebuild DOM; theme bám theo st.session_state.theme.
+inject_design_system(is_light=(st.session_state.get('theme', 'light') == 'light'))
 
 # Inject JS chặn blink qua components.v1.html — không bị st.markdown strip script tags
 import streamlit.components.v1 as _st_components
@@ -6698,7 +6750,7 @@ if st.session_state.get('theme', 'light') == 'dark':
     st.session_state['_last_injected_theme'] = 'dark'
 
 # === CSS CHO CHẾ ĐỘ SÁNG (LIGHT MODE OVERRIDE) ===
-if st.session_state.get('theme') == 'light' and _current_theme != _last_injected_theme:
+if st.session_state.get('theme', 'light') == 'light':
     st.markdown("""
     <style>
         .stApp { background: #f8f9fa !important; color: #333 !important; }
@@ -7048,9 +7100,28 @@ if st.session_state.get('theme') == 'light' and _current_theme != _last_injected
             scrollbar-width: thin !important;
             scrollbar-color: #1657bc rgba(0,0,0,0.06) !important;
         }
+
+        /* === KHẮC PHỤC CHỮ TRẮNG TRONG GIAO DIỆN SÁNG === */
+        /* Nút secondary: ghi đè chữ trắng từ base CSS (specificity cao hơn) */
+        .stButton button p, .stDownloadButton button p,
+        [data-testid="stFormSubmitButton"] button p,
+        [data-testid="stBaseButton-secondary"] p {
+            color: #212529 !important;
+        }
+        /* Nút primary giữ chữ trắng */
+        .stButton button[kind="primary"] p,
+        [data-testid="stBaseButton-primary"] p,
+        [data-testid="stBaseButton-primaryFormSubmit"] p {
+            color: #ffffff !important;
+        }
+        /* Ghi đè màu con trỏ gõ */
+        html, body, *, input, textarea { caret-color: #1657bc !important; }
     </style>
     """, unsafe_allow_html=True)
     st.session_state['_last_injected_theme'] = 'light'
+
+# Skin widget gốc Streamlit theo demo "clinical-teal" — inject CUỐI CÙNG để thắng CSS theme cũ.
+inject_streamlit_skin(is_light=(st.session_state.get('theme', 'light') == 'light'))
 
 MAX_FILE_SIZE_MB = 10000
 
@@ -7551,35 +7622,37 @@ def hien_thi_tab_cong_nghe():
     st.markdown("### 🏥 PHỤC HỒI CHỨC NĂNG TỪ XA (TELEREHABILITATION)")
     
     col1, col2, col3 = st.columns(3)
-    
+    _card_h4 = "#1a1a2e" if is_light else "#fff"
+    _card_p = "#555" if is_light else "#aaa"
+
     with col1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card" style="height: 250px; border-top: 4px solid #00CED1;">
             <div style="font-size: 3rem; margin-bottom: 10px;">🌍</div>
-            <h4 style="color: #fff;">Tiếp cận toàn cầu</h4>
-            <p style="color: #aaa; font-size: 0.9rem;">
+            <h4 style="color: {_card_h4};">Tiếp cận toàn cầu</h4>
+            <p style="color: {_card_p}; font-size: 0.9rem;">
                 Theo tiêu chuẩn WHO 2022, Telerehab giúp bệnh nhân ở vùng sâu tiếp cận y tế chất lượng cao mà không cần di chuyển.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card" style="height: 250px; border-top: 4px solid #5a63d8;">
             <div style="font-size: 3rem; margin-bottom: 10px;">📉</div>
-            <h4 style="color: #fff;">Tối ưu chi phí</h4>
-            <p style="color: #aaa; font-size: 0.9rem;">
+            <h4 style="color: {_card_h4};">Tối ưu chi phí</h4>
+            <p style="color: {_card_p}; font-size: 0.9rem;">
                 Giảm 40% chi phí điều trị nội trú nhờ duy trì chương trình tập luyện tại nhà được giám sát tự động qua AI.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
     with col3:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card" style="height: 250px; border-top: 4px solid #FF6B6B;">
             <div style="font-size: 3rem; margin-bottom: 10px;">🎯</div>
-            <h4 style="color: #fff;">Cá nhân hóa</h4>
-            <p style="color: #aaa; font-size: 0.9rem;">
+            <h4 style="color: {_card_h4};">Cá nhân hóa</h4>
+            <p style="color: {_card_p}; font-size: 0.9rem;">
                 Dữ liệu từ cảm biến AI giúp bác sĩ điều chỉnh phác đồ theo từng milimet biên độ vận động của bệnh nhân.
             </p>
         </div>
@@ -7764,20 +7837,26 @@ def hien_thi_tab_lien_he():
 
     col1, col2 = st.columns(2)
 
+    _lh_light = st.session_state.get('theme', 'light') == 'light'
+    _lh_card_bg = "rgba(255,255,255,0.85)" if _lh_light else "rgba(255,255,255,0.03)"
+    _lh_card_shadow = "0 15px 35px rgba(0,0,0,0.1)" if _lh_light else "0 15px 35px rgba(0,0,0,0.4)"
+    _lh_name = "#1a1a2e" if _lh_light else "white"
+    _lh_sub = "#444" if _lh_light else "#ccc"
+
     with col1:
-        st.markdown("""
-        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(31, 111, 224, 0.4); border-radius: 20px; padding: 30px; min-height: 480px; position: relative; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.4); backdrop-filter: blur(10px);">
+        st.markdown(f"""
+        <div style="background: {_lh_card_bg}; border: 1px solid rgba(31, 111, 224, 0.4); border-radius: 20px; padding: 30px; min-height: 480px; position: relative; overflow: hidden; box-shadow: {_lh_card_shadow}; backdrop-filter: blur(10px);">
             <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(31, 111, 224, 0.1); border-radius: 50%;"></div>
             <h2 style="color: #1f6fe0; margin-bottom: 30px; border-bottom: 3px solid #1f6fe0; padding-bottom: 15px; display: flex; align-items: center;">
                 <span style="margin-right: 15px; font-size: 2rem;">👩‍🔬</span> Nghiên cứu viên chính
             </h2>
             <div style="margin-bottom: 20px;">
                 <p style="color: #888; font-size: 1rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Họ và tên</p>
-                <p style="font-size: 1.4rem; font-weight: bold; color: white; font-family: 'Outfit', sans-serif;">Đinh Lê Quỳnh Phương</p>
+                <p style="font-size: 1.4rem; font-weight: bold; color: {_lh_name}; font-family: 'Outfit', sans-serif;">Đinh Lê Quỳnh Phương</p>
             </div>
             <div style="margin-bottom: 20px;">
                 <p style="color: #888; font-size: 1rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Đơn vị công tác</p>
-                <p style="font-size: 1.1rem; color: #ccc;">Trường Đại học Y tế Công cộng - Số 1A, Đức Thắng, Bắc Từ Liêm, Hà Nội</p>
+                <p style="font-size: 1.1rem; color: {_lh_sub};">Trường Đại học Y tế Công cộng - Số 1A, Đức Thắng, Bắc Từ Liêm, Hà Nội</p>
             </div>
             <div style="margin-bottom: 20px;">
                 <p style="color: #888; font-size: 1rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Email liên hệ</p>
@@ -7791,19 +7870,19 @@ def hien_thi_tab_lien_he():
         """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown("""
-        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(90, 99, 216, 0.4); border-radius: 20px; padding: 30px; min-height: 480px; position: relative; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.4); backdrop-filter: blur(10px);">
+        st.markdown(f"""
+        <div style="background: {_lh_card_bg}; border: 1px solid rgba(90, 99, 216, 0.4); border-radius: 20px; padding: 30px; min-height: 480px; position: relative; overflow: hidden; box-shadow: {_lh_card_shadow}; backdrop-filter: blur(10px);">
             <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(90, 99, 216, 0.1); border-radius: 50%;"></div>
             <h2 style="color: #5a63d8; margin-bottom: 30px; border-bottom: 3px solid #5a63d8; padding-bottom: 15px; display: flex; align-items: center;">
                 <span style="margin-right: 15px; font-size: 2rem;">⚖️</span> Hội đồng đạo đức
             </h2>
             <div style="margin-bottom: 20px;">
                 <p style="color: #888; font-size: 1rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Tên cơ quan</p>
-                <p style="font-size: 1.4rem; font-weight: bold; color: white; font-family: 'Outfit', sans-serif;">HĐĐĐ Trường ĐH Y tế Công cộng</p>
+                <p style="font-size: 1.4rem; font-weight: bold; color: {_lh_name}; font-family: 'Outfit', sans-serif;">HĐĐĐ Trường ĐH Y tế Công cộng</p>
             </div>
             <div style="margin-bottom: 20px;">
                 <p style="color: #888; font-size: 1rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Địa chỉ trụ sở</p>
-                <p style="font-size: 1.1rem; color: #ccc;">Số 1A, Đức Thắng, Bắc Từ Liêm, Hà Nội</p>
+                <p style="font-size: 1.1rem; color: {_lh_sub};">Số 1A, Đức Thắng, Bắc Từ Liêm, Hà Nội</p>
             </div>
             <div style="margin-bottom: 20px;">
                 <p style="color: #888; font-size: 1rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Email hỗ trợ</p>
@@ -7843,7 +7922,7 @@ def hien_thi_tab_lien_he():
     transform: scale(1.02);
 }
 </style>
-<div class="map-container" style="margin-top: 35px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(31, 111, 224, 0.3); border-radius: 20px; padding: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); backdrop-filter: blur(10px);">
+<div class="map-container" style="margin-top: 35px; background: {_lh_card_bg}; border: 1px solid rgba(31, 111, 224, 0.3); border-radius: 20px; padding: 30px; box-shadow: {_lh_card_shadow}; backdrop-filter: blur(10px);">
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 25px; border-bottom: 3px solid #1f6fe0; padding-bottom: 15px;">
 <h2 style="color: #1f6fe0; margin: 0; display: flex; align-items: center; font-family: 'Outfit', sans-serif;">
 <span style="margin-right: 15px; font-size: 2rem;">📍</span> VỊ TRÍ BỆNH VIỆN ĐA KHOA PHẠM NGỌC THẠCH
@@ -7854,7 +7933,7 @@ def hien_thi_tab_lien_he():
 </div>
 <div style="margin-bottom: 25px;">
 <p style="color: #888; font-size: 0.95rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Địa chỉ bệnh viện</p>
-<p style="font-size: 1.25rem; color: #fff; font-weight: 500; font-family: 'Outfit', sans-serif; margin: 0;">
+<p style="font-size: 1.25rem; color: {_lh_name}; font-weight: 500; font-family: 'Outfit', sans-serif; margin: 0;">
 Số 1A, Đường Đức Thắng, Phường Đông Ngạc, Quận Bắc Từ Liêm, Hà Nội
 </p>
 </div>
@@ -13936,13 +14015,17 @@ def _hien_thi_tab_phan_tich_noi_dung(key_suffix="", stats_ext=None, df_ext=None,
         # 1. HIỂN THỊ HIỆU SUẤT TỔNG QUAN (KHÔNG CHIA GIAI ĐOẠN)
         st.markdown("### 🏥 HIỆU SUẤT TẬP LUYỆN TỔNG QUAN (ĐỐI CHIẾU VIDEO YOUTUBE)")
         
+        _pa_light = st.session_state.get('theme', 'light') == 'light'
+        _pa_txt = "#1a1a2e" if _pa_light else "#fff"
+        _pa_sub = "#555" if _pa_light else "#ccc"
+        _pa_sub2 = "#666" if _pa_light else "#bbb"
         st.markdown(f"""
-        <div style="background: linear-gradient(135deg, rgba(31, 111, 224, 0.1) 0%, rgba(22, 87, 188, 0.2) 100%); 
+        <div style="background: linear-gradient(135deg, rgba(31, 111, 224, 0.1) 0%, rgba(22, 87, 188, 0.2) 100%);
                     padding: 20px; border-radius: 12px; border: 1px solid #1f6fe0; text-align: center; margin-bottom: 15px;">
             <h4 style="margin: 0; color: #1f6fe0; font-size: 1.15rem; font-weight: bold;">🏒 Hiệu suất bài tập với gậy</h4>
-            <p style="margin: 5px 0; font-size: 0.9rem; color: #ccc;">Sai số cho phép: <b>{tk.get('sai_so', bt['chuan']['sai_so'])}°</b></p>
-            <h3 style="margin: 10px 0; color: #fff; font-size: 2.2rem; font-weight: bold;">{metrics_g2['do_chinh_xac']:.1f}%</h3>
-            <p style="margin: 0; font-size: 0.85rem; color: #bbb;">Đúng: <b>{metrics_g2['frame_dung']}</b> | Gần đúng: <b>{metrics_g2['frame_gan_dung']}</b> | Sai: <b>{metrics_g2['frame_sai']}</b></p>
+            <p style="margin: 5px 0; font-size: 0.9rem; color: {_pa_sub};">Sai số cho phép: <b>{tk.get('sai_so', bt['chuan']['sai_so'])}°</b></p>
+            <h3 style="margin: 10px 0; color: {_pa_txt}; font-size: 2.2rem; font-weight: bold;">{metrics_g2['do_chinh_xac']:.1f}%</h3>
+            <p style="margin: 0; font-size: 0.85rem; color: {_pa_sub2};">Đúng: <b>{metrics_g2['frame_dung']}</b> | Gần đúng: <b>{metrics_g2['frame_gan_dung']}</b> | Sai: <b>{metrics_g2['frame_sai']}</b></p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -13986,36 +14069,40 @@ def _hien_thi_tab_phan_tich_noi_dung(key_suffix="", stats_ext=None, df_ext=None,
         st.markdown("### 🏥 HIỆU SUẤT THEO 3 GIAI ĐOẠN HỒI PHỤC (ĐỐI CHIẾU VIDEO YOUTUBE)")
         col_g1, col_g2, col_g3 = st.columns(3)
         
+        _pa_light = st.session_state.get('theme', 'light') == 'light'
+        _pa_txt = "#1a1a2e" if _pa_light else "#fff"
+        _pa_sub = "#555" if _pa_light else "#ccc"
+        _pa_sub2 = "#666" if _pa_light else "#bbb"
         with col_g1:
             st.markdown(f"""
-            <div style="background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.2) 100%); 
+            <div style="background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.2) 100%);
                         padding: 15px; border-radius: 12px; border: 1px solid #4CAF50; text-align: center;">
                 <h4 style="margin: 0; color: #4CAF50; font-size: 1.05rem; font-weight: bold;">🌱 Giai đoạn 1: Khởi đầu</h4>
-                <p style="margin: 5px 0; font-size: 0.85rem; color: #ccc;">Sai số cho phép: <b>45°</b></p>
-                <h3 style="margin: 10px 0; color: #fff; font-size: 1.8rem; font-weight: bold;">{metrics_g1['do_chinh_xac']:.1f}%</h3>
-                <p style="margin: 0; font-size: 0.75rem; color: #bbb;">Đúng: <b>{metrics_g1['frame_dung']}</b> | Gần đúng: <b>{metrics_g1['frame_gan_dung']}</b> | Sai: <b>{metrics_g1['frame_sai']}</b></p>
+                <p style="margin: 5px 0; font-size: 0.85rem; color: {_pa_sub};">Sai số cho phép: <b>45°</b></p>
+                <h3 style="margin: 10px 0; color: {_pa_txt}; font-size: 1.8rem; font-weight: bold;">{metrics_g1['do_chinh_xac']:.1f}%</h3>
+                <p style="margin: 0; font-size: 0.75rem; color: {_pa_sub2};">Đúng: <b>{metrics_g1['frame_dung']}</b> | Gần đúng: <b>{metrics_g1['frame_gan_dung']}</b> | Sai: <b>{metrics_g1['frame_sai']}</b></p>
             </div>
             """, unsafe_allow_html=True)
-            
+
         with col_g2:
             st.markdown(f"""
-            <div style="background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%); 
+            <div style="background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.2) 100%);
                         padding: 15px; border-radius: 12px; border: 1px solid #2196F3; text-align: center;">
                 <h4 style="margin: 0; color: #2196F3; font-size: 1.05rem; font-weight: bold;">📈 Giai đoạn 2: Hồi phục</h4>
-                <p style="margin: 5px 0; font-size: 0.85rem; color: #ccc;">Sai số cho phép: <b>30°</b> (Trung bình)</p>
-                <h3 style="margin: 10px 0; color: #fff; font-size: 1.8rem; font-weight: bold;">{metrics_g2['do_chinh_xac']:.1f}%</h3>
-                <p style="margin: 0; font-size: 0.75rem; color: #bbb;">Đúng: <b>{metrics_g2['frame_dung']}</b> | Gần đúng: <b>{metrics_g2['frame_gan_dung']}</b> | Sai: <b>{metrics_g2['frame_sai']}</b></p>
+                <p style="margin: 5px 0; font-size: 0.85rem; color: {_pa_sub};">Sai số cho phép: <b>30°</b> (Trung bình)</p>
+                <h3 style="margin: 10px 0; color: {_pa_txt}; font-size: 1.8rem; font-weight: bold;">{metrics_g2['do_chinh_xac']:.1f}%</h3>
+                <p style="margin: 0; font-size: 0.75rem; color: {_pa_sub2};">Đúng: <b>{metrics_g2['frame_dung']}</b> | Gần đúng: <b>{metrics_g2['frame_gan_dung']}</b> | Sai: <b>{metrics_g2['frame_sai']}</b></p>
             </div>
             """, unsafe_allow_html=True)
-            
+
         with col_g3:
             st.markdown(f"""
-            <div style="background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.2) 100%); 
+            <div style="background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.2) 100%);
                         padding: 15px; border-radius: 12px; border: 1px solid #F44336; text-align: center;">
                 <h4 style="margin: 0; color: #F44336; font-size: 1.05rem; font-weight: bold;">🎯 Giai đoạn 3: Chuẩn xác</h4>
-                <p style="margin: 5px 0; font-size: 0.85rem; color: #ccc;">Sai số cho phép: <b>15°</b> (Khắt khe)</p>
-                <h3 style="margin: 10px 0; color: #fff; font-size: 1.8rem; font-weight: bold;">{metrics_g3['do_chinh_xac']:.1f}%</h3>
-                <p style="margin: 0; font-size: 0.75rem; color: #bbb;">Đúng: <b>{metrics_g3['frame_dung']}</b> | Gần đúng: <b>{metrics_g3['frame_gan_dung']}</b> | Sai: <b>{metrics_g3['frame_sai']}</b></p>
+                <p style="margin: 5px 0; font-size: 0.85rem; color: {_pa_sub};">Sai số cho phép: <b>15°</b> (Khắt khe)</p>
+                <h3 style="margin: 10px 0; color: {_pa_txt}; font-size: 1.8rem; font-weight: bold;">{metrics_g3['do_chinh_xac']:.1f}%</h3>
+                <p style="margin: 0; font-size: 0.75rem; color: {_pa_sub2};">Đúng: <b>{metrics_g3['frame_dung']}</b> | Gần đúng: <b>{metrics_g3['frame_gan_dung']}</b> | Sai: <b>{metrics_g3['frame_sai']}</b></p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -14408,11 +14495,13 @@ def _hien_thi_tab_phan_tich_noi_dung(key_suffix="", stats_ext=None, df_ext=None,
                                              k_chuan=tk_selected.get('tb_khuyu_chuan'),
                                              sai_so_override=sai_so_selected)
             if insights:
+                _ins_light = st.session_state.get('theme', 'light') == 'light'
+                _ins_txt = "#1a1a2e" if _ins_light else "#fff"
                 for item in insights:
                     st.markdown(f"""
                     <div style="background: rgba(255,165,0,0.1); border-left: 5px solid #FFA500; padding: 1rem; border-radius: 8px; margin-bottom: 10px;">
                         <h4 style="color: #FFA500; margin-top: 0;">⚠️ {item['loai']} ({item['chi_so']})</h4>
-                        <p style="color: #fff; margin-bottom: 5px;"><strong>🔴 Cảnh báo:</strong> {item.get('canh_warning', item.get('canh_bao', ''))}</p>
+                        <p style="color: {_ins_txt}; margin-bottom: 5px;"><strong>🔴 Cảnh báo:</strong> {item.get('canh_warning', item.get('canh_bao', ''))}</p>
                         <p style="color: #00CED1; margin-bottom: 0;"><strong>💡 Lời khuyên:</strong> {item['loi_khuyen']}</p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -15393,6 +15482,7 @@ def hien_thi_tab_khai_bao_trieu_chung():
         muc_do_dau = st.select_slider("Mức độ đau hiện tại (VAS):", 
                                      options=list(range(11)), 
                                      value=3)
+        st.markdown(vas_display(muc_do_dau), unsafe_allow_html=True)
         
         submitted = st.form_submit_button("📤 GỬI THÔNG TIN CHO BÁC SĨ", width="stretch", type="primary")
         
@@ -17129,13 +17219,32 @@ def _inject_auth_demo_css(is_light: bool):
         tokens = (".demo-auth-hero,.st-key-authcard{--surface:#ffffff;--surface-2:#f4f7fc;"
                   "--ink:#0f1a26;--ink-2:#39506a;--ink-3:#6c7e92;--teal:#1f6fe0;--teal-strong:#1657bc;"
                   "--teal-50:rgba(31,111,224,.12);--teal-12:rgba(31,111,224,.10);--ai:#5a63d8;"
-                  "--line:#dfe6f1;--shadow:0 4px 14px rgba(15,28,24,.08);--shadow-lg:0 24px 60px rgba(15,28,24,.16);}")
+                  "--line:#dfe6f1;--shadow-sm:0 1px 2px rgba(15,28,24,.06),0 1px 3px rgba(15,28,24,.05);"
+                  "--shadow:0 4px 14px rgba(15,28,24,.08);--shadow-lg:0 24px 60px rgba(15,28,24,.16);}")
     else:
         tokens = (".demo-auth-hero,.st-key-authcard{--surface:#101a27;--surface-2:#152130;"
                   "--ink:#e8eef7;--ink-2:#a9bccf;--ink-3:#7c8b9b;--teal:#5b9bff;--teal-strong:#8bb6ff;"
                   "--teal-50:rgba(91,155,255,.16);--teal-12:rgba(91,155,255,.10);--ai:#8b93f8;"
-                  "--line:#1f2c3b;--shadow:0 6px 22px rgba(0,0,0,.45);--shadow-lg:0 28px 70px rgba(0,0,0,.6);}")
+                  "--line:#1f2c3b;--shadow-sm:0 1px 2px rgba(0,0,0,.4);"
+                  "--shadow:0 6px 22px rgba(0,0,0,.45);--shadow-lg:0 28px 70px rgba(0,0,0,.6);}")
     css = """
+    [data-testid="stSidebar"], [data-testid="collapsedControl"]{display:none !important}
+    [data-testid="stAppViewContainer"] > .main{margin-left:0 !important}
+    .block-container{max-width:100% !important;padding:0 !important}
+    .auth-topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;padding:8px 26px 9px;background:rgba(255,255,255,.72);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line)}
+    .auth-topbar .brand{display:flex;align-items:center;gap:11px;min-width:0}
+    .auth-topbar .brand-mark{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,var(--teal),var(--teal-strong));box-shadow:0 6px 16px var(--teal-50)}
+    .auth-topbar .brand-mark .icon{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .auth-topbar .brand-txt{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+    .auth-topbar .brand-name{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:18px;letter-spacing:.1px;color:var(--ink)}
+    .auth-topbar .brand-name b{color:var(--teal)}
+    .auth-topbar .brand-sub{font-size:11px;color:var(--ink-3);letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .auth-topbar .spacer{flex:1}
+    .auth-topbar .theme-visual{width:40px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink-2)}
+    .auth-topbar .theme-visual .icon{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    .auth-stage{padding:0 clamp(38px,3.2vw,64px)}
+    .auth-stage [data-testid="stHorizontalBlock"],
+    .block-container [data-testid="stHorizontalBlock"]:has(.demo-auth-hero){min-height:calc(100vh - 58px);align-items:center;padding:0 clamp(38px,3.2vw,64px)}
     /* ===== HERO (cot trai) ===== */
     .demo-auth-hero{position:relative;padding:8px 18px 8px 4px;display:flex;flex-direction:column;gap:20px;min-height:520px;justify-content:center}
     .demo-auth-hero .eyebrow{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:6px 13px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.3px;background:var(--teal-50);color:var(--teal-strong);border:1px solid var(--teal-50)}
@@ -17156,12 +17265,65 @@ def _inject_auth_demo_css(is_light: bool):
     .demo-auth-hero #poseArm{transform-box:fill-box;transform-origin:right top;animation:_armswing 4.4s ease-in-out infinite}
     @keyframes _armswing{0%,100%{transform:rotate(8deg)}50%{transform:rotate(-86deg)}}
     /* ===== AUTH CARD (cot phai) ===== */
-    .st-key-authcard{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow-lg);padding:26px 24px !important}
+    .st-key-authcard{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow-lg);padding:clamp(22px,3.4vw,34px) !important;max-width:430px;margin:0 auto}
+    .st-key-authcard .auth-card-title{font-family:'Fraunces',Georgia,serif !important;font-weight:600;font-size:25px;line-height:1.18;margin:0 0 4px;color:var(--ink) !important}
+    .st-key-authcard .auth-card-sub{font-size:13.5px;color:var(--ink-3) !important;margin:0 0 22px;line-height:1.45}
     .st-key-authcard [data-testid="stWidgetLabel"] p{font-size:12.5px !important;font-weight:600 !important;color:var(--ink-2) !important}
     .st-key-authcard [data-baseweb="input"],.st-key-authcard [data-baseweb="select"]>div{border-radius:11px !important;border:1px solid var(--line) !important;background:var(--surface-2) !important}
     .st-key-authcard [data-baseweb="input"]:focus-within{border-color:var(--teal) !important;box-shadow:0 0 0 3px var(--teal-50) !important}
+    .st-key-authcard .stTextInput{margin-bottom:14px}
+    .st-key-authcard .st-key-login_u div[data-baseweb="input"],.st-key-authcard .st-key-login_p div[data-baseweb="input"],
+    .st-key-authcard .st-key-reg_n div[data-baseweb="input"],.st-key-authcard .st-key-reg_u div[data-baseweb="input"],
+    .st-key-authcard .st-key-reg_e div[data-baseweb="input"],.st-key-authcard .st-key-reg_p div[data-baseweb="input"],
+    .st-key-authcard .st-key-reg_cp div[data-baseweb="input"]{position:relative;height:46px !important;padding-left:34px !important}
+    .st-key-authcard .st-key-login_u div[data-baseweb="input"]::before,.st-key-authcard .st-key-reg_n div[data-baseweb="input"]::before,.st-key-authcard .st-key-reg_u div[data-baseweb="input"]::before{
+        content:"";position:absolute;left:13px;top:50%;width:16px;height:16px;transform:translateY(-50%);
+        background:var(--ink-3);opacity:.92;
+        -webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>') center/contain no-repeat;
+        mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>') center/contain no-repeat;
+    }
+    .st-key-authcard .st-key-reg_e div[data-baseweb="input"]::before{
+        content:"";position:absolute;left:13px;top:50%;width:16px;height:16px;transform:translateY(-50%);
+        background:var(--ink-3);opacity:.92;
+        -webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></svg>') center/contain no-repeat;
+        mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></svg>') center/contain no-repeat;
+    }
+    .st-key-authcard .st-key-login_p div[data-baseweb="input"]::before,.st-key-authcard .st-key-reg_p div[data-baseweb="input"]::before,.st-key-authcard .st-key-reg_cp div[data-baseweb="input"]::before{
+        content:"";position:absolute;left:13px;top:50%;width:16px;height:16px;transform:translateY(-50%);
+        background:var(--ink-3);opacity:.92;
+        -webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="11" width="15" height="9" rx="2.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>') center/contain no-repeat;
+        mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="11" width="15" height="9" rx="2.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>') center/contain no-repeat;
+    }
+    .st-key-authcard .st-key-login_p div[data-baseweb="input"]::after{
+        content:"";position:absolute;right:14px;top:50%;width:16px;height:16px;transform:translateY(-50%);
+        background:var(--ink-3);opacity:.9;
+        -webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>') center/contain no-repeat;
+        mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>') center/contain no-repeat;
+    }
+    .st-key-authcard .st-key-login_p input{padding-right:30px !important}
     .st-key-authcard button[kind="primary"]{background:linear-gradient(145deg,var(--teal),var(--teal-strong)) !important;border:none !important;border-radius:12px !important;font-weight:600 !important;box-shadow:0 8px 20px var(--teal-50) !important}
+    .st-key-authcard .st-key-login_submit button::after{content:"→";font-size:18px;line-height:1;margin-left:9px}
     .st-key-authcard button[kind="secondary"]{border-radius:11px !important;border:1px solid var(--line) !important}
+    .st-key-authcard .st-key-forgot_link button{border:none !important;background:transparent !important;box-shadow:none !important;color:var(--teal) !important;padding:0 !important;min-height:auto !important;height:auto !important;font-size:12.5px !important;font-weight:600 !important}
+    .st-key-authcard .st-key-forgot_link button:hover{transform:none !important;text-decoration:underline !important}
+    .st-key-authcard .st-key-auth_mode_widget{margin-bottom:22px}
+    .st-key-authcard .st-key-auth_mode_widget div[data-testid="stSegmentedControl"]{display:flex;background:var(--surface-2) !important;border:1px solid var(--line) !important;border-radius:12px !important;padding:4px !important}
+    .st-key-authcard .st-key-auth_mode_widget div[data-testid="stSegmentedControl"] button{flex:1;border:none !important;background:transparent !important;color:var(--ink-3) !important;padding:9px !important;border-radius:9px !important;font-size:13.5px !important;font-weight:600 !important;box-shadow:none !important}
+    .st-key-authcard .st-key-auth_mode_widget div[data-testid="stSegmentedControl"] button:hover{color:var(--teal) !important;transform:none !important}
+    .st-key-authcard .st-key-auth_mode_widget div[data-testid="stSegmentedControl"] button[aria-checked="true"],.st-key-authcard .st-key-auth_mode_widget div[data-testid="stSegmentedControl"] button[kind="segmented_controlActive"]{background:var(--surface) !important;color:var(--teal-strong) !important;box-shadow:var(--shadow-sm) !important}
+    .st-key-authcard .auth-role-label{font-size:12.5px;font-weight:600;color:var(--ink-2);margin:2px 0 8px}
+    .st-key-authcard .auth-role-static{display:flex;align-items:center;gap:10px;background:var(--teal-12);border:1.5px solid var(--teal);border-radius:13px;padding:11px;margin:4px 0 16px;box-shadow:0 0 0 3px var(--teal-50)}
+    .st-key-authcard .auth-role-static .ri{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--teal);color:#fff;border:1px solid var(--teal)}
+    .st-key-authcard .auth-role-static .rt{display:flex;flex-direction:column;line-height:1.15}
+    .st-key-authcard .auth-role-static .rt b{font-size:13px;font-weight:600;color:var(--ink)}
+    .st-key-authcard .auth-role-static .rt span{font-size:10.5px;color:var(--ink-3)}
+    .st-key-authcard .auth-foot{margin-top:16px;font-size:12.5px;color:var(--ink-3);text-align:center;line-height:1.55}
+    .st-key-authcard .auth-foot b{color:var(--teal);font-weight:600}
+    .st-key-authcard .demo-strip{margin-top:20px;border-top:1px dashed var(--line);padding-top:16px}
+    .st-key-authcard .demo-strip .dt{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;text-align:center}
+    .st-key-authcard .demo-btns{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+    .st-key-authcard .demo-pill{border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+    .st-key-authcard .demo-pill .icon{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
     """
     st.markdown("<style>" + tokens + css + "</style>", unsafe_allow_html=True)
 
@@ -17201,161 +17363,258 @@ def _html_auth_hero(is_light: bool) -> str:
     )
 
 
-def hien_thi_dang_nhap_dang_ky():
-    with st.sidebar:
-        st.markdown("### 🛠️ CẤU HÌNH GIAO DIỆN")
-        current_theme = st.session_state.get('theme', 'light')
-        t_label = "🌙 Chế độ Tối" if current_theme == 'dark' else "☀️ Chế độ Sáng"
-        st.toggle(t_label, value=(current_theme == 'dark'), 
-                  key="theme_toggle_login", 
-                  on_change=lambda: st.session_state.update({"theme": "dark" if st.session_state.get("theme_toggle_login", True) else "light"}))
-        st.markdown("---")
+def _html_auth_topbar(is_light: bool) -> str:
+    theme_icon = "i-moon" if is_light else "i-sun"
+    return (
+        '<div class="auth-topbar">'
+        '<div class="brand">'
+        '<div class="brand-mark"><svg class="icon"><use href="#i-pulse"/></svg></div>'
+        '<div class="brand-txt">'
+        '<span class="brand-name">Rehab <b>AI</b> Monitor</span>'
+        '<span class="brand-sub">Hệ sinh thái lâm sàng · HUPH × BV Phạm Ngọc Thạch · 2026</span>'
+        '</div></div>'
+        '<div class="spacer"></div>'
+        f'<div class="theme-visual"><svg class="icon"><use href="#{theme_icon}"/></svg></div>'
+        '</div>'
+    )
 
+
+def _decode_auth_payload(raw):
+    if not raw:
+        return {}
+    try:
+        padded = str(raw) + "=" * (-len(str(raw)) % 4)
+        return json.loads(base64.urlsafe_b64decode(padded.encode("utf-8")).decode("utf-8"))
+    except Exception:
+        return {}
+
+
+def _clear_auth_query_params():
+    try:
+        st.query_params.clear()
+    except Exception:
+        pass
+
+
+def _handle_auth_component_actions():
+    action = st.query_params.get("auth_action", "")
+    payload = _decode_auth_payload(st.query_params.get("auth_payload", ""))
+    if not action:
+        return
+
+    if action == "forgot":
+        st.session_state["_auth_component_success"] = "Liên hệ Quản trị viên để cấp lại mật khẩu."
+        _clear_auth_query_params()
+        st.rerun()
+
+    if action == "login":
+        u = str(payload.get("username", "")).strip()
+        p = str(payload.get("password", ""))
+        users = load_users()
+        if u in users and verify_password(p, users[u]["password"]):
+            _clear_auth_query_params()
+            _hoan_tat_dang_nhap(u, users[u])
+            _rerun_toan_bo_app()
+        st.session_state["_auth_component_error"] = "Tài khoản hoặc mật khẩu không đúng"
+        _clear_auth_query_params()
+        st.rerun()
+
+    if action == "register":
+        reg_name = str(payload.get("full_name", "")).strip()
+        reg_u = str(payload.get("username", "")).strip()
+        reg_e = str(payload.get("email", "")).strip()
+        reg_p = str(payload.get("password", ""))
+        reg_cp = str(payload.get("confirm_password", ""))
+        if not reg_u or not reg_e or len(reg_p) < 6:
+            st.session_state["_auth_component_error"] = "Vui lòng điền đầy đủ thông tin bắt buộc và mật khẩu tối thiểu 6 ký tự"
+        elif reg_p != reg_cp:
+            st.session_state["_auth_component_error"] = "Mật khẩu xác nhận không khớp"
+        else:
+            users = load_users()
+            if reg_u in users:
+                st.session_state["_auth_component_error"] = "Tên đăng nhập này đã tồn tại"
+            else:
+                users[reg_u] = {
+                    "password": hash_password(reg_p),
+                    "email": reg_e,
+                    "full_name": reg_name,
+                    "role": "Bệnh nhân",
+                    "created_at": get_vn_now().isoformat()
+                }
+                save_users(users)
+                st.session_state["_auth_component_success"] = "Đăng ký thành công! Bạn có thể đăng nhập ngay."
+        _clear_auth_query_params()
+        st.rerun()
+
+
+def _html_auth_card_component(error_msg="", success_msg="") -> str:
+    error_html = f'<div class="msg err">{error_msg}</div>' if error_msg else ""
+    success_html = f'<div class="msg ok">{success_msg}</div>' if success_msg else ""
+    return f"""
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{{
+  --ui:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --display:'Fraunces',Georgia,'Times New Roman',serif;
+  --surface:#ffffff;--surface-2:#f4f7fc;--ink:#0f1a26;--ink-2:#39506a;--ink-3:#6c7e92;
+  --teal:#1f6fe0;--teal-strong:#1657bc;--teal-50:rgba(31,111,224,.12);
+  --line:#dfe6f1;--shadow-sm:0 1px 2px rgba(15,28,24,.06),0 1px 3px rgba(15,28,24,.05);
+  --shadow-lg:0 24px 60px rgba(15,28,24,.16),0 8px 24px rgba(15,28,24,.10);
+}}
+*{{box-sizing:border-box}}
+html,body{{margin:0;padding:0;background:transparent;font-family:var(--ui);color:var(--ink);}}
+.wrap{{display:flex;align-items:center;justify-content:center;padding:8px 0 24px;min-height:620px}}
+.auth-card{{width:100%;max-width:430px;background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow-lg);padding:34px}}
+h2{{font-family:var(--display);font-weight:600;font-size:25px;line-height:1.18;margin:0 0 4px;color:var(--ink)}}
+.sub{{font-size:13.5px;color:var(--ink-3);margin:0 0 22px;line-height:1.45}}
+.seg{{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:22px}}
+.seg button{{flex:1;border:none;background:transparent;color:var(--ink-3);padding:9px;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.18s}}
+.seg button.on{{background:var(--surface);color:var(--teal-strong);box-shadow:var(--shadow-sm)}}
+.field{{margin-bottom:15px}}
+.field label{{display:block;font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px}}
+.inp{{display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--line);border-radius:11px;padding:0 12px;height:46px;transition:.18s}}
+.inp:focus-within{{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-50);background:var(--surface)}}
+.icon{{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}}
+.inp .icon{{color:var(--ink-3);width:17px;height:17px}}
+.inp input{{flex:1;border:none;background:transparent;outline:none;color:var(--ink);font-size:14.5px;height:100%;min-width:0}}
+.toggle-eye{{border:none;background:transparent;color:var(--ink-3);cursor:pointer;display:grid;place-items:center;padding:4px}}
+.toggle-eye:hover{{color:var(--teal)}}
+.btn-primary{{width:100%;height:48px;border:none;border-radius:12px;cursor:pointer;background:linear-gradient(145deg,var(--teal),var(--teal-strong));color:#fff;font-size:14.5px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 8px 20px var(--teal-50);transition:.18s}}
+.btn-primary:hover{{transform:translateY(-1px);box-shadow:0 12px 26px var(--teal-50)}}
+.auth-foot{{margin-top:16px;font-size:12.5px;color:var(--ink-3);text-align:center;line-height:1.55}}
+.auth-foot button{{border:none;background:transparent;color:var(--teal);font:inherit;font-weight:600;cursor:pointer;padding:0}}
+.demo-strip{{margin-top:20px;border-top:1px dashed var(--line);padding-top:16px}}
+.demo-strip .dt{{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;text-align:center}}
+.demo-btns{{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}}
+.demo-btns button{{border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.16s}}
+.demo-btns button:hover{{border-color:var(--teal);color:var(--teal);transform:translateY(-1px)}}
+.demo-btns button .icon{{width:13px;height:13px}}
+.role-label{{font-size:12.5px;font-weight:600;color:var(--ink-2);margin:4px 0 9px}}
+.role-grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:18px}}
+.role-opt{{display:flex;align-items:center;gap:10px;text-align:left;background:var(--surface-2);border:1.5px solid var(--line);border-radius:13px;padding:11px;transition:.16s}}
+.role-opt.on{{border-color:var(--teal);background:rgba(31,111,224,.10);box-shadow:0 0 0 3px var(--teal-50)}}
+.role-opt .ri{{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--teal);color:#fff;border:1px solid var(--teal)}}
+.role-opt .rt{{display:flex;flex-direction:column;line-height:1.15;min-width:0}}
+.role-opt .rt b{{font-size:13px;font-weight:600}}
+.role-opt .rt span{{font-size:10.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.role-opt.full{{grid-column:1 / -1}}
+.register-only{{display:none}}
+body.register .register-only{{display:block}}
+body.register .login-only{{display:none}}
+.msg{{border-radius:11px;padding:9px 11px;font-size:12.5px;margin-bottom:12px;line-height:1.35}}
+.msg.err{{background:rgba(210,69,58,.12);color:#d2453a}}
+.msg.ok{{background:rgba(22,163,74,.12);color:#16a34a}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="11" width="15" height="9" rx="2.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.6-9.2-9C1.3 8 3 4.5 6.4 4.5c2 0 3.2 1.2 3.6 2 .4-.8 1.6-2 3.6-2 3.4 0 5.1 3.5 3.6 6.5C19 15.4 12 20 12 20Z"/></symbol>
+  <symbol id="i-stetho" viewBox="0 0 24 24"><path d="M6 3v5a4 4 0 0 0 8 0V3M5 3h2M13 3h2M10 16v1a4 4 0 0 0 8 0v-2"/><circle cx="18" cy="11" r="2.2"/></symbol>
+  <symbol id="i-tools" viewBox="0 0 24 24"><path d="M14.5 5.5a3.5 3.5 0 0 0-4.6 4.4L3 16.7 5.3 19l6.8-6.9a3.5 3.5 0 0 0 4.4-4.6l-2.2 2.2-2-2 2.2-2.2Z"/></symbol>
+  <symbol id="i-micro" viewBox="0 0 24 24"><path d="M6 18h12M9 18V9l3-1.5M9 13l4-2"/><circle cx="14.5" cy="6.5" r="2.5"/><path d="M13 16a5 5 0 0 0 5-5"/></symbol>
+  <symbol id="i-cog" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1M18.4 18.4l-2.1-2.1M7.7 7.7 5.6 5.6"/></symbol>
+</svg>
+<div class="wrap">
+  <div class="auth-card">
+    <h2 id="authTitle">Đăng nhập hệ thống</h2>
+    <p class="sub" id="authSub">Truy cập bảng điều khiển theo vai trò của bạn.</p>
+    {error_html}{success_html}
+    <div class="seg">
+      <button id="segLogin" class="on" type="button" onclick="setMode('login')">Đăng nhập</button>
+      <button id="segReg" type="button" onclick="setMode('register')">Đăng ký</button>
+    </div>
+    <div class="register-only">
+      <div class="role-label">Bạn đăng ký với tư cách</div>
+      <div class="role-grid">
+        <div class="role-opt on full"><span class="ri"><svg class="icon"><use href="#i-heart"/></svg></span><span class="rt"><b>Bệnh nhân</b><span>Tài khoản theo dõi tập luyện</span></span></div>
+      </div>
+      <div class="field"><label>Họ và tên</label><div class="inp"><svg class="icon"><use href="#i-user"/></svg><input id="regName" type="text" placeholder="VD: Nguyễn Văn A"></div></div>
+    </div>
+    <div class="field"><label id="lblAcc">Tài khoản</label><div class="inp"><svg class="icon"><use href="#i-user"/></svg><input id="accInput" type="text" placeholder="Tên đăng nhập"></div></div>
+    <div class="register-only field"><label>Email / Số điện thoại</label><div class="inp"><svg class="icon"><use href="#i-mail"/></svg><input id="emailInput" type="text" placeholder="email@huph.edu.vn"></div></div>
+    <div class="field"><label>Mật khẩu</label><div class="inp"><svg class="icon"><use href="#i-lock"/></svg><input id="pwInput" type="password" placeholder="••••••••"><button class="toggle-eye" onclick="togglePw('pwInput')" type="button"><svg class="icon"><use href="#i-eye"/></svg></button></div></div>
+    <div class="register-only field"><label>Nhập lại mật khẩu</label><div class="inp"><svg class="icon"><use href="#i-lock"/></svg><input id="pw2Input" type="password" placeholder="••••••••"><button class="toggle-eye" onclick="togglePw('pw2Input')" type="button"><svg class="icon"><use href="#i-eye"/></svg></button></div></div>
+    <button class="btn-primary" type="button" onclick="submitAuth()"><span id="submitTxt">Đăng nhập</span><svg class="icon"><use href="#i-arrow"/></svg></button>
+    <div class="auth-foot login-only">Quên mật khẩu? <button onclick="sendAction('forgot',{{}})" type="button">Khôi phục tại đây</button></div>
+    <div class="demo-strip">
+      <div class="dt">Xem nhanh demo theo vai trò</div>
+      <div class="demo-btns">
+        <button type="button" onclick="fillDemo('patient')"><svg class="icon"><use href="#i-heart"/></svg>Bệnh nhân</button>
+        <button type="button" onclick="fillDemo('doctor')"><svg class="icon"><use href="#i-stetho"/></svg>Bác sĩ</button>
+        <button type="button" onclick="fillDemo('ktv')"><svg class="icon"><use href="#i-tools"/></svg>KTV</button>
+        <button type="button" onclick="fillDemo('ncv')"><svg class="icon"><use href="#i-micro"/></svg>NCV</button>
+        <button type="button" onclick="fillDemo('qtv')"><svg class="icon"><use href="#i-cog"/></svg>Quản trị</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let mode='login';
+function setMode(next){{
+  mode=next;
+  document.body.classList.toggle('register',mode==='register');
+  document.getElementById('segLogin').classList.toggle('on',mode==='login');
+  document.getElementById('segReg').classList.toggle('on',mode==='register');
+  document.getElementById('authTitle').textContent=mode==='login'?'Đăng nhập hệ thống':'Đăng ký tài khoản';
+  document.getElementById('authSub').textContent=mode==='login'?'Truy cập bảng điều khiển theo vai trò của bạn.':'Tạo tài khoản bệnh nhân để bắt đầu theo dõi tập luyện.';
+  document.getElementById('submitTxt').textContent=mode==='login'?'Đăng nhập':'Đăng ký';
+}}
+function togglePw(id){{ const el=document.getElementById(id); el.type=el.type==='password'?'text':'password'; }}
+function enc(obj){{
+  const json=JSON.stringify(obj);
+  const b64=btoa(unescape(encodeURIComponent(json))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');
+  return b64;
+}}
+function sendAction(action,data){{
+  const url=new URL(window.parent.location.href);
+  url.searchParams.set('auth_action',action);
+  url.searchParams.set('auth_payload',enc(data));
+  window.parent.location.href=url.toString();
+}}
+function submitAuth(){{
+  if(mode==='login'){{
+    sendAction('login',{{username:document.getElementById('accInput').value.trim(),password:document.getElementById('pwInput').value}});
+  }}else{{
+    sendAction('register',{{full_name:document.getElementById('regName').value.trim(),username:document.getElementById('accInput').value.trim(),email:document.getElementById('emailInput').value.trim(),password:document.getElementById('pwInput').value,confirm_password:document.getElementById('pw2Input').value}});
+  }}
+}}
+function fillDemo(role){{
+  const map={{patient:'patient01',doctor:'bsi01',ktv:'ktv01',ncv:'ncv01',qtv:'admin'}};
+  document.getElementById('accInput').value=map[role]||'';
+  document.getElementById('pwInput').focus();
+}}
+</script>
+</body>
+</html>
+"""
+
+
+def hien_thi_dang_nhap_dang_ky():
     # === GIAO DIỆN HERO theo design demo (clinical-teal) ===
     is_light = st.session_state.get('theme') == 'light'
     _inject_auth_demo_css(is_light)
+    _handle_auth_component_actions()
+    st.markdown(_html_auth_topbar(is_light), unsafe_allow_html=True)
+    st.markdown('<div class="auth-stage">', unsafe_allow_html=True)
     col_hero, col_form = st.columns([1.05, 0.95], gap="large")
     with col_hero:
         st.markdown(_html_auth_hero(is_light), unsafe_allow_html=True)
 
     with col_form:
-        with st.container(key="authcard"):
-            # CHẾ ĐỘ QUÊN MẬT KHẨU
-            if st.session_state.get('forgot_password_mode', False):
-                st.markdown("### 🔄 KHÔI PHỤC MẬT KHẨU")
-                u_reset = st.text_input("👤 Tên đăng nhập", placeholder="Nhập tên tài khoản", key="f_u")
-                e_reset = st.text_input("📧 Email đã đăng ký", placeholder="example@gmail.com", key="f_e")
-                n_pass = st.text_input("🆕 Mật khẩu mới", type="password", placeholder="Tối thiểu 6 ký tự", key="f_p1")
-                c_pass = st.text_input("✅ Xác nhận mật khẩu mới", type="password", placeholder="Nhập lại mật khẩu", key="f_p2")
-                
-                c1, c2 = st.columns(2)
-                with c1:
-                    if st.button("Đặt lại mật khẩu", width="stretch", type="primary"):
-                        users = load_users()
-                        if u_reset in users and users[u_reset].get('email') == e_reset:
-                            if n_pass == c_pass and len(n_pass) >= 6:
-                                users[u_reset]['password'] = hash_password(n_pass)
-                                save_users(users)
-                                st.success("✅ Thành công! Hãy đăng nhập lại.")
-                                st.session_state.forgot_password_mode = False
-                                st.rerun()
-                            else: st.error("❌ Mật khẩu không khớp hoặc quá ngắn")
-                        else: st.error("❌ Thông tin không chính xác")
-                with c2:
-                    if st.button("Hủy bỏ", width="stretch"):
-                        st.session_state.forgot_password_mode = False
-                        st.rerun()
-                return
-
-            # GIAO DIỆN CHÍNH (TABS)
-            login_role = st.selectbox("🎭 Bạn truy cập với vai trò:", ["Bệnh nhân", "Bác sĩ / KTV PHCN", "Nghiên cứu viên", "Quản trị viên"], key="login_role_main")
-            
-            tab_list = ["🔐 ĐĂNG NHẬP", "📋 ĐĂNG KÝ", "🚀 GOOGLE ID"]
-            all_login_tabs = st.tabs(tab_list)
-            t_map = {name: all_login_tabs[i] for i, name in enumerate(tab_list)}
-            
-            if "🔐 ĐĂNG NHẬP" in t_map:
-                with t_map["🔐 ĐĂNG NHẬP"]:
-                    # CHẾ ĐỘ ĐỔI MẬT KHẨU TRONG LOGIN
-                    if st.session_state.get('change_password_mode', False):
-                        st.markdown("### 🔑 THAY ĐỔI MẬT KHẨU")
-                        st.info("💡 Điền thông tin bên dưới để cập nhật mật khẩu mới.")
-                        with st.form("login_change_password_form_v2"):
-                            cp_u = st.text_input("👤 Tên đăng nhập", key="cp_u_v2")
-                            cp_old = st.text_input("🔒 Mật khẩu hiện tại", type="password", key="cp_old_v2")
-                            cp_new = st.text_input("🆕 Mật khẩu mới", type="password", key="cp_new_v2")
-                            cp_conf = st.text_input("✅ Xác nhận mật khẩu mới", type="password", key="cp_conf_v2")
-                            
-                            c1, c2 = st.columns(2)
-                            with c1:
-                                if st.form_submit_button("💾 CẬP NHẬT", width="stretch"):
-                                    users = load_users()
-                                    if cp_u in users and verify_password(cp_old, users[cp_u]['password']):
-                                        if users[cp_u].get('role') == login_role:
-                                            if cp_new == cp_conf and len(cp_new) >= 6:
-                                                users[cp_u]['password'] = hash_password(cp_new)
-                                                save_users(users)
-                                                st.success("✅ Thành công! Hãy đăng nhập lại.")
-                                                st.session_state.change_password_mode = False
-                                                st.rerun()
-                                            else: st.error("❌ Mật khẩu không khớp hoặc quá ngắn.")
-                                        else: st.error(f"❌ Tài khoản không khớp với vai trò {login_role}.")
-                                    else: st.error("❌ Thông tin không chính xác.")
-                            with c2:
-                                if st.form_submit_button("Hủy bỏ", width="stretch"):
-                                    st.session_state.change_password_mode = False
-                                    st.rerun()
-                    else:
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        u = st.text_input("👤 Tên đăng nhập", placeholder="Nhập tên tài khoản", key="login_u")
-                        p = st.text_input("🔑 Mật khẩu", type="password", placeholder="Nhập mật khẩu", key="login_p")
-                        
-                        if st.button("🚀 ĐĂNG NHẬP NGAY", width="stretch", type="primary"):
-                            users = load_users()
-                            if u in users and verify_password(p, users[u]['password']):
-                                if users[u].get('role', 'Bệnh nhân') == login_role:
-                                    _hoan_tat_dang_nhap(u, users[u])
-                                    _rerun_toan_bo_app()
-                                else:
-                                    st.error(f"❌ Tài khoản này không có quyền truy cập với vai trò {login_role}")
-                            else: st.error("❌ Tài khoản hoặc mật khẩu không đúng")
-                        
-                        # Chỉ hiện nút Đổi mật khẩu cho Bác sĩ và NCV
-                        if login_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
-                            if st.button("🔑 ĐỔI MẬT KHẨU", width="stretch", type="secondary"):
-                                st.session_state.change_password_mode = True
-                                st.rerun()
-
-                        if st.button("❓ Bạn quên mật khẩu?", width="stretch", type="secondary"):
-                            st.session_state.forgot_password_mode = True
-                            st.rerun()
-                            
-            if "📋 ĐĂNG KÝ" in t_map:
-                with t_map["📋 ĐĂNG KÝ"]:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    reg_name = st.text_input("📛 Họ và tên", placeholder="VD: Nguyễn Văn A", key="reg_n")
-                    reg_u = st.text_input("👤 Tên đăng nhập *", placeholder="Chọn tên tài khoản", key="reg_u")
-                    reg_e = st.text_input("📧 Email liên hệ *", placeholder="example@gmail.com", key="reg_e")
-                    reg_p = st.text_input("🔑 Mật khẩu *", type="password", placeholder="Tối thiểu 6 ký tự", key="reg_p")
-                    reg_cp = st.text_input("✅ Xác nhận mật khẩu *", type="password", placeholder="Nhập lại mật khẩu", key="reg_cp")
-                    st.info("💡 Các tài khoản Bác sĩ và Nghiên cứu viên đã được khởi tạo theo danh sách. Để cấp thêm tài khoản mới, vui lòng liên hệ Quản trị viên.")
-                    reg_role = "Bệnh nhân" # Gán mặc định không cần hiển thị
-                    
-                    if st.button("🚀 ĐĂNG KÝ TRUY CẬP", width="stretch", type="primary"):
-                        if not reg_u or not reg_e or len(reg_p) < 6:
-                            st.warning("⚠️ Vui lòng điền đầy đủ các thông tin bắt buộc (*)")
-                        elif reg_p != reg_cp:
-                            st.error("❌ Mật khẩu xác nhận không khớp")
-                        else:
-                            users = load_users()
-                            if reg_u in users: st.error("❌ Tên đăng nhập này đã tồn tại")
-                            else:
-                                users[reg_u] = {
-                                    "password": hash_password(reg_p),
-                                    "email": reg_e,
-                                    "full_name": reg_name,
-                                    "role": reg_role,
-                                    "created_at": get_vn_now().isoformat()
-                                }
-                                save_users(users)
-                                st.success("🎉 Đăng ký thành công! Bạn có thể đăng nhập ngay.")
-                                
-            if "🚀 GOOGLE ID" in t_map:
-                with t_map["🚀 GOOGLE ID"]:
-                    st.markdown("""
-                    <div style="text-align: center; padding: 10px;">
-                        <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" width="40" style="margin-bottom: 5px;">
-                        <h5 style="color: white;">Đăng nhập nhanh</h5>
-                        <p style="color: #888; font-size: 0.85rem;">Truy cập an toàn qua Google ID</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    if st.button("🌐 TIẾP TỤC ĐĂNG NHẬP VỚI GOOGLE", width="stretch", type="primary"):
-                        try:
-                            st.session_state.auth_initiated = True
-                            st.login("google")
-                        except Exception as e:
-                            st.error(f"⚠️ Lỗi Google: {e}")
+        _auth_error = st.session_state.pop("_auth_component_error", "")
+        _auth_success = st.session_state.pop("_auth_component_success", "")
+        import streamlit.components.v1 as components
+        components.html(_html_auth_card_component(_auth_error, _auth_success), height=650, scrolling=False)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================
 # HÀM HIỂN TRỊ TAB QUẢN TRỊ VIÊN
@@ -17625,8 +17884,11 @@ def hien_thi_tab_quan_tri_vien():
 
 def hien_thi_home_quan_tri_vien():
     """Trang chủ chuyên biệt dành cho Quản trị viên (Admin Dashboard)"""
-    st.markdown("## 📊 HỆ THỐNG QUẢN TRỊ TỔNG THỂ")
-    
+    st.markdown(page_head(
+        "Bảng điều khiển quản trị",
+        "Giám sát người dùng, dữ liệu và tình trạng vận hành toàn hệ thống"),
+        unsafe_allow_html=True)
+
     # Load dữ liệu
     users = load_users()
     v_list = load_data(VIDEOS_FILE)
@@ -17648,20 +17910,19 @@ def hien_thi_home_quan_tri_vien():
         if v.get('metrics') and isinstance(v['metrics'], dict):
             total_frames += v['metrics'].get('tong_frame', 0)
             
-    # Hiển thị các Metric Card cao cấp
+    # Hiển thị các Metric Card cao cấp (design "clinical-teal" port từ demo_ui)
     is_light = st.session_state.theme == 'light'
-    card_bg = "rgba(255, 255, 255, 1)" if is_light else "rgba(255, 255, 255, 0.05)"
-    
-    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
-    with m_col1:
-        st.markdown(f"""<div class="metric-card" style="background:{card_bg};"><div class="metric-label">👥 Người dùng</div><div class="metric-value">{total_users}</div><div style="font-size:0.8rem; color:#888;">{patients} BN | {doctors} BS</div></div>""", unsafe_allow_html=True)
-    with m_col2:
-        st.markdown(f"""<div class="metric-card" style="background:{card_bg};"><div class="metric-label">🎬 Tổng Video</div><div class="metric-value">{total_vids}</div><div style="font-size:0.8rem; color:#888;">Video đã nhận</div></div>""", unsafe_allow_html=True)
-    with m_col3:
-        st.markdown(f"""<div class="metric-card" style="background:{card_bg};"><div class="metric-label">📝 Đánh giá</div><div class="metric-value">{total_evals}</div><div style="font-size:0.8rem; color:#888;">Bản ghi chuyên môn</div></div>""", unsafe_allow_html=True)
-    with m_col4:
-        st.markdown(f"""<div class="metric-card" style="background:{card_bg};"><div class="metric-label">⚡ Frames Xử lý</div><div class="metric-value">{total_frames:,}</div><div style="font-size:0.8rem; color:#888;">Dữ liệu qua AI</div></div>""", unsafe_allow_html=True)
-    
+    _admin_stats = (
+        stat("i-users", "Người dùng", str(total_users), "", "", f"{patients} BN · {doctors} BS · {ncvs} NCV")
+        + stat("i-video", "Tổng video", str(total_vids), "", "", "video đã nhận")
+        + stat("i-doc", "Đánh giá", str(total_evals), "", "", "bản ghi chuyên môn")
+        + stat("i-spark", "Frames xử lý", f"{total_frames:,}", "", "", "dữ liệu qua AI")
+    )
+    st.markdown(
+        block('<div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">'
+              + _admin_stats + '</div>'),
+        unsafe_allow_html=True)
+
     st.markdown("---")
     
     # Biểu đồ thống kê
@@ -18471,32 +18732,10 @@ def _render_main_tab_content(tab_titles, user_role):
         _tab_target = st.session_state.pop('trigger_tab_switch', None)
         if _tab_target and _tab_target in tab_titles:
             st.session_state.active_tab = _tab_target
-            # Ghi đè TRỰC TIẾP trạng thái widget trước khi render — pop key + default mới
-            # KHÔNG đổi được highlight vì default chỉ áp dụng ở lần tạo widget đầu tiên.
-            st.session_state["active_tab_widget"] = _tab_target
+            st.session_state["_tab_switched_programmatically"] = True
+            st.rerun()
 
-        # default chỉ truyền khi widget chưa có trạng thái (lần render đầu / sau F5),
-        # tránh cảnh báo "widget created with a default value but also had its value set via Session State".
-        _seg_kwargs = {}
-        if "active_tab_widget" not in st.session_state:
-            _seg_kwargs["default"] = st.session_state.active_tab
-
-        # Hiển thị Menu segmented control dạng Tab Bar
-        selected_tab = st.segmented_control(
-            label="Menu điều hướng",
-            options=tab_titles,
-            selection_mode="single",
-            key="active_tab_widget",
-            label_visibility="collapsed",
-            **_seg_kwargs,
-        )
-    
-        if selected_tab:
-            st.session_state.active_tab = selected_tab
-        else:
-            selected_tab = st.session_state.active_tab
-
-        _gan_js_cuon_tab_mot_lan()
+        selected_tab = st.session_state.active_tab if st.session_state.active_tab in tab_titles else tab_titles[0]
         st.caption(f"📍 Đang xem: **{selected_tab}**")
 
         # ==================== TAB 1: TRANG CHỦ ====================
@@ -18507,9 +18746,57 @@ def _render_main_tab_content(tab_titles, user_role):
                 else:
                     # Nếu là Bác sĩ hoặc NCV, hiển thị danh sách triệu chứng
                     if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
-                        # --- DANH SÁCH TRIỆU CHỨNG BN (CHUYỂN TỪ SIDEBAR SANG ĐÂY) ---
-                        st.markdown("### 👥 DANH SÁCH TRIỆU CHỨNG BN MỚI NHẤT")
                         symptoms_data = load_data(SYMPTOMS_FILE)
+
+                        # ===== DASHBOARD HEADER (design "clinical-teal" port từ demo_ui) =====
+                        def _vas_to_int(x):
+                            try:
+                                return int(str(x).split('/')[0].strip())
+                            except Exception:
+                                return 0
+
+                        if user_role == "Bác sĩ / KTV PHCN":
+                            _v_list = load_danh_sach_video_nghien_cuu()
+                            _, _e_mtime = _mtimes_video_eval()
+                            _evals_db = _evals_dedup_cached(_e_mtime)
+                            _eval_keys = {
+                                (e.get('patient_username'), e.get('video_name'), e.get('exercise'))
+                                for e in _evals_db
+                                if e.get('doctor_username') and e.get('doctor_username') != "AI_Researcher"
+                            }
+                            _pending_eval = sum(
+                                1 for v in _v_list
+                                if (v.get('username'), v.get('video_name'), v.get('exercise')) not in _eval_keys
+                            )
+                            _total_patients = len(set(v.get('username') for v in _v_list if v.get('username')))
+                            _vas_high = sum(1 for it in (symptoms_data or []) if _vas_to_int(it.get('vas', 0)) >= 6)
+                            _stats_html = (
+                                stat("i-bell", "Chờ đánh giá", str(_pending_eval), "", "", "ưu tiên hôm nay")
+                                + stat("i-users", "Tổng bệnh nhân", str(_total_patients), "", "", "đang điều trị")
+                                + stat("i-vas", "VAS ≥ 6", str(_vas_high), "", "", "cần theo dõi sát")
+                            )
+                            st.markdown(page_head(
+                                "Bảng điều khiển lâm sàng",
+                                "Tiếp nhận & đánh giá buổi tập phục hồi chức năng của bệnh nhân"),
+                                unsafe_allow_html=True)
+                        else:  # Nghiên cứu viên
+                            _total_vids, _pending_ai, _avg_acc = _thong_ke_video_nghien_cuu()
+                            _stats_html = (
+                                stat("i-db", "Tổng video", str(_total_vids), "", "", "trong dataset")
+                                + stat("i-clock", "Chờ xử lý AI", str(_pending_ai), "", "", "hàng chờ phân tích")
+                                + stat("i-target", "Độ chính xác TB", f"{_avg_acc:.1f}%", "", "", "trên mẫu đã đánh giá")
+                            )
+                            st.markdown(page_head(
+                                "Bảng điều khiển nghiên cứu",
+                                "Quản lý dataset, trích xuất khung xương & kiểm định mô hình AI"),
+                                unsafe_allow_html=True)
+                        st.markdown(
+                            block('<div class="grid g-3" style="margin-bottom:18px">' + _stats_html + '</div>'),
+                            unsafe_allow_html=True)
+
+                        # --- DANH SÁCH TRIỆU CHỨNG BN (CHUYỂN TỪ SIDEBAR SANG ĐÂY) ---
+                        st.markdown(section_label("Khai báo triệu chứng bệnh nhân mới nhất", "i-users"),
+                                    unsafe_allow_html=True)
                         if symptoms_data:
                             # Nhóm các khai báo triệu chứng theo bệnh nhân để gộp bài tập
                             grouped_symptoms = {}
@@ -18562,6 +18849,44 @@ def _render_main_tab_content(tab_titles, user_role):
 
                     # HIỂN THỊ THÔNG TIN BÀI TẬP (CHỈ HIỆN CHO BN - BS/NCV ĐÃ BIẾT NÊN CẮT BỎ ĐỂ TRÁNH RỐI)
                     if user_role == "Bệnh nhân":
+                        # ===== DASHBOARD HEADER BỆNH NHÂN (design "clinical-teal" từ demo_ui) =====
+                        _bn_user = st.session_state.user_info.get('username', '')
+                        _bn_name = st.session_state.user_info.get('full_name') or _bn_user or 'bạn'
+                        try:
+                            _n_buoi = len([v for v in load_danh_sach_video_nghien_cuu()
+                                           if v.get('username') == _bn_user])
+                        except Exception:
+                            _n_buoi = 0
+                        try:
+                            _, _e_mt = _mtimes_video_eval()
+                            _n_nhanxet = len([e for e in _evals_dedup_cached(_e_mt)
+                                              if e.get('patient_username') == _bn_user
+                                              and e.get('doctor_username')
+                                              and e.get('doctor_username') != "AI_Researcher"])
+                        except Exception:
+                            _n_nhanxet = 0
+                        _vas_last = "—"
+                        try:
+                            _mine = [it for it in (load_data(SYMPTOMS_FILE) or [])
+                                     if it.get('patient_username') == _bn_user
+                                     or it.get('full_name') == st.session_state.user_info.get('full_name')]
+                            if _mine:
+                                _vas_last = f"{_mine[-1].get('vas', '—')}/10"
+                        except Exception:
+                            pass
+                        _bn_stats = (
+                            stat("i-dumbbell", "Buổi tập đã gửi", str(_n_buoi), "", "", "tổng video")
+                            + stat("i-spark", "Nhận xét chuyên gia", str(_n_nhanxet), "", "", "AI & Bác sĩ")
+                            + stat("i-vas", "VAS gần nhất", str(_vas_last), "", "", "mức đau khai báo")
+                        )
+                        st.markdown(page_head(
+                            f"Xin chào, {_bn_name}",
+                            "Khai báo triệu chứng, chọn bài tập và gửi video để chuyên gia đánh giá."),
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            block('<div class="grid g-3" style="margin-bottom:18px">' + _bn_stats + '</div>'),
+                            unsafe_allow_html=True)
+
                         # --- KHAI BÁO THÔNG TIN NGƯỚI DÙNG + TRIỆU CHỨNG + CHỌN BÀI TẬP ---
                         st.markdown("## 📝 THÔNG TIN KHÁM & TẬP LUYỆN")
                     
@@ -19178,9 +19503,171 @@ def _render_main_tab_content(tab_titles, user_role):
             if True:
                 hien_thi_tab_phieu_nckh()
 
+def _sidebar_demo_stats(user_role):
+    """Lấy số liệu thật cho side-card demo mà không thay đổi dữ liệu/luồng xử lý cũ."""
+    stats = {}
+    try:
+        user_info = st.session_state.get("user_info", {}) or {}
+        username = user_info.get("username", "")
+
+        def _vas_to_int(value):
+            try:
+                return int(str(value).split("/")[0].strip())
+            except Exception:
+                return 0
+
+        if user_role == "Bệnh nhân":
+            symptoms = load_data(SYMPTOMS_FILE) or []
+            mine = [
+                item for item in symptoms
+                if item.get("patient_username") == username
+                or item.get("username") == username
+                or item.get("full_name") == user_info.get("full_name")
+            ]
+            latest = mine[-1] if mine else {}
+            latest_vas = latest.get("vas")
+            stats.update({
+                "diagnosis": latest.get("diagnosis") or latest.get("chan_doan") or latest.get("symptoms") or "Chưa khai báo",
+                "treatment_week": user_info.get("treatment_week") or user_info.get("week") or "Theo dữ liệu hệ thống",
+                "latest_vas": f"{latest_vas}/10" if latest_vas not in (None, "", "N/A") else "N/A",
+                "doctor": user_info.get("doctor_name") or user_info.get("assigned_doctor") or "Chưa gán",
+            })
+
+        elif user_role == "Bác sĩ / KTV PHCN":
+            videos = load_danh_sach_video_nghien_cuu()
+            _, eval_mtime = _mtimes_video_eval()
+            evals_db = _evals_dedup_cached(eval_mtime)
+            evaluated_keys = {
+                (e.get("patient_username"), e.get("video_name"), e.get("exercise"))
+                for e in evals_db
+                if e.get("doctor_username") and e.get("doctor_username") != "AI_Researcher"
+            }
+            pending_eval = sum(
+                1 for v in videos
+                if (v.get("username"), v.get("video_name"), v.get("exercise")) not in evaluated_keys
+            )
+            symptoms = load_data(SYMPTOMS_FILE) or []
+            cutoff = get_vn_now().replace(tzinfo=None) - timedelta(days=7)
+            sessions_7d = 0
+            for v in videos:
+                dt = _parse_vn_datetime(v.get("time") or v.get("created_at") or v.get("upload_time"))
+                if dt and dt >= cutoff:
+                    sessions_7d += 1
+            stats.update({
+                "total_patients": len(set(v.get("username") for v in videos if v.get("username"))),
+                "pending_eval": pending_eval,
+                "vas_high": sum(1 for item in symptoms if _vas_to_int(item.get("vas", 0)) >= 6),
+                "sessions_7d": sessions_7d,
+            })
+
+        elif user_role == "Nghiên cứu viên":
+            total_videos, pending_ai, avg_acc = _thong_ke_video_nghien_cuu()
+            stats.update({
+                "total_videos": total_videos,
+                "pending_ai": pending_ai,
+                "model": st.session_state.get("ncv_model_type", "MediaPipe Heavy").replace("MediaPipe ", "MP-"),
+                "avg_acc": f"{avg_acc:.1f}%",
+            })
+
+        elif user_role == "Quản trị viên":
+            users = load_users()
+            hf_ok, hf_msg = kiem_tra_quyen_hf_dataset() if (HF_SPACE_ID or os.path.exists("/data")) else (False, "")
+            stats.update({
+                "accounts": len(users),
+                "storage": "HF Dataset" if HF_SPACE_ID or os.path.exists("/data") else "Local",
+                "sync": "OK" if hf_ok else ("Token lỗi" if HF_TOKEN else "Local"),
+                "status": "OK" if not hf_msg or hf_ok else "Cần kiểm tra",
+            })
+    except Exception:
+        return stats
+    return stats
+
+
+def _build_main_tab_titles(user_role):
+    """Danh sách trang chính theo vai trò, dùng chung cho sidebar và phần render nội dung."""
+    if user_role == "Quản trị viên":
+        return ["🏠 TRANG CHỦ", "🛠️ QUẢN TRỊ VIÊN", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
+
+    if user_role == "Bác sĩ / KTV PHCN":
+        selected_video_main = st.session_state.get('current_eval_video')
+        _vid_key_meta = (
+            (selected_video_main or {}).get("username", ""),
+            (selected_video_main or {}).get("video_name", ""),
+        )
+        if st.session_state.get("_meta_tab_vid_key") != _vid_key_meta:
+            _, _has_out = _lay_meta_tab_bac_si(selected_video_main)
+            st.session_state["_meta_tab_vid_key"] = _vid_key_meta
+            st.session_state["_meta_tab_has_output"] = _has_out
+        has_video_output = st.session_state.get("_meta_tab_has_output", False)
+        titles = ["🏠 TRANG CHỦ", "📊 QUẢN LÝ ĐÁNH GIÁ & NCKH"]
+        if has_video_output:
+            titles.append("🎬 VIDEO & ẢNH")
+        titles += ["⏰ LỊCH NHẮC NHỞ", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "📞 THÔNG TIN LIÊN HỆ", "💬 PHẢN HỒI"]
+        return titles
+
+    if user_role == "Bệnh nhân":
+        return ["🏠 TRANG CHỦ", "📊 KẾT QUẢ ĐÁNH GIÁ", "⏰ LỊCH NHẮC NHỞ", "📚 THÔNG TIN TỔNG HỢP", "📞 THÔNG TIN LIÊN HỆ", "💬 PHẢN HỒI"]
+
+    return ["🏠 TRANG CHỦ", "📊 KẾT QUẢ ĐÁNH GIÁ", "🔬 PHÂN TÍCH & TRÍCH XUẤT DỮ LIỆU", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
+
+
+def _init_active_tab(tab_titles):
+    if 'active_tab' not in st.session_state or st.session_state.active_tab not in tab_titles:
+        st.session_state.active_tab = tab_titles[0]
+
+    if st.session_state.pop("_tab_switched_programmatically", False):
+        st.session_state["sidebar_active_tab"] = st.session_state.active_tab
+    elif st.session_state.get("sidebar_active_tab") in tab_titles:
+        st.session_state.active_tab = st.session_state.sidebar_active_tab
+    else:
+        st.session_state["sidebar_active_tab"] = st.session_state.active_tab
+
+    if st.session_state.get("active_tab_widget") not in tab_titles:
+        st.session_state.pop("active_tab_widget", None)
+
+
+def _render_sidebar_main_navigation(tab_titles):
+    st.markdown("""
+    <style>
+    .st-key-sidebar_active_tab [data-testid="stWidgetLabel"] p{
+        font-size:10.5px!important;font-weight:800!important;letter-spacing:.7px!important;
+        text-transform:uppercase!important;color:var(--ink-3)!important;margin-bottom:8px!important;
+    }
+    .st-key-sidebar_active_tab [role="radiogroup"]{display:flex!important;flex-direction:column!important;gap:4px!important}
+    .st-key-sidebar_active_tab [role="radiogroup"] label{
+        min-height:42px!important;border-radius:10px!important;padding:0 12px!important;
+        display:flex!important;align-items:center!important;color:var(--ink-2)!important;
+        background:transparent!important;border:1px solid transparent!important;font-weight:700!important;
+    }
+    .st-key-sidebar_active_tab [role="radiogroup"] label:hover{
+        background:var(--surface-2)!important;color:var(--ink)!important;
+    }
+    .st-key-sidebar_active_tab [role="radiogroup"] label:has(input:checked){
+        background:linear-gradient(145deg,var(--teal),var(--teal-strong))!important;
+        color:#fff!important;border-color:transparent!important;box-shadow:0 6px 16px var(--teal-50)!important;
+    }
+    .st-key-sidebar_active_tab [role="radiogroup"] label:has(input:checked) *{color:#fff!important}
+    .st-key-sidebar_active_tab [role="radiogroup"] input{display:none!important}
+    </style>
+    """, unsafe_allow_html=True)
+    selected = st.radio(
+        "ĐIỀU HƯỚNG",
+        options=tab_titles,
+        index=tab_titles.index(st.session_state.active_tab) if st.session_state.active_tab in tab_titles else 0,
+        key="sidebar_active_tab",
+    )
+    if selected != st.session_state.active_tab:
+        st.session_state.active_tab = selected
+        st.rerun()
 
 
 def main():
+    # Inject design system và CSS cho auth/nav từ demo_ui
+    is_light = st.session_state.get('theme', 'light') == 'light'
+    inject_design_system(is_light=is_light)
+    inject_streamlit_skin(is_light=is_light)
+    inject_auth_nav_css()
+    
     thuc_hien_khoi_tao_he_thong_mot_lan()
 
     # Kiểm tra trạng thái đăng nhập ngay đầu hàm main
@@ -19201,8 +19688,31 @@ def main():
     def update_theme_callback():
         st.session_state.theme = 'dark' if st.session_state.get('theme_toggle_top', True) else 'light'
 
+    user_role = st.session_state.user_info.get('role', 'Bệnh nhân')
+
+    # Tự động chọn video đầu tiên trước khi dựng điều hướng, để tab động như "VIDEO & ẢNH" vẫn xuất hiện đúng.
+    if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
+        if not st.session_state.get('current_eval_video') and not st.session_state.get('_default_video_picked'):
+            all_vids = load_danh_sach_video_nghien_cuu()
+            if all_vids:
+                st.session_state.current_eval_video = all_vids[0]
+            st.session_state._default_video_picked = True
+
+    tab_titles = _build_main_tab_titles(user_role)
+    _init_active_tab(tab_titles)
+
     # Chuyển các điều khiển hệ thống vào Sidebar
     with st.sidebar:
+        _render_sidebar_main_navigation(tab_titles)
+        st.markdown(
+            block(side_info_html(
+                role=user_role,
+                user_info=st.session_state.user_info,
+                stats=_sidebar_demo_stats(user_role),
+            )),
+            unsafe_allow_html=True,
+        )
+        
         st.markdown("### 🛠️ HỆ THỐNG")
         
         # 1. Chế độ Sáng/Tối
@@ -19269,8 +19779,6 @@ def main():
     header_h1_color = "#ffffff" if not is_light else "#1a1a2e"
     header_p_color = "#ffffff" if not is_light else "#333333"
     _hien_thi_header_chinh(header_h1_color, header_p_color, show_badge=True, is_light=is_light)
-    
-    user_role = st.session_state.user_info.get('role', 'Bệnh nhân')
     
     # --- KHỞI TẠO MẶC ĐỊNH ĐỂ TRÁNH LỖI UNBOUNDLOCALERROR ---
     ma_bai_tap = list(BAI_TAP.keys())[0]
@@ -19467,44 +19975,6 @@ def main():
         st.markdown("**🏥 Trường Đại học Y tế Công cộng**")
         st.markdown("**👩‍⚕️ Chủ nhiệm đề tài:** Đinh Lê Quỳnh Phương")
     
-    # Tự động chọn video đầu tiên một lần — tránh load lại danh sách mỗi lần chuyển tab
-    if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
-        if not st.session_state.get('current_eval_video') and not st.session_state.get('_default_video_picked'):
-            all_vids = load_danh_sach_video_nghien_cuu()
-            if all_vids:
-                st.session_state.current_eval_video = all_vids[0]
-            st.session_state._default_video_picked = True
-
-    if user_role == "Quản trị viên":
-        tab_titles = ["🏠 TRANG CHỦ", "🛠️ QUẢN TRỊ VIÊN", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
-    elif user_role == "Bác sĩ / KTV PHCN":
-        selected_video_main = st.session_state.get('current_eval_video')
-        # Cache kết quả _lay_meta_tab_bac_si theo video key — tránh scan disk mỗi rerun
-        _vid_key_meta = (
-            (selected_video_main or {}).get("username", ""),
-            (selected_video_main or {}).get("video_name", ""),
-        )
-        if st.session_state.get("_meta_tab_vid_key") != _vid_key_meta:
-            _, _has_out = _lay_meta_tab_bac_si(selected_video_main)
-            st.session_state["_meta_tab_vid_key"] = _vid_key_meta
-            st.session_state["_meta_tab_has_output"] = _has_out
-        has_video_output = st.session_state.get("_meta_tab_has_output", False)
-        tab_titles = ["🏠 TRANG CHỦ", "📊 QUẢN LÝ ĐÁNH GIÁ & NCKH"]
-        if has_video_output:
-            tab_titles.append("🎬 VIDEO & ẢNH")
-        tab_titles += ["⏰ LỊCH NHẮC NHỞ", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "📞 THÔNG TIN LIÊN HỆ", "💬 PHẢN HỒI"]
-    elif user_role == "Bệnh nhân":
-        tab_titles = ["🏠 TRANG CHỦ", "📊 KẾT QUẢ ĐÁNH GIÁ", "⏰ LỊCH NHẮC NHỞ", "📚 THÔNG TIN TỔNG HỢP", "📞 THÔNG TIN LIÊN HỆ", "💬 PHẢN HỒI"]
-    else: # Nghiên cứu viên
-        tab_titles = ["🏠 TRANG CHỦ", "📊 KẾT QUẢ ĐÁNH GIÁ", "🔬 PHÂN TÍCH & TRÍCH XUẤT DỮ LIỆU", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
-        
-    # Khởi tạo hoặc khôi phục active_tab (đồng bộ widget sau reload — tránh trang trống)
-    if 'active_tab' not in st.session_state or st.session_state.active_tab not in tab_titles:
-        st.session_state.active_tab = tab_titles[0]
-    if st.session_state.get("active_tab_widget") not in tab_titles:
-        st.session_state.pop("active_tab_widget", None)
-        st.session_state.active_tab = tab_titles[0]
-
     try:
         _render_main_tab_content(tab_titles, user_role)
     except Exception as tab_err:

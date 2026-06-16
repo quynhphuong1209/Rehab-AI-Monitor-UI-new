@@ -64,8 +64,9 @@ def _ic(i): return _ICON_FIX.get(i, i)
 # ============================================================ TOKENS (light/dark)
 _TOKENS_LIGHT = (
     ":root{--ui:'Inter','Be Vietnam Pro',system-ui,sans-serif;--display:'Fraunces',Georgia,serif;"
-    "--mono:'IBM Plex Mono',ui-monospace,monospace;--bg:#e8edf5;--surface:#ffffff;--surface-2:#f4f7fc;"
-    "--surface-3:#edf2fa;--ink:#0f1a26;--ink-2:#39506a;--ink-3:#6c7e92;--teal:#1f6fe0;--teal-strong:#1657bc;"
+    "--mono:'IBM Plex Mono',ui-monospace,monospace;--bg:#e8edf5;--bg-mesh-1:rgba(31,111,224,.10);--bg-mesh-2:rgba(99,102,241,.07);"
+    "--surface:#ffffff;--surface-2:#f4f7fc;--surface-3:#edf2fa;--glass:rgba(255,255,255,.72);"
+    "--ink:#0f1a26;--ink-2:#39506a;--ink-3:#6c7e92;--teal:#1f6fe0;--teal-strong:#1657bc;"
     "--teal-50:rgba(31,111,224,.12);--teal-12:rgba(31,111,224,.10);--ai:#5a63d8;--ai-50:rgba(90,99,216,.12);"
     "--danger:#d2453a;--danger-50:rgba(210,69,58,.12);--warn:#c9820e;--warn-50:rgba(201,130,14,.14);--ok:#16a34a;"
     "--line:#dfe6f1;--line-2:#edf1f9;--shadow-sm:0 1px 2px rgba(15,28,24,.06),0 1px 3px rgba(15,28,24,.05);"
@@ -74,8 +75,9 @@ _TOKENS_LIGHT = (
 )
 _TOKENS_DARK = (
     ":root{--ui:'Inter','Be Vietnam Pro',system-ui,sans-serif;--display:'Fraunces',Georgia,serif;"
-    "--mono:'IBM Plex Mono',ui-monospace,monospace;--bg:#0a1119;--surface:#101a27;--surface-2:#152130;"
-    "--surface-3:#1a2839;--ink:#e8eef7;--ink-2:#a9bccf;--ink-3:#7c8b9b;--teal:#5b9bff;--teal-strong:#8bb6ff;"
+    "--mono:'IBM Plex Mono',ui-monospace,monospace;--bg:#0a1119;--bg-mesh-1:rgba(91,155,255,.13);--bg-mesh-2:rgba(99,102,241,.10);"
+    "--surface:#101a27;--surface-2:#152130;--surface-3:#1a2839;--glass:rgba(16,26,39,.66);"
+    "--ink:#e8eef7;--ink-2:#a9bccf;--ink-3:#7c8b9b;--teal:#5b9bff;--teal-strong:#8bb6ff;"
     "--teal-50:rgba(91,155,255,.16);--teal-12:rgba(91,155,255,.10);--ai:#8b93f8;--ai-50:rgba(139,147,248,.16);"
     "--danger:#f0786c;--danger-50:rgba(240,120,108,.16);--warn:#e7b15a;--warn-50:rgba(231,177,90,.16);--ok:#34d399;"
     "--line:#1f2c3b;--line-2:#18222f;--shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow:0 6px 22px rgba(0,0,0,.45);"
@@ -229,6 +231,125 @@ def inject_design_system(is_light: bool = True):
     st.markdown("<style>" + tokens + _COMPONENT_CSS + "</style>" + _ICON_SPRITE, unsafe_allow_html=True)
 
 
+# ============================================================ STREAMLIT NATIVE SKIN
+# "Thay da" widget gốc của Streamlit (nút, ô nhập, sidebar, card, expander, segmented nav...)
+# cho khớp ngôn ngữ thiết kế "clinical-teal" của demo. Dùng var(--token) nên tự đổi theo light/dark.
+# PHẢI inject SAU mọi CSS theme cũ (cuối cùng) để thắng độ ưu tiên.
+_STREAMLIT_SKIN_CSS = """
+<style id="duk-st-skin">
+/* ---------- NỀN APP (mesh gradient giống demo) ---------- */
+.stApp{
+  background-color:var(--bg)!important;
+  background-image:
+    radial-gradient(60vw 50vh at 8% -8%, var(--teal-12), transparent 60%),
+    radial-gradient(55vw 50vh at 105% 0%, var(--ai-50), transparent 55%)!important;
+  background-attachment:fixed!important;
+}
+/* gọn "chrome": ẩn nút Deploy + toolbar thừa, header trong suốt */
+[data-testid="stToolbar"], [data-testid="stDecoration"], #MainMenu{display:none!important;}
+header[data-testid="stHeader"]{background:transparent!important;backdrop-filter:none!important;}
+
+/* ---------- NÚT BẤM → demo .btn-s / .btn-primary ---------- */
+.stButton>button, .stFormSubmitButton>button, .stDownloadButton>button, .stLinkButton>a{
+  border-radius:11px!important;
+  border:1px solid var(--line)!important;
+  background:var(--surface)!important;
+  color:var(--ink-2)!important;
+  font-weight:600!important;
+  font-family:var(--ui)!important;
+  transition:border-color .16s, color .16s, transform .16s, box-shadow .16s!important;
+}
+.stButton>button:hover, .stFormSubmitButton>button:hover, .stDownloadButton>button:hover{
+  border-color:var(--teal)!important; color:var(--teal)!important; transform:translateY(-1px)!important;
+}
+/* nút primary → gradient teal */
+.stButton>button[kind="primary"], .stFormSubmitButton>button[kind="primaryFormSubmit"],
+button[data-testid="stBaseButton-primary"], button[data-testid="stBaseButton-primaryFormSubmit"]{
+  background:linear-gradient(145deg,var(--teal),var(--teal-strong))!important;
+  color:#fff!important; border:1px solid transparent!important;
+  box-shadow:0 6px 16px var(--teal-50)!important;
+}
+.stButton>button[kind="primary"]:hover, button[data-testid="stBaseButton-primary"]:hover{
+  transform:translateY(-1px)!important; box-shadow:0 10px 22px var(--teal-50)!important; color:#fff!important;
+}
+
+/* ---------- Ô NHẬP (text/number/textarea/select/date) → demo .inp ---------- */
+.stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"],
+.stTextArea div[data-baseweb="textarea"], .stTextArea div[data-baseweb="base-input"],
+.stDateInput div[data-baseweb="input"],
+.stSelectbox div[data-baseweb="select"]>div, .stMultiSelect div[data-baseweb="select"]>div{
+  background:var(--surface-2)!important;
+  border:1px solid var(--line)!important;
+  border-radius:11px!important;
+  transition:border-color .16s, box-shadow .16s!important;
+}
+.stTextInput div[data-baseweb="input"]:focus-within, .stNumberInput div[data-baseweb="input"]:focus-within,
+.stTextArea div[data-baseweb="textarea"]:focus-within, .stDateInput div[data-baseweb="input"]:focus-within,
+.stSelectbox div[data-baseweb="select"]:focus-within>div{
+  border-color:var(--teal)!important; box-shadow:0 0 0 3px var(--teal-50)!important; background:var(--surface)!important;
+}
+.stTextInput input, .stNumberInput input, .stTextArea textarea, .stDateInput input{
+  color:var(--ink)!important; background:transparent!important;
+}
+/* nhãn input */
+.stTextInput label, .stNumberInput label, .stTextArea label, .stSelectbox label,
+.stMultiSelect label, .stDateInput label, .stSlider label, .stRadio label, .stCheckbox label{
+  color:var(--ink-2)!important; font-weight:600!important;
+}
+
+/* ---------- SIDEBAR → mặt demo ---------- */
+[data-testid="stSidebar"]{
+  background:var(--surface)!important; border-right:1px solid var(--line)!important;
+}
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3{
+  color:var(--ink)!important; font-family:var(--display)!important;
+}
+
+/* ---------- CONTAINER có viền + EXPANDER → demo .card ---------- */
+[data-testid="stVerticalBlockBorderWrapper"]:has(>div>[data-testid="stVerticalBlock"]){border-radius:var(--r)!important;}
+div[data-testid="stExpander"]{
+  border:1px solid var(--line)!important; border-radius:var(--r)!important;
+  background:var(--surface)!important; box-shadow:var(--shadow-sm)!important; overflow:hidden!important;
+}
+div[data-testid="stExpander"] summary{color:var(--ink)!important; font-weight:600!important;}
+div[data-testid="stExpander"] summary:hover{color:var(--teal)!important;}
+
+/* ---------- THANH ĐIỀU HƯỚNG (segmented_control) → demo nav pills ---------- */
+div[data-testid="stSegmentedControl"] button{
+  border-radius:11px!important; border:1px solid var(--line)!important;
+  background:var(--surface)!important; color:var(--ink-2)!important; font-weight:600!important;
+}
+div[data-testid="stSegmentedControl"] button:hover{border-color:var(--teal)!important; color:var(--teal)!important;}
+div[data-testid="stSegmentedControl"] button[aria-checked="true"],
+div[data-testid="stSegmentedControl"] button[kind="segmented_controlActive"]{
+  background:linear-gradient(145deg,var(--teal),var(--teal-strong))!important;
+  color:#fff!important; border-color:transparent!important; box-shadow:0 6px 16px var(--teal-50)!important;
+}
+
+/* ---------- TABS (st.tabs) → gạch chân teal ---------- */
+.stTabs [data-baseweb="tab-list"]{border-bottom:1px solid var(--line)!important;}
+.stTabs [data-baseweb="tab"]{color:var(--ink-3)!important; font-weight:600!important;}
+.stTabs [data-baseweb="tab"][aria-selected="true"]{color:var(--teal-strong)!important;}
+.stTabs [data-baseweb="tab-highlight"]{background:var(--teal)!important;}
+
+/* ---------- SLIDER / TOGGLE / CHECKBOX accent teal ---------- */
+.stSlider [data-baseweb="slider"] div[role="slider"]{background:var(--teal)!important;}
+[data-testid="stSliderTickBarMin"], [data-testid="stSliderTickBarMax"]{color:var(--ink-3)!important;}
+
+/* ---------- ALERTS (info/success/warning/error) bo góc mềm ---------- */
+[data-testid="stAlert"]{border-radius:var(--r)!important;}
+
+/* caption + markdown text màu theo token */
+[data-testid="stCaptionContainer"]{color:var(--ink-3)!important;}
+</style>
+"""
+
+
+def inject_streamlit_skin(is_light: bool = True):
+    """Skin widget gốc Streamlit theo demo. Gọi mỗi rerun, SAU mọi CSS theme cũ (cuối cùng)."""
+    st.markdown(_STREAMLIT_SKIN_CSS, unsafe_allow_html=True)
+
+
 # ============================================================ HTML HELPERS (port từ JS demo)
 def _icon(i, cls="icon"):
     return f'<svg class="{cls}"><use href="#{_ic(i)}"/></svg>'
@@ -377,3 +498,240 @@ def table(headers, rows_html) -> str:
 def kv(label, value, color="") -> str:
     style = f' style="color:{color}"' if color else ""
     return f'<div class="kv"><span>{label}</span><b{style}>{value}</b></div>'
+
+# ============================================================ AUTH SCREEN COMPONENTS
+def auth_screen_html() -> str:
+    """Màn hình đăng nhập/đăng ký giống demo HTML."""
+    return """
+<div class="auth-wrap">
+  <div class="auth-hero">
+    <span class="eyebrow"><svg class="icon sm"><use href="#i-shield-c"/></svg> Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>
+    <h1>Giám sát tập <em>phục hồi chức năng</em> bằng AI, ngay tại nhà.</h1>
+    <p class="lede">Bệnh nhân khai báo triệu chứng (VAS) → AI phân tích khung xương & góc khớp theo thời gian thực → Chuyên gia đối chiếu và đưa ra phác đồ. Một luồng lâm sàng khép kín.</p>
+    <div class="hero-stats">
+      <div class="hstat"><div class="n">33</div><div class="l">điểm khung xương / khung hình</div></div>
+      <div class="hstat"><div class="n">±15°</div><div class="l">sai số mục tiêu giai đoạn 3</div></div>
+      <div class="hstat"><div class="n">5</div><div class="l">vai trò người dùng</div></div>
+    </div>
+  </div>
+</div>
+"""
+
+def topbar_html(user_info=None, is_light=True) -> str:
+    """Top bar với brand và user info giống demo."""
+    user_html = ""
+    if user_info:
+        role_badges = {
+            "Bệnh nhân": ("rb-patient", "i-heart", "BN"),
+            "Bác sĩ / KTV PHCN": ("rb-doctor", "i-stetho", "BS"),
+            "Nghiên cứu viên": ("rb-ncv", "i-micro", "NC"),
+            "Quản trị viên": ("rb-qtv", "i-cog", "QT")
+        }
+        badge_cls, icon, av = role_badges.get(user_info.get("role", ""), ("rb-patient", "i-heart", "BN"))
+        user_html = f"""
+<div id="userArea" style="display:flex;align-items:center;gap:12px">
+  <span class="rolebadge {badge_cls}"><svg class="icon"><use href="#{icon}"/></svg> {user_info.get('role', '')}</span>
+  <div class="userchip">
+    <div class="avatar">{av}</div>
+    <div class="meta"><span class="nm">{user_info.get('full_name', '')}</span><span class="rl">{user_info.get('role', '')}</span></div>
+  </div>
+</div>"""
+    
+    return f"""
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark"><svg class="icon"><use href="#i-pulse"/></svg></div>
+    <div class="brand-txt">
+      <span class="brand-name">Rehab <b>AI</b> Monitor</span>
+      <span class="brand-sub">Hệ sinh thái lâm sàng · HUPH × BV Phạm Ngọc Thạch · 2026</span>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  {user_html}
+</header>
+"""
+
+def sidebar_nav_html(role: str, current_page: str = "") -> str:
+    """Navigation sidebar theo vai trò giống demo."""
+    nav_items = {
+        "Bệnh nhân": [
+            ("train", "Tập luyện hôm nay", "i-dumbbell"),
+            ("feedback", "Nhận xét AI & Bác sĩ", "i-spark"),
+            ("progress", "Tiến triển ROM", "i-chart"),
+            ("vas", "Khai báo VAS", "i-vas"),
+            ("schedule", "Lịch nhắc nhở", "i-bell")
+        ],
+        "Bác sĩ / KTV PHCN": [
+            ("patients", "Danh sách bệnh nhân", "i-users"),
+            ("evaluate", "Đánh giá lâm sàng", "i-stetho"),
+            ("compare", "Đối chiếu kết quả AI", "i-target"),
+            ("protocol", "Phác đồ điều trị", "i-doc")
+        ],
+        "Nghiên cứu viên": [
+            ("dataset", "Quản lý Dataset", "i-db"),
+            ("model", "Cấu hình mô hình AI", "i-cog"),
+            ("metrics", "AI vs Lâm sàng", "i-bars"),
+            ("analysis", "Phân tích kỹ thuật", "i-flask")
+        ],
+        "Quản trị viên": [
+            ("accounts", "Quản lý tài khoản", "i-users"),
+            ("system", "Tình trạng hệ thống", "i-shield"),
+            ("cleanup", "Dọn dẹp CSDL", "i-broom"),
+            ("logs", "Nhật ký hoạt động", "i-log")
+        ]
+    }
+    
+    items = nav_items.get(role, [])
+    nav_html = "".join(
+        f'<button class="navitem {"on" if page_id == current_page else ""}" onclick="goNav(\'{page_id}\')">'
+        f'<svg class="icon"><use href="#{icon}"/></svg><span>{label}</span></button>'
+        for page_id, label, icon in items
+    )
+    
+    return f'<div class="side-section">Điều hướng</div><nav id="navList">{nav_html}</nav>'
+
+def side_info_html(role: str, user_info=None, stats=None) -> str:
+    """Side card với thông tin tóm tắt theo vai trò."""
+    stats = stats or {}
+    if role == "Bệnh nhân":
+        diagnosis = stats.get("diagnosis") or "Chưa khai báo"
+        treatment_week = stats.get("treatment_week") or "Theo dữ liệu hệ thống"
+        latest_vas = stats.get("latest_vas") or "N/A"
+        doctor = stats.get("doctor") or "Chưa gán"
+        return f"""
+<div class="side-card">
+  <div class="h"><svg class="icon"><use href="#i-heart"/></svg> Hồ sơ của tôi</div>
+  <div class="kv"><span>Chẩn đoán</span><b>{diagnosis}</b></div>
+  <div class="kv"><span>Tuần điều trị</span><b>{treatment_week}</b></div>
+  <div class="kv"><span>VAS gần nhất</span><b style="color:var(--warn)">{latest_vas}</b></div>
+  <div class="kv"><span>Bác sĩ phụ trách</span><b>{doctor}</b></div>
+</div>"""
+    elif role in ["Bác sĩ / KTV PHCN"]:
+        total_patients = stats.get("total_patients", 0)
+        pending_eval = stats.get("pending_eval", 0)
+        vas_high = stats.get("vas_high", 0)
+        sessions_7d = stats.get("sessions_7d", 0)
+        return f"""
+<div class="side-card">
+  <div class="h"><svg class="icon"><use href="#i-users"/></svg> Tổng quan hôm nay</div>
+  <div class="kv"><span>BN phụ trách</span><b>{total_patients}</b></div>
+  <div class="kv"><span>Chờ đánh giá</span><b style="color:var(--danger)">{pending_eval}</b></div>
+  <div class="kv"><span>VAS ≥ 6 (cảnh báo)</span><b style="color:var(--warn)">{vas_high}</b></div>
+  <div class="kv"><span>Buổi tập 7 ngày</span><b>{sessions_7d}</b></div>
+</div>"""
+    elif role == "Nghiên cứu viên":
+        total_videos = stats.get("total_videos", 0)
+        pending_ai = stats.get("pending_ai", 0)
+        model = stats.get("model", "MP-Heavy")
+        avg_acc = stats.get("avg_acc", 0)
+        return f"""
+<div class="side-card">
+  <div class="h"><svg class="icon"><use href="#i-db"/></svg> Dataset hiện hành</div>
+  <div class="kv"><span>Video mẫu</span><b>{total_videos}</b></div>
+  <div class="kv"><span>Chờ AI xử lý</span><b>{pending_ai}</b></div>
+  <div class="kv"><span>Mô hình</span><b>{model}</b></div>
+  <div class="kv"><span>Độ chính xác TB</span><b style="color:var(--ok)">{avg_acc}</b></div>
+</div>"""
+    else:  # Quản trị viên
+        accounts = stats.get("accounts", 0)
+        sync = stats.get("sync", "Local")
+        storage = stats.get("storage", "Local")
+        status = stats.get("status", "OK")
+        return f"""
+<div class="side-card">
+  <div class="h"><svg class="icon"><use href="#i-shield"/></svg> Hệ thống</div>
+  <div class="kv"><span>Tài khoản</span><b>{accounts}</b></div>
+  <div class="kv"><span>Lưu trữ</span><b>{storage}</b></div>
+  <div class="kv"><span>Đồng bộ</span><b>{sync}</b></div>
+  <div class="kv"><span>Trạng thái</span><b style="color:var(--ok)">{status}</b></div>
+</div>"""
+
+# ============================================================ ADDITIONAL CSS FOR AUTH & NAV
+_AUTH_NAV_CSS = """
+/* ============================================================ AUTH SCREEN */
+.auth-wrap{
+  min-height:calc(100vh - 63px);
+  display:grid;grid-template-columns:1.05fr .95fr;
+  align-items:stretch;
+}
+.auth-hero{
+  position:relative;overflow:hidden;
+  padding:clamp(28px,5vw,64px);
+  display:flex;flex-direction:column;justify-content:center;gap:26px;
+}
+.auth-hero .eyebrow{
+  display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
+  padding:6px 13px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.4px;
+  background:var(--teal-50);color:var(--teal-strong);border:1px solid var(--teal-50);
+}
+.auth-hero h1{
+  font-family:var(--display);font-weight:600;font-size:clamp(30px,4.4vw,50px);
+  line-height:1.05;margin:0;letter-spacing:-.5px;
+}
+.auth-hero h1 em{font-style:italic;color:var(--teal)}
+.auth-hero p.lede{font-size:16px;color:var(--ink-2);max-width:46ch;margin:0}
+.hero-stats{display:flex;gap:14px;flex-wrap:wrap}
+.hstat{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 16px;min-width:130px;box-shadow:var(--shadow-sm);
+}
+.hstat .n{font-family:var(--mono);font-size:23px;font-weight:600;color:var(--teal-strong)}
+.hstat .l{font-size:12px;color:var(--ink-3);margin-top:3px}
+
+/* ============================================================ TOP BAR */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;gap:14px;
+  padding:12px clamp(14px,3vw,28px);
+  background:var(--glass);
+  backdrop-filter:saturate(160%) blur(14px);
+  -webkit-backdrop-filter:saturate(160%) blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-mark{
+  width:40px;height:40px;border-radius:12px;flex:none;
+  display:grid;place-items:center;color:#fff;
+  background:linear-gradient(145deg,var(--teal),var(--teal-strong));
+  box-shadow:0 6px 16px var(--teal-50);
+}
+.brand-txt{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.brand-name{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.1px}
+.brand-name b{color:var(--teal)}
+.brand-sub{font-size:11px;color:var(--ink-3);letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spacer{flex:1}
+
+.userchip{display:flex;align-items:center;gap:10px}
+.avatar{
+  width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;
+  font-weight:700;font-size:13px;color:#fff;background:var(--teal);
+}
+.userchip .meta{display:flex;flex-direction:column;line-height:1.15}
+.userchip .meta .nm{font-size:13.5px;font-weight:600}
+.userchip .meta .rl{font-size:11px;color:var(--ink-3)}
+
+/* ============================================================ SIDEBAR NAV */
+.side-section{font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--ink-3);margin:6px 10px 8px}
+.navitem{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  border:none;background:transparent;color:var(--ink-2);
+  padding:10px 11px;border-radius:11px;font-size:13.5px;font-weight:500;cursor:pointer;
+  margin-bottom:2px;transition:.15s;position:relative;
+}
+.navitem:hover{background:var(--surface-2);color:var(--ink)}
+.navitem.on{background:var(--teal-12);color:var(--teal-strong);font-weight:600}
+.navitem.on::before{content:"";position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:3px;height:20px;border-radius:3px;background:var(--teal)}
+
+.side-card{margin-top:16px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+.side-card .h{font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.side-card .h .icon{width:14px;height:14px;color:var(--teal)}
+
+@media (max-width:980px){
+  .auth-wrap{grid-template-columns:1fr}
+  .auth-hero{min-height:auto;padding-bottom:0}
+}
+"""
+
+def inject_auth_nav_css():
+    """Inject CSS cho auth screen và navigation."""
+    st.markdown("<style>" + _AUTH_NAV_CSS + "</style>", unsafe_allow_html=True)
