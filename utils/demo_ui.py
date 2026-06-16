@@ -536,7 +536,7 @@ def topbar_html(user_info=None, is_light=True) -> str:
     <div class="meta"><span class="nm">{user_info.get('full_name', '')}</span><span class="rl">{user_info.get('role', '')}</span></div>
   </div>
 </div>"""
-    
+
     return f"""
 <header class="topbar">
   <div class="brand">
@@ -580,14 +580,14 @@ def sidebar_nav_html(role: str, current_page: str = "") -> str:
             ("logs", "Nhật ký hoạt động", "i-log")
         ]
     }
-    
+
     items = nav_items.get(role, [])
     nav_html = "".join(
         f'<button class="navitem {"on" if page_id == current_page else ""}" onclick="goNav(\'{page_id}\')">'
         f'<svg class="icon"><use href="#{icon}"/></svg><span>{label}</span></button>'
         for page_id, label, icon in items
     )
-    
+
     return f'<div class="side-section">Điều hướng</div><nav id="navList">{nav_html}</nav>'
 
 def side_info_html(role: str, user_info=None, stats=None) -> str:

@@ -2875,11 +2875,11 @@ def setup_mediapipe_resources():
     import shutil
     import tempfile
     import urllib.request
-    
+
     # Chỉ chạy trên Linux (môi trường Streamlit Cloud) nơi venv bị read-only
     if sys.platform == "win32":
         return True
-        
+
     try:
         import mediapipe as mp
         import mediapipe.python.solutions.download_utils as download_utils
@@ -19841,7 +19841,7 @@ def main():
     inject_design_system(is_light=is_light)
     inject_streamlit_skin(is_light=is_light)
     inject_auth_nav_css()
-    
+
     thuc_hien_khoi_tao_he_thong_mot_lan()
 
     # Kiểm tra trạng thái đăng nhập ngay đầu hàm main
@@ -19886,7 +19886,7 @@ def main():
             )),
             unsafe_allow_html=True,
         )
-        
+
         st.markdown("### 🛠️ HỆ THỐNG")
         
         # 1. Chế độ Sáng/Tối
