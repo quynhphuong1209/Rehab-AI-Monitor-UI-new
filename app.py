@@ -5478,6 +5478,83 @@ def _lam_moi_giao_dien_sau_nut():
         st.rerun()
 
 
+def _route_slug_for_role(role):
+    role_text = str(role or "").casefold()
+    if "quản" in role_text or "quan" in role_text:
+        return "admin"
+    if "nghiên" in role_text or "nghien" in role_text or "ncv" in role_text:
+        return "ncv"
+    if "bác" in role_text or "bac" in role_text or "ktv" in role_text:
+        return "bac-si-ktv"
+    return "benh-nhan"
+
+
+def _query_value(name, default=None):
+    try:
+        value = st.query_params.get(name, default)
+        if isinstance(value, list):
+            return value[0] if value else default
+        return value
+    except Exception:
+        return default
+
+
+def _sync_route_query(username=None, role=None):
+    """Show role/user in URL so every logged-in shell has a clear route."""
+    try:
+        info = st.session_state.get("user_info") or {}
+        username = username or info.get("username")
+        role = role or info.get("role")
+        if not username or not role:
+            return
+        desired = {
+            "role": _route_slug_for_role(role),
+            "user": str(username),
+            "theme": st.session_state.get("theme", "light"),
+        }
+        current = {key: _query_value(key) for key in desired}
+        if current == desired and _query_value("logout") is None and _query_value("ui_theme") is None:
+            return
+        st.query_params.clear()
+        for key, value in desired.items():
+            st.query_params[key] = value
+    except Exception:
+        pass
+
+
+def _dang_xuat_ve_dang_nhap():
+    """Logout from any role and return to the auth screen."""
+    theme = st.session_state.get("theme", "light")
+    try:
+        if st.session_state.get("user_info") and st.session_state.user_info.get("auth_type") == "google":
+            st.logout()
+    except Exception:
+        pass
+    try:
+        st.query_params.clear()
+    except Exception:
+        pass
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.session_state.logged_in = False
+    st.session_state.user_info = None
+    st.session_state.theme = theme
+    st.rerun()
+
+
+def _xu_ly_route_query_actions():
+    """Handle topbar query actions for theme/logout."""
+    if str(_query_value("logout", "")) == "1":
+        _dang_xuat_ve_dang_nhap()
+
+    requested_theme = _query_value("ui_theme")
+    if requested_theme in ("light", "dark"):
+        st.session_state.theme = requested_theme
+
+    if st.session_state.get("logged_in") and st.session_state.get("user_info"):
+        _sync_route_query()
+
+
 def _hoan_tat_dang_nhap(username, user_record):
     """Gom xử lý sau đăng nhập để tránh sidebar đã login nhưng body còn form cũ."""
     role = user_record.get('role', 'Bệnh nhân')
@@ -5493,6 +5570,7 @@ def _hoan_tat_dang_nhap(username, user_record):
     st.session_state.pop("active_tab_widget", None)
     st.session_state._need_home_sync = True
     st.session_state._clear_login_widgets_next_run = True
+    _sync_route_query(username=username, role=role)
 
 _xoa_widget_dang_nhap_sau_rerun()
 
@@ -5519,6 +5597,7 @@ if not st.session_state.get('logged_in'):
             st.session_state.show_login_dialog = False
             if 'auth_initiated' in st.session_state:
                 del st.session_state['auth_initiated']
+            _sync_route_query()
             
             st.rerun() 
     except Exception as e:
@@ -17937,7 +18016,7 @@ def hien_thi_dang_nhap_dang_ky():
     render_auth_topbar(topbar_html, is_light=is_light)
     render_auth_theme_button(is_light=is_light)
     open_auth_shell()
-    hero_col, col_mid = st.columns([1.05, 0.95], gap="large")
+    hero_col, col_mid = st.columns([1.0, 0.78], gap="small")
     with hero_col:
         render_auth_hero(auth_screen_html)
     with col_mid:
@@ -20058,6 +20137,7 @@ def main():
     # Do not force browser reloads after F5 on HF Spaces.
     # Streamlit owns reconnect; manual location.reload() can loop into a blank app shell.
     thuc_hien_khoi_tao_he_thong_mot_lan()
+    _xu_ly_route_query_actions()
 
     # Kiểm tra trạng thái đăng nhập ngay đầu hàm main
     if not st.session_state.get("logged_in") or not st.session_state.get("user_info"):
@@ -20152,12 +20232,7 @@ def main():
             """, unsafe_allow_html=True)
         
         if st.button("🚪 Đăng xuất hệ thống", width="stretch", key="logout_sidebar", type="secondary"):
-            if st.session_state.user_info and st.session_state.user_info.get("auth_type") == "google":
-                st.logout()
-            st.query_params.clear()
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-            st.rerun()
+            _dang_xuat_ve_dang_nhap()
         st.markdown("---")
 
     is_light = st.session_state.get('theme') == 'light'

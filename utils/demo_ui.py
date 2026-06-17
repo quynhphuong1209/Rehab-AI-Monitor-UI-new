@@ -13,6 +13,7 @@ Cách dùng trong app.py:
     st.markdown(stat("i-users","Đang điều trị","18","+2","up","tuần này"), unsafe_allow_html=True)
 """
 import math
+from urllib.parse import quote
 import streamlit as st
 
 # ============================================================ ICON SPRITE
@@ -249,6 +250,18 @@ _STREAMLIT_SKIN_CSS = """
 [data-testid="stToolbar"], [data-testid="stDecoration"], #MainMenu{display:none!important;}
 header[data-testid="stHeader"]{background:transparent!important;backdrop-filter:none!important;}
 
+/* text mặc định của Streamlit theo theme: light = ink tối, dark = ink sáng */
+.stApp, .stApp label, .stApp p, .stApp li,
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
+[data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] p,
+[data-testid="stWidgetLabel"], [data-testid="stWidgetLabel"] *{
+  color:var(--ink)!important;
+}
+.stApp small, .stApp caption, [data-testid="stCaptionContainer"],
+[data-testid="stMarkdownContainer"] .muted{
+  color:var(--ink-3)!important;
+}
+
 /* ---------- NÚT BẤM → demo .btn-s / .btn-primary ---------- */
 .stButton>button, .stFormSubmitButton>button, .stDownloadButton>button, .stLinkButton>a{
   border-radius:11px!important;
@@ -261,6 +274,10 @@ header[data-testid="stHeader"]{background:transparent!important;backdrop-filter:
 }
 .stButton>button:hover, .stFormSubmitButton>button:hover, .stDownloadButton>button:hover{
   border-color:var(--teal)!important; color:var(--teal)!important; transform:translateY(-1px)!important;
+}
+.stButton>button *, .stFormSubmitButton>button *, .stDownloadButton>button *, .stLinkButton>a *{
+  color:inherit!important;
+  -webkit-text-fill-color:inherit!important;
 }
 /* nút primary → gradient teal */
 .stButton>button[kind="primary"], .stFormSubmitButton>button[kind="primaryFormSubmit"],
@@ -543,6 +560,16 @@ def topbar_html(user_info=None, is_light=True) -> str:
     """Top bar với brand và user info giống demo."""
     user_html = ""
     if user_info:
+        def route_slug(role):
+            role_text = str(role or "").casefold()
+            if "quản" in role_text or "quan" in role_text:
+                return "admin"
+            if "nghiên" in role_text or "nghien" in role_text or "ncv" in role_text:
+                return "ncv"
+            if "bác" in role_text or "bac" in role_text or "ktv" in role_text:
+                return "bac-si-ktv"
+            return "benh-nhan"
+
         role_badges = {
             "Bệnh nhân": ("rb-patient", "i-heart", "BN"),
             "Bác sĩ / KTV PHCN": ("rb-doctor", "i-stetho", "BS"),
@@ -550,6 +577,10 @@ def topbar_html(user_info=None, is_light=True) -> str:
             "Quản trị viên": ("rb-qtv", "i-cog", "QT")
         }
         badge_cls, icon, av = role_badges.get(user_info.get("role", ""), ("rb-patient", "i-heart", "BN"))
+        next_theme = "dark" if is_light else "light"
+        theme_icon = "i-moon" if is_light else "i-sun"
+        username = user_info.get("username", "")
+        theme_href = f"?ui_theme={next_theme}&role={route_slug(user_info.get('role', ''))}&user={quote(str(username), safe='')}"
         user_html = f"""
 <div id="userArea" style="display:flex;align-items:center;gap:12px">
   <span class="rolebadge {badge_cls}"><svg class="icon"><use href="#{icon}"/></svg> {user_info.get('role', '')}</span>
@@ -557,6 +588,8 @@ def topbar_html(user_info=None, is_light=True) -> str:
     <div class="avatar">{av}</div>
     <div class="meta"><span class="nm">{user_info.get('full_name', '')}</span><span class="rl">{user_info.get('role', '')}</span></div>
   </div>
+  <a class="topbtn top-logout" href="?logout=1" title="Đăng xuất" aria-label="Đăng xuất"><svg class="icon"><use href="#i-logout"/></svg></a>
+  <a class="topbtn" href="{theme_href}" title="Đổi giao diện sáng/tối" aria-label="Đổi giao diện sáng/tối"><svg class="icon"><use href="#{theme_icon}"/></svg></a>
 </div>"""
 
     return f"""
@@ -672,10 +705,10 @@ def side_info_html(role: str, user_info=None, stats=None) -> str:
 _AUTH_NAV_CSS = """
 /* ============================================================ AUTH SCREEN */
 .auth-shell{
-  min-height:calc(100vh - 86px);
+  min-height:calc(100vh - 78px);
   display:flex;
   align-items:center;
-  padding:clamp(14px,2vh,24px) 0 clamp(18px,4vh,44px);
+  padding:clamp(10px,1.8vh,20px) 0 clamp(14px,3vh,34px);
   color:var(--ink)!important;
 }
 .st-key-auth_theme_icon_button{
@@ -713,7 +746,7 @@ _AUTH_NAV_CSS = """
 }
 .auth-shell [data-testid="stHorizontalBlock"]{
   align-items:center;
-  gap:clamp(26px,4vw,72px)!important;
+  gap:clamp(12px,2.2vw,40px)!important;
   width:100%;
 }
 .auth-wrap{
@@ -723,9 +756,9 @@ _AUTH_NAV_CSS = """
 }
 .auth-hero{
   position:relative;overflow:hidden;
-  padding:clamp(12px,2.4vw,30px) clamp(10px,2vw,18px);
+  padding:clamp(8px,2vw,22px) clamp(6px,1.4vw,14px);
   display:flex;flex-direction:column;justify-content:center;gap:24px;
-  min-height:500px;
+  min-height:440px;
   color:var(--ink)!important;
 }
 .auth-hero .eyebrow{
@@ -748,7 +781,7 @@ _AUTH_NAV_CSS = """
 .hstat .n{font-family:var(--mono);font-size:23px;font-weight:600;color:var(--teal-strong)}
 .hstat .l{font-size:12px;color:var(--ink-3)!important;margin-top:3px}
 .pose-card{
-  position:absolute;right:-30px;bottom:-20px;width:min(46%,360px);opacity:.9;pointer-events:none;
+  position:absolute;right:-10px;bottom:-12px;width:min(42%,330px);opacity:.9;pointer-events:none;
 }
 .pose-svg{width:100%;height:auto;overflow:visible}
 .pose-bone{stroke:var(--teal);stroke-width:5;stroke-linecap:round;fill:none}
@@ -873,10 +906,31 @@ _AUTH_NAV_CSS = """
   box-shadow:0 6px 16px var(--teal-50);
 }
 .brand-txt{display:flex;flex-direction:column;line-height:1.1;min-width:0}
-.brand-name{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.1px}
+.brand-name{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.1px;color:var(--ink)!important}
 .brand-name b{color:var(--teal)}
-.brand-sub{font-size:11px;color:var(--ink-3);letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-sub{font-size:11px;color:var(--ink-3)!important;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .spacer{flex:1}
+
+.topbtn{
+  height:38px;min-width:38px;padding:0 12px;border-radius:11px;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--surface);border:1px solid var(--line);color:var(--ink-2)!important;
+  text-decoration:none!important;font-size:13px;font-weight:600;transition:.18s;
+}
+.topbtn:hover{border-color:var(--teal);color:var(--teal)!important;transform:translateY(-1px)}
+.topbtn .icon{width:17px;height:17px}
+.top-logout:hover{border-color:var(--danger);color:var(--danger)!important}
+.rolebadge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:600;
+  border:1px solid transparent;white-space:nowrap;
+}
+.rolebadge .icon{width:13px;height:13px}
+.rb-doctor{background:var(--teal-50);color:var(--teal-strong)!important;border-color:var(--teal-50)}
+.rb-ktv{background:rgba(2,132,199,.12);color:#0284c7!important;border-color:rgba(2,132,199,.18)}
+.rb-ncv{background:var(--ai-50);color:var(--ai)!important;border-color:var(--ai-50)}
+.rb-qtv{background:var(--warn-50);color:var(--warn)!important;border-color:var(--warn-50)}
+.rb-patient{background:rgba(22,163,74,.12);color:#16a34a!important;border-color:rgba(22,163,74,.18)}
 
 .userchip{display:flex;align-items:center;gap:10px}
 .avatar{
@@ -884,8 +938,8 @@ _AUTH_NAV_CSS = """
   font-weight:700;font-size:13px;color:#fff;background:var(--teal);
 }
 .userchip .meta{display:flex;flex-direction:column;line-height:1.15}
-.userchip .meta .nm{font-size:13.5px;font-weight:600}
-.userchip .meta .rl{font-size:11px;color:var(--ink-3)}
+.userchip .meta .nm{font-size:13.5px;font-weight:600;color:var(--ink)!important}
+.userchip .meta .rl{font-size:11px;color:var(--ink-3)!important}
 
 /* ============================================================ SIDEBAR NAV */
 .side-section{font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--ink-3);margin:6px 10px 8px}
