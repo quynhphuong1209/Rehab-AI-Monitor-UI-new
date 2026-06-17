@@ -648,12 +648,15 @@ def side_info_html(role: str, user_info=None, stats=None) -> str:
 _AUTH_NAV_CSS = """
 /* ============================================================ AUTH SCREEN */
 .auth-shell{
-  min-height:auto;
-  padding:clamp(6px,1.2vw,14px) 0 clamp(24px,4vw,48px);
+  min-height:calc(100vh - 65px);
+  display:flex;
+  align-items:center;
+  padding:clamp(18px,3vh,34px) 0 clamp(18px,4vh,44px);
 }
 .auth-shell [data-testid="stHorizontalBlock"]{
-  align-items:flex-start;
-  gap:clamp(18px,2.4vw,34px)!important;
+  align-items:center;
+  gap:clamp(34px,5vw,96px)!important;
+  width:100%;
 }
 .auth-wrap{
   min-height:calc(100vh - 63px);
@@ -662,8 +665,9 @@ _AUTH_NAV_CSS = """
 }
 .auth-hero{
   position:relative;overflow:hidden;
-  padding:clamp(8px,1.8vw,22px) clamp(8px,1.6vw,18px);
-  display:flex;flex-direction:column;justify-content:flex-start;gap:16px;
+  padding:clamp(18px,3vw,38px) clamp(10px,2vw,18px);
+  display:flex;flex-direction:column;justify-content:center;gap:24px;
+  min-height:520px;
 }
 .auth-hero .eyebrow{
   display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
@@ -671,7 +675,7 @@ _AUTH_NAV_CSS = """
   background:var(--teal-50);color:var(--teal-strong);border:1px solid var(--teal-50);
 }
 .auth-hero h1{
-  font-family:var(--display);font-weight:600;font-size:clamp(30px,4.4vw,50px);
+  font-family:var(--display);font-weight:600;font-size:clamp(38px,4.8vw,56px);
   line-height:1.05;margin:0;letter-spacing:-.5px;
 }
 .auth-hero h1 em{font-style:italic;color:var(--teal)}
@@ -686,25 +690,45 @@ _AUTH_NAV_CSS = """
 
 .auth-card-streamlit,
 .st-key-auth_card_streamlit{
-  width:100%;max-width:460px;margin:0 auto;
+  width:100%;max-width:430px;margin:0 auto;
 }
 .auth-card-head{
-  width:100%;margin:0 auto 10px;
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
-  box-shadow:var(--shadow-sm);padding:20px 22px 16px;
+  display:none;
 }
-.auth-card-head h2{font-family:var(--display);font-weight:600;font-size:25px;margin:0 0 4px;color:var(--ink)}
-.auth-card-head .sub{font-size:13.5px;color:var(--ink-3);margin:0}
 .st-key-auth_card_streamlit{
   background:var(--surface)!important;
   border:1px solid var(--line)!important;
   border-radius:var(--r-lg)!important;
-  box-shadow:var(--shadow)!important;
-  padding:18px 16px!important;
+  box-shadow:var(--shadow-lg)!important;
+  padding:34px 34px 30px!important;
+}
+.st-key-auth_card_streamlit::before{
+  content:"Đăng nhập hệ thống";
+  display:block;
+  font-family:var(--display);
+  font-weight:600;
+  font-size:28px;
+  line-height:1.1;
+  color:var(--ink);
+  margin-bottom:8px;
+}
+.st-key-auth_card_streamlit::after{
+  content:none;
+  display:none;
+}
+.st-key-auth_card_streamlit > div:first-child::before{
+  content:"Truy cập bảng điều khiển theo vai trò của bạn.";
+  display:block;
+  color:var(--ink-3);
+  font-size:13.5px;
+  margin:-2px 0 22px;
+}
+.st-key-auth_card_streamlit [data-testid="stSelectbox"]{
+  margin-bottom:14px!important;
 }
 .st-key-auth_card_streamlit .stTabs [data-baseweb="tab-list"]{
   display:flex;gap:4px;background:var(--surface-2)!important;border:1px solid var(--line)!important;border-radius:12px!important;
-  padding:4px!important;margin-bottom:18px!important;
+  padding:4px!important;margin-bottom:22px!important;
 }
 .st-key-auth_card_streamlit .stTabs [data-baseweb="tab"]{
   flex:1;border-radius:9px!important;background:transparent!important;color:var(--ink-3)!important;
@@ -721,6 +745,15 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .stSelectbox label,
 .st-key-auth_card_streamlit .stTextInput label{
   color:var(--ink-2)!important;
+}
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"],
+.st-key-auth_card_streamlit .stSelectbox div[data-baseweb="select"]>div{
+  min-height:46px!important;
+}
+.st-key-auth_card_streamlit .stButton>button,
+.st-key-auth_card_streamlit .stFormSubmitButton>button{
+  min-height:48px!important;
+  border-radius:11px!important;
 }
 
 /* ============================================================ TOP BAR */
@@ -773,10 +806,12 @@ _AUTH_NAV_CSS = """
 
 @media (max-width:980px){
   .auth-wrap{grid-template-columns:1fr}
-  .auth-shell{padding-top:4px}
+  .auth-shell{min-height:auto;padding-top:18px;align-items:flex-start}
+  .auth-shell [data-testid="stHorizontalBlock"]{gap:18px!important}
   .auth-hero{min-height:auto;padding:8px 0 4px;gap:12px}
+  .auth-hero h1{font-size:clamp(30px,9vw,42px)}
   .auth-panel{padding-top:0}
-  .auth-card-head{margin-bottom:8px}
+  .st-key-auth_card_streamlit{padding:24px 18px!important}
 }
 """
 
