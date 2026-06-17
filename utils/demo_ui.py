@@ -803,6 +803,53 @@ _AUTH_NAV_CSS = """
 .side-card{margin-top:16px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:13px}
 .side-card .h{font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:9px}
 .side-card .h .icon{width:14px;height:14px;color:var(--teal)}
+.side-card .kv{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;font-size:12.5px;color:var(--ink-2)}
+.side-card .kv b{color:var(--ink);font-family:var(--mono);font-size:12px}
+
+[data-testid="stSidebar"]{
+  background:color-mix(in srgb,var(--bg) 88%,var(--surface) 12%)!important;
+  border-right:1px solid var(--line)!important;
+}
+[data-testid="stSidebar"] [data-testid="stSidebarContent"]{
+  padding-top:18px!important;
+}
+[data-testid="stSidebar"] .stButton>button{
+  justify-content:flex-start!important;
+  min-height:38px!important;
+  border-radius:11px!important;
+  background:transparent!important;
+  border-color:transparent!important;
+  color:var(--ink-2)!important;
+  box-shadow:none!important;
+}
+[data-testid="stSidebar"] .stButton>button[kind="primary"],
+[data-testid="stSidebar"] button[data-testid="stBaseButton-primary"]{
+  background:var(--teal-12)!important;
+  color:var(--teal-strong)!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+[data-testid="stSidebar"] .stButton>button:hover{
+  background:var(--surface-2)!important;
+  color:var(--teal-strong)!important;
+  transform:none!important;
+}
+.st-key-auth_card_streamlit .stRadio [role="radiogroup"]{
+  display:grid!important;
+  grid-template-columns:1fr 1fr;
+  gap:9px!important;
+}
+.st-key-auth_card_streamlit .stRadio label{
+  background:var(--surface-2)!important;
+  border:1px solid var(--line)!important;
+  border-radius:11px!important;
+  padding:9px 10px!important;
+}
+.st-key-auth_card_streamlit .stRadio label:has(input:checked){
+  border-color:var(--teal)!important;
+  background:var(--teal-12)!important;
+  color:var(--teal-strong)!important;
+}
 
 @media (max-width:980px){
   .auth-wrap{grid-template-columns:1fr}

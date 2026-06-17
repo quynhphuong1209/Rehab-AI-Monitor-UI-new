@@ -17974,15 +17974,14 @@ def hien_thi_dang_nhap_dang_ky():
                 st.markdown('</main>', unsafe_allow_html=True)
                 return
 
-            # GIAO DIỆN CHÍNH (TABS)
-            login_role = st.selectbox("🎭 Bạn truy cập với vai trò:", ["Bệnh nhân", "Bác sĩ / KTV PHCN", "Nghiên cứu viên", "Quản trị viên"], key="login_role_main")
-            
-            tab_list = ["🔐 ĐĂNG NHẬP", "📋 ĐĂNG KÝ", "🚀 GOOGLE ID"]
+            # GIAO DIỆN CHÍNH (TABS) - giống auth card HTML demo
+            login_role = st.session_state.get("login_role_main", "Bác sĩ / KTV PHCN")
+            tab_list = ["Đăng nhập", "Đăng ký", "Google ID"]
             all_login_tabs = st.tabs(tab_list)
             t_map = {name: all_login_tabs[i] for i, name in enumerate(tab_list)}
             
-            if "🔐 ĐĂNG NHẬP" in t_map:
-                with t_map["🔐 ĐĂNG NHẬP"]:
+            if "Đăng nhập" in t_map:
+                with t_map["Đăng nhập"]:
                     # CHẾ ĐỘ ĐỔI MẬT KHẨU TRONG LOGIN
                     if st.session_state.get('change_password_mode', False):
                         st.markdown("### 🔑 THAY ĐỔI MẬT KHẨU")
@@ -17999,15 +17998,13 @@ def hien_thi_dang_nhap_dang_ky():
                                     users = load_users()
                                     cp_key = _auth_lookup_key(users, cp_u)
                                     if cp_key and _verify_auth_password(cp_key, cp_old, users[cp_key]):
-                                        if _roles_match(users[cp_key].get('role'), login_role):
-                                            if cp_new == cp_conf and len(cp_new) >= 6:
-                                                users[cp_key]['password'] = hash_password(cp_new)
-                                                save_users(users)
-                                                st.success("✅ Thành công! Hãy đăng nhập lại.")
-                                                st.session_state.change_password_mode = False
-                                                st.rerun()
-                                            else: st.error("❌ Mật khẩu không khớp hoặc quá ngắn.")
-                                        else: st.error(f"❌ Tài khoản không khớp với vai trò {login_role}.")
+                                        if cp_new == cp_conf and len(cp_new) >= 6:
+                                            users[cp_key]['password'] = hash_password(cp_new)
+                                            save_users(users)
+                                            st.success("✅ Thành công! Hãy đăng nhập lại.")
+                                            st.session_state.change_password_mode = False
+                                            st.rerun()
+                                        else: st.error("❌ Mật khẩu không khớp hoặc quá ngắn.")
                                     else: st.error("❌ Thông tin không chính xác.")
                             with c2:
                                 if st.form_submit_button("Hủy bỏ", width="stretch"):
@@ -18022,37 +18019,38 @@ def hien_thi_dang_nhap_dang_ky():
                             users = load_users()
                             u_key = _auth_lookup_key(users, u)
                             if u_key and _verify_auth_password(u_key, p, users[u_key]):
-                                if _roles_match(users[u_key].get('role', 'Bệnh nhân'), login_role):
-                                    _upgrade_password_hash_if_needed(users, u_key, p)
-                                    _hoan_tat_dang_nhap(u_key, users[u_key])
-                                    _rerun_toan_bo_app()
-                                else:
-                                    st.error(f"❌ Tài khoản này không có quyền truy cập với vai trò {login_role}")
+                                _upgrade_password_hash_if_needed(users, u_key, p)
+                                _hoan_tat_dang_nhap(u_key, users[u_key])
+                                _rerun_toan_bo_app()
                             elif u_key and users[u_key].get('role') == "Bệnh nhân":
                                 st.error("❌ Mật khẩu bệnh nhân chưa đúng với dữ liệu trong database/users.json.")
                             else:
                                 st.error("❌ Tài khoản hoặc mật khẩu không đúng")
                         
-                        # Chỉ hiện nút Đổi mật khẩu cho Bác sĩ và NCV
-                        if login_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
-                            if st.button("🔑 ĐỔI MẬT KHẨU", width="stretch", type="secondary"):
-                                st.session_state.change_password_mode = True
-                                st.rerun()
+                        if st.button("🔑 ĐỔI MẬT KHẨU", width="stretch", type="secondary"):
+                            st.session_state.change_password_mode = True
+                            st.rerun()
 
                         if st.button("❓ Bạn quên mật khẩu?", width="stretch", type="secondary"):
                             st.session_state.forgot_password_mode = True
                             st.rerun()
                             
-            if "📋 ĐĂNG KÝ" in t_map:
-                with t_map["📋 ĐĂNG KÝ"]:
+            if "Đăng ký" in t_map:
+                with t_map["Đăng ký"]:
                     st.markdown("<br>", unsafe_allow_html=True)
+                    reg_role = st.radio(
+                        "Bạn đăng ký với tư cách",
+                        ["Bệnh nhân", "Bác sĩ / KTV PHCN", "Nghiên cứu viên"],
+                        horizontal=True,
+                        key="reg_role_main",
+                    )
                     reg_name = st.text_input("📛 Họ và tên", placeholder="VD: Nguyễn Văn A", key="reg_n")
                     reg_u = st.text_input("👤 Tên đăng nhập *", placeholder="Chọn tên tài khoản", key="reg_u")
                     reg_e = st.text_input("📧 Email liên hệ *", placeholder="example@gmail.com", key="reg_e")
                     reg_p = st.text_input("🔑 Mật khẩu *", type="password", placeholder="Tối thiểu 6 ký tự", key="reg_p")
                     reg_cp = st.text_input("✅ Xác nhận mật khẩu *", type="password", placeholder="Nhập lại mật khẩu", key="reg_cp")
-                    st.info("💡 Các tài khoản Bác sĩ và Nghiên cứu viên đã được khởi tạo theo danh sách. Để cấp thêm tài khoản mới, vui lòng liên hệ Quản trị viên.")
-                    reg_role = "Bệnh nhân" # Gán mặc định không cần hiển thị
+                    if reg_role != "Bệnh nhân":
+                        st.info("💡 Tài khoản Bác sĩ/KTV và Nghiên cứu viên cần Quản trị viên phê duyệt trước khi kích hoạt.")
                     
                     if st.button("🚀 ĐĂNG KÝ TRUY CẬP", width="stretch", type="primary"):
                         reg_u_clean = _normalize_auth_text(reg_u)
@@ -18075,8 +18073,8 @@ def hien_thi_dang_nhap_dang_ky():
                                 save_users(users)
                                 st.success("🎉 Đăng ký thành công! Bạn có thể đăng nhập ngay.")
                                 
-            if "🚀 GOOGLE ID" in t_map:
-                with t_map["🚀 GOOGLE ID"]:
+            if "Google ID" in t_map:
+                with t_map["Google ID"]:
                     st.markdown("""
                     <div style="text-align: center; padding: 10px;">
                         <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" width="40" style="margin-bottom: 5px;">
@@ -19219,15 +19217,18 @@ def _render_main_tab_content(tab_titles, user_role):
         if "active_tab_widget" not in st.session_state:
             _seg_kwargs["default"] = st.session_state.active_tab
 
-        # Hiển thị Menu segmented control dạng Tab Bar
-        selected_tab = st.segmented_control(
-            label="Menu điều hướng",
-            options=tab_titles,
-            selection_mode="single",
-            key="active_tab_widget",
-            label_visibility="collapsed",
-            **_seg_kwargs,
-        )
+        if st.session_state.get("_demo_sidebar_nav_enabled"):
+            selected_tab = st.session_state.get("active_tab_widget") or st.session_state.active_tab
+        else:
+            # Hiển thị Menu segmented control dạng Tab Bar
+            selected_tab = st.segmented_control(
+                label="Menu điều hướng",
+                options=tab_titles,
+                selection_mode="single",
+                key="active_tab_widget",
+                label_visibility="collapsed",
+                **_seg_kwargs,
+            )
     
         if selected_tab:
             st.session_state.active_tab = selected_tab
@@ -19235,7 +19236,8 @@ def _render_main_tab_content(tab_titles, user_role):
             selected_tab = st.session_state.active_tab
 
         _gan_js_cuon_tab_mot_lan()
-        st.caption(f"📍 Đang xem: **{selected_tab}**")
+        if not st.session_state.get("_demo_sidebar_nav_enabled"):
+            st.caption(f"📍 Đang xem: **{selected_tab}**")
 
         # ==================== TAB 1: TRANG CHỦ ====================
         if selected_tab == "🏠 TRANG CHỦ":
@@ -19922,6 +19924,129 @@ def _render_main_tab_content(tab_titles, user_role):
 
 
 
+def _demo_nav_label_for_tab(tab_title):
+    raw = str(tab_title or "")
+    cleaned = raw
+    for prefix in ("🏠", "📊", "🔬", "🎬", "⏰", "📚", "👥", "📞", "💬", "🛠️", "🌐", "📖", "📄"):
+        cleaned = cleaned.replace(prefix, "")
+    cleaned = " ".join(cleaned.split()).title()
+    icon = "i-doc"
+    if "TRANG CHỦ" in raw:
+        icon = "i-dumbbell"
+        cleaned = "Tập luyện hôm nay" if st.session_state.user_info.get("role") == "Bệnh nhân" else "Tổng quan"
+    elif "KẾT QUẢ" in raw or "ĐÁNH GIÁ" in raw:
+        icon = "i-spark"
+        cleaned = "Nhận xét / Đánh giá"
+    elif "PHÂN TÍCH" in raw:
+        icon = "i-flask"
+        cleaned = "Phân tích AI"
+    elif "VIDEO" in raw:
+        icon = "i-video"
+        cleaned = "Video & ảnh"
+    elif "LỊCH" in raw:
+        icon = "i-bell"
+        cleaned = "Lịch nhắc nhở"
+    elif "THÔNG TIN TỔNG HỢP" in raw:
+        icon = "i-doc"
+        cleaned = "Thông tin tổng hợp"
+    elif "HỒ SƠ" in raw:
+        icon = "i-users"
+        cleaned = "Hồ sơ đề tài"
+    elif "LIÊN HỆ" in raw:
+        icon = "i-mail"
+        cleaned = "Thông tin liên hệ"
+    elif "PHẢN HỒI" in raw:
+        icon = "i-log"
+        cleaned = "Phản hồi"
+    elif "QUẢN TRỊ" in raw:
+        icon = "i-cog"
+        cleaned = "Quản trị viên"
+    return cleaned, icon
+
+
+def _render_demo_sidebar_nav(tab_titles, user_role):
+    st.session_state["_demo_sidebar_nav_enabled"] = True
+    if st.session_state.get("active_tab_widget") not in tab_titles:
+        st.session_state["active_tab_widget"] = st.session_state.get("active_tab", tab_titles[0])
+
+    st.markdown('<div class="side-section">ĐIỀU HƯỚNG</div>', unsafe_allow_html=True)
+    for i, tab_title in enumerate(tab_titles):
+        label, icon = _demo_nav_label_for_tab(tab_title)
+        active = st.session_state.get("active_tab_widget") == tab_title
+        if st.button(
+            f"{label}",
+            key=f"demo_nav_{user_role}_{i}",
+            type="primary" if active else "secondary",
+            width="stretch",
+            icon=":material/chevron_right:" if active else None,
+        ):
+            st.session_state.active_tab = tab_title
+            st.session_state.active_tab_widget = tab_title
+            st.rerun()
+
+    stats = {}
+    try:
+        if user_role == "Bệnh nhân":
+            stats = {"diagnosis": "Theo hồ sơ", "treatment_week": "Đang theo dõi", "latest_vas": "N/A", "doctor": "Bác sĩ / KTV"}
+        elif user_role == "Bác sĩ / KTV PHCN":
+            v_list = load_danh_sach_video_nghien_cuu()
+            evals_db_cached = _evals_dedup_cached(_mtimes_video_eval()[1])
+            evaluated_keys = {
+                (e.get('patient_username'), e.get('video_name'), e.get('exercise'))
+                for e in evals_db_cached
+                if e.get('doctor_username') and e.get('doctor_username') != "AI_Researcher"
+            }
+            stats = {
+                "total_patients": len(set(v.get('username') for v in v_list if v.get('username'))),
+                "pending_eval": sum(
+                    1 for v in v_list
+                    if (v.get('username'), v.get('video_name'), v.get('exercise')) not in evaluated_keys
+                ),
+                "vas_high": 0,
+                "sessions_7d": len(v_list),
+            }
+        elif user_role == "Nghiên cứu viên":
+            total_vids, pending_ai, avg_acc = _thong_ke_video_nghien_cuu()
+            stats = {"total_videos": total_vids, "pending_ai": pending_ai, "model": st.session_state.get("ncv_model_type", "MP-Heavy"), "avg_acc": f"{avg_acc:.1f}%"}
+        else:
+            users = load_users()
+            stats = {"accounts": len(users), "sync": "HF" if HF_SPACE_ID else "Local", "storage": "JSON", "status": "OK"}
+    except Exception:
+        stats = {}
+
+    if side_info_html:
+        st.markdown(side_info_html(user_role, st.session_state.user_info, stats), unsafe_allow_html=True)
+
+
+def _render_demo_topbar(user_role):
+    if topbar_html:
+        st.markdown(topbar_html(st.session_state.user_info, is_light=(st.session_state.get('theme') == 'light')), unsafe_allow_html=True)
+
+
+def _get_main_tab_titles_for_role(user_role):
+    if user_role == "Quản trị viên":
+        return ["🏠 TRANG CHỦ", "🛠️ QUẢN TRỊ VIÊN", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
+    if user_role == "Bác sĩ / KTV PHCN":
+        selected_video_main = st.session_state.get('current_eval_video')
+        _vid_key_meta = (
+            (selected_video_main or {}).get("username", ""),
+            (selected_video_main or {}).get("video_name", ""),
+        )
+        if st.session_state.get("_meta_tab_vid_key") != _vid_key_meta:
+            _, _has_out = _lay_meta_tab_bac_si(selected_video_main)
+            st.session_state["_meta_tab_vid_key"] = _vid_key_meta
+            st.session_state["_meta_tab_has_output"] = _has_out
+        has_video_output = st.session_state.get("_meta_tab_has_output", False)
+        titles = ["🏠 TRANG CHỦ", "📊 QUẢN LÝ ĐÁNH GIÁ & NCKH"]
+        if has_video_output:
+            titles.append("🎬 VIDEO & ẢNH")
+        titles += ["⏰ LỊCH NHẮC NHỞ", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "📞 THÔNG TIN LIÊN HỆ", "💬 PHẢN HỒI"]
+        return titles
+    if user_role == "Bệnh nhân":
+        return ["🏠 TRANG CHỦ", "📊 KẾT QUẢ ĐÁNH GIÁ", "⏰ LỊCH NHẮC NHỞ", "📚 THÔNG TIN TỔNG HỢP", "📞 THÔNG TIN LIÊN HỆ", "💬 PHẢN HỒI"]
+    return ["🏠 TRANG CHỦ", "📊 KẾT QUẢ ĐÁNH GIÁ", "🔬 PHÂN TÍCH & TRÍCH XUẤT DỮ LIỆU", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
+
+
 def main():
     # Do not force browser reloads after F5 on HF Spaces.
     # Streamlit owns reconnect; manual location.reload() can loop into a blank app shell.
@@ -19941,12 +20066,32 @@ def main():
     if st.session_state.pop("_need_home_sync", False):
         _dong_bo_video_list_nen(force=True)
 
+    user_role = st.session_state.user_info.get('role', 'Bệnh nhân')
+
+    # Tự động chọn video đầu tiên một lần — tránh load lại danh sách mỗi lần chuyển tab
+    if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
+        if not st.session_state.get('current_eval_video') and not st.session_state.get('_default_video_picked'):
+            all_vids = load_danh_sach_video_nghien_cuu()
+            if all_vids:
+                st.session_state.current_eval_video = all_vids[0]
+            st.session_state._default_video_picked = True
+
+    tab_titles = _get_main_tab_titles_for_role(user_role)
+    if 'active_tab' not in st.session_state or st.session_state.active_tab not in tab_titles:
+        st.session_state.active_tab = tab_titles[0]
+    if st.session_state.get("active_tab_widget") not in tab_titles:
+        st.session_state.active_tab_widget = st.session_state.active_tab
+
+    _render_demo_topbar(user_role)
+
     # Callback xử lý đổi theme nhanh
     def update_theme_callback():
         st.session_state.theme = 'dark' if st.session_state.get('theme_toggle_top', True) else 'light'
 
     # Chuyển các điều khiển hệ thống vào Sidebar
     with st.sidebar:
+        _render_demo_sidebar_nav(tab_titles, user_role)
+        st.markdown("---")
         st.markdown("### 🛠️ HỆ THỐNG")
         
         # 1. Chế độ Sáng/Tối
@@ -20008,13 +20153,7 @@ def main():
             st.rerun()
         st.markdown("---")
 
-    # TOP HEADER - Đã được tối ưu cho cả Light và Dark mode
     is_light = st.session_state.get('theme') == 'light'
-    header_h1_color = "#ffffff" if not is_light else "#1a1a2e"
-    header_p_color = "#ffffff" if not is_light else "#333333"
-    _hien_thi_header_chinh(header_h1_color, header_p_color, show_badge=True, is_light=is_light)
-    
-    user_role = st.session_state.user_info.get('role', 'Bệnh nhân')
     
     # --- KHỞI TẠO MẶC ĐỊNH ĐỂ TRÁNH LỖI UNBOUNDLOCALERROR ---
     ma_bai_tap = list(BAI_TAP.keys())[0]
@@ -20211,37 +20350,6 @@ def main():
         st.markdown("**🏥 Trường Đại học Y tế Công cộng**")
         st.markdown("**👩‍⚕️ Chủ nhiệm đề tài:** Đinh Lê Quỳnh Phương")
     
-    # Tự động chọn video đầu tiên một lần — tránh load lại danh sách mỗi lần chuyển tab
-    if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
-        if not st.session_state.get('current_eval_video') and not st.session_state.get('_default_video_picked'):
-            all_vids = load_danh_sach_video_nghien_cuu()
-            if all_vids:
-                st.session_state.current_eval_video = all_vids[0]
-            st.session_state._default_video_picked = True
-
-    if user_role == "Quản trị viên":
-        tab_titles = ["🏠 TRANG CHỦ", "🛠️ QUẢN TRỊ VIÊN", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
-    elif user_role == "Bác sĩ / KTV PHCN":
-        selected_video_main = st.session_state.get('current_eval_video')
-        # Cache kết quả _lay_meta_tab_bac_si theo video key — tránh scan disk mỗi rerun
-        _vid_key_meta = (
-            (selected_video_main or {}).get("username", ""),
-            (selected_video_main or {}).get("video_name", ""),
-        )
-        if st.session_state.get("_meta_tab_vid_key") != _vid_key_meta:
-            _, _has_out = _lay_meta_tab_bac_si(selected_video_main)
-            st.session_state["_meta_tab_vid_key"] = _vid_key_meta
-            st.session_state["_meta_tab_has_output"] = _has_out
-        has_video_output = st.session_state.get("_meta_tab_has_output", False)
-        tab_titles = ["🏠 TRANG CHỦ", "📊 QUẢN LÝ ĐÁNH GIÁ & NCKH"]
-        if has_video_output:
-            tab_titles.append("🎬 VIDEO & ẢNH")
-        tab_titles += ["⏰ LỊCH NHẮC NHỞ", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "📞 THÔNG TIN LIÊN HỆ", "💬 PHẢN HỒI"]
-    elif user_role == "Bệnh nhân":
-        tab_titles = ["🏠 TRANG CHỦ", "📊 KẾT QUẢ ĐÁNH GIÁ", "⏰ LỊCH NHẮC NHỞ", "📚 THÔNG TIN TỔNG HỢP", "📞 THÔNG TIN LIÊN HỆ", "💬 PHẢN HỒI"]
-    else: # Nghiên cứu viên
-        tab_titles = ["🏠 TRANG CHỦ", "📊 KẾT QUẢ ĐÁNH GIÁ", "🔬 PHÂN TÍCH & TRÍCH XUẤT DỮ LIỆU", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
-        
     # Khởi tạo hoặc khôi phục active_tab (đồng bộ widget sau reload — tránh trang trống)
     if 'active_tab' not in st.session_state or st.session_state.active_tab not in tab_titles:
         st.session_state.active_tab = tab_titles[0]
