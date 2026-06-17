@@ -648,11 +648,12 @@ def side_info_html(role: str, user_info=None, stats=None) -> str:
 _AUTH_NAV_CSS = """
 /* ============================================================ AUTH SCREEN */
 .auth-shell{
-  min-height:calc(100vh - 64px);
-  padding:clamp(18px,3.5vw,42px) 0 clamp(28px,5vw,64px);
+  min-height:auto;
+  padding:clamp(6px,1.2vw,14px) 0 clamp(24px,4vw,48px);
 }
 .auth-shell [data-testid="stHorizontalBlock"]{
-  align-items:center;
+  align-items:flex-start;
+  gap:clamp(18px,2.4vw,34px)!important;
 }
 .auth-wrap{
   min-height:calc(100vh - 63px);
@@ -661,8 +662,8 @@ _AUTH_NAV_CSS = """
 }
 .auth-hero{
   position:relative;overflow:hidden;
-  padding:clamp(22px,4.5vw,60px) clamp(10px,2vw,22px);
-  display:flex;flex-direction:column;justify-content:center;gap:26px;
+  padding:clamp(8px,1.8vw,22px) clamp(8px,1.6vw,18px);
+  display:flex;flex-direction:column;justify-content:flex-start;gap:16px;
 }
 .auth-hero .eyebrow{
   display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
@@ -688,7 +689,7 @@ _AUTH_NAV_CSS = """
   width:100%;max-width:460px;margin:0 auto;
 }
 .auth-card-head{
-  width:100%;margin:0 auto 14px;
+  width:100%;margin:0 auto 10px;
   background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
   box-shadow:var(--shadow-sm);padding:20px 22px 16px;
 }
@@ -772,8 +773,10 @@ _AUTH_NAV_CSS = """
 
 @media (max-width:980px){
   .auth-wrap{grid-template-columns:1fr}
-  .auth-hero{min-height:auto;padding-bottom:0}
-  .auth-panel{padding-top:10px}
+  .auth-shell{padding-top:4px}
+  .auth-hero{min-height:auto;padding:8px 0 4px;gap:12px}
+  .auth-panel{padding-top:0}
+  .auth-card-head{margin-bottom:8px}
 }
 """
 
