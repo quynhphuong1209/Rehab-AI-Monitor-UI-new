@@ -18,7 +18,7 @@ except ImportError:
         print("Vui lòng cài đặt thủ công: pip install huggingface_hub")
 
 # Configuration
-HF_DATASET_ID = "quynhphuong1209/Rehab-AI-Monitor-2026-data"
+HF_DATASET_ID = os.environ.get("HF_DATASET_ID", "").strip()
 DATABASE_DIR = "database"
 README_PATH = "README.md"
 
@@ -40,9 +40,11 @@ def download_latest_data(token=None):
         "doctor_evaluations.json",
         "research_data.json",
         "patient_symptoms.json",
-        "video_list.json",
-        "users.json"
+        "video_list.json"
     ]
+    if not HF_DATASET_ID:
+        print("⚠️ Chưa cấu hình HF_DATASET_ID; bỏ qua đồng bộ cloud để tránh đọc nhầm dataset.")
+        return False
     
     os.makedirs(DATABASE_DIR, exist_ok=True)
     print(f"📥 Đang đồng bộ dữ liệu từ Hugging Face Dataset: {HF_DATASET_ID}...")
@@ -84,7 +86,7 @@ def generate_report():
     return """# BÁO CÁO TOÀN DIỆN KẾT QUẢ NGHIÊN CỨU LÂM SÀNG & NCKH (NCV)
 ## HỆ THỐNG GIÁM SÁT PHỤC HỒI CHỨC NĂNG BẰNG AI (REHAB-AI-MONITOR)
 
-Báo cáo này được cập nhật đầy đủ và chính xác theo giao diện nghiên cứu của website [Hugging Face Space](https://quynhphuong1209-rehab-ai-monitor-2026.hf.space/?logged_in_user=2211090031&logged_in_role=Nghi%C3%AAn+c%E1%BB%A9u+vi%C3%AAn) và cổng Bác sĩ / KTV PHCN. Các chỉ số đã được đối soát trùng khớp hoàn toàn với cơ sở dữ liệu hệ thống, bao gồm thông tin bệnh sử, triệu chứng lâm sàng và trạng thái duyệt hồ sơ của bác sĩ.
+Báo cáo này được cập nhật đầy đủ và chính xác theo giao diện nghiên cứu của website [Hugging Face Space](https://quynhphuong1209-rehab-ai-monitor-2026.hf.space/) và cổng Bác sĩ / KTV PHCN. Các chỉ số đã được đối soát trùng khớp hoàn toàn với cơ sở dữ liệu hệ thống, bao gồm thông tin bệnh sử, triệu chứng lâm sàng và trạng thái duyệt hồ sơ của bác sĩ.
 
 ---
 

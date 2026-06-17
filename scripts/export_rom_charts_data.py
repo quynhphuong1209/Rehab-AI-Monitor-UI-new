@@ -18,7 +18,7 @@ ROOT = os.path.join(SCRIPT_DIR, "..")
 BASE = os.path.join(ROOT, "database")
 OUT_TXT = os.path.join(ROOT, "docs", "_ROM_CHARTS_DATA.txt")
 OUT_JSON = os.path.join(ROOT, "docs", "_ROM_CHARTS_DATA.json")
-HF_DATASET_ID = "quynhphuong1209/Rehab-AI-Monitor-2026-data"
+HF_DATASET_ID = os.environ.get("HF_DATASET_ID", "").strip()
 
 sys.path.insert(0, SCRIPT_DIR)
 from export_report_metrics import lay_metrics_chinh, phase_block, r1  # noqa: E402
@@ -204,6 +204,9 @@ def resolve_csv_path(df_path):
 
 
 def download_csv_hf(basename, token, cache_dir):
+    if not HF_DATASET_ID:
+        print("Chua cau hinh HF_DATASET_ID; bo qua tai CSV tu HF.")
+        return None
     try:
         from huggingface_hub import hf_hub_download
     except ImportError:
@@ -423,7 +426,7 @@ def main():
             print("  CMD:        set HF_TOKEN=hf_xxx")
         else:
             print("Ghi chu: khong tim thay CSV local / tai tu HF Dataset that bai.")
-            print("  Kiem tra token Read + Dataset quynhphuong1209/Rehab-AI-Monitor-2026-data")
+            print("  Kiem tra token Read va bien HF_DATASET_ID.")
 
 
 if __name__ == "__main__":

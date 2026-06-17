@@ -8,7 +8,7 @@ về và cập nhật vào các file JSON local.
 Cách dùng:
     python sync_from_hf.py                          # Dùng token từ .streamlit/secrets.toml hoặc biến môi trường
     python sync_from_hf.py --token hf_xxxx          # Chỉ định token thủ công
-    python sync_from_hf.py --dataset quynhphuong1209/Rehab-AI-Monitor-2026-data
+    python sync_from_hf.py --dataset owner/dataset-name
     python sync_from_hf.py --dry-run                # Xem trước, không ghi file
     python sync_from_hf.py --file doctor_evaluations.json video_list.json  # Chỉ sync 1 số file
 """
@@ -22,17 +22,19 @@ from datetime import datetime
 from pathlib import Path
 
 # ── Cấu hình mặc định ──────────────────────────────────────────────────────
-DEFAULT_DATASET_ID = "quynhphuong1209/Rehab-AI-Monitor-2026-data"
+DEFAULT_DATASET_ID = ""
 
 # Danh sách file JSON cần đồng bộ (tên file trên HF Dataset → local path)
 SYNC_FILES = {
     "doctor_evaluations.json": "database/doctor_evaluations.json",
     "video_list.json":         "database/video_list.json",
     "lich_su_tap_luyen.json":  "database/lich_su_tap_luyen.json",
-    "users.json":              "database/users.json",
     "research_data.json":      "database/research_data.json",
     "patient_symptoms.json":   "database/patient_symptoms.json",
     "schedules.json":          "database/schedules.json",
+}
+USER_SYNC_FILES = {
+    "users.json": "database/users.json",
 }
 
 # ── Đọc token / dataset_id ─────────────────────────────────────────────────
@@ -40,7 +42,7 @@ def load_hf_config():
     """Đọc HF_TOKEN và HF_DATASET_ID theo thứ tự ưu tiên:
     1. Biến môi trường
     2. .streamlit/secrets.toml
-    3. Giá trị mặc định (chỉ dataset_id)
+    3. Không có mặc định an toàn; yêu cầu env/secret/argument.
     """
     token = os.environ.get("HF_TOKEN", "").strip()
     dataset_id = os.environ.get("HF_DATASET_ID", "").strip()
@@ -196,6 +198,7 @@ def sync_from_hf(
     files: list[str] | None = None,
     dry_run: bool = False,
     backup: bool = True,
+    include_users: bool = False,
 ):
     """
     Tải và merge dữ liệu từ HF Dataset về local.
@@ -215,10 +218,16 @@ def sync_from_hf(
     print(f"  Mode    : {'🔍 DRY-RUN (chỉ xem)' if dry_run else '💾 GHI FILE THẬT'}")
     print()
 
-    target_files = files or list(SYNC_FILES.keys())
+    file_map = dict(SYNC_FILES)
+    if include_users:
+        file_map.update(USER_SYNC_FILES)
+    elif files and "users.json" in files:
+        print("  ⚠️  Bỏ qua users.json. Dùng --include-users nếu thật sự muốn đồng bộ auth DB.")
+        files = [f for f in files if f != "users.json"]
+    target_files = files or list(file_map.keys())
 
     for hf_name in target_files:
-        local_rel = SYNC_FILES.get(hf_name)
+        local_rel = file_map.get(hf_name)
         if not local_rel:
             print(f"  ⚠️  Không biết đường dẫn local cho: {hf_name}, bỏ qua.")
             continue
@@ -251,7 +260,8 @@ def sync_from_hf(
 
         # Backup file local cũ
         if backup and os.path.exists(local_path):
-            bak_path = local_path + ".bak"
+            stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            bak_path = f"{local_path}.{stamp}.bak"
             shutil.copy2(local_path, bak_path)
 
         # Tạo thư mục nếu chưa có
@@ -285,12 +295,17 @@ if __name__ == "__main__":
     parser.add_argument("--file",    type=str, nargs="+",   help="Chỉ sync các file cụ thể (VD: doctor_evaluations.json video_list.json)")
     parser.add_argument("--dry-run", action="store_true",   help="Chỉ xem, không ghi file")
     parser.add_argument("--no-backup", action="store_true", help="Không tạo file .bak")
+    parser.add_argument("--include-users", action="store_true", help="Cho phép đồng bộ users.json (mặc định bị bỏ qua để tránh ghi đè mật khẩu/role)")
     args = parser.parse_args()
 
     # Đọc config
     env_token, env_dataset = load_hf_config()
     token      = args.token   or env_token
     dataset_id = args.dataset or env_dataset
+
+    if not dataset_id:
+        print("\n⚠️  Chưa có HF_DATASET_ID. Truyền --dataset hoặc cấu hình biến môi trường/Secrets.")
+        sys.exit(1)
 
     if not token:
         print("\n⚠️  Chưa có HF_TOKEN!")
@@ -307,4 +322,5 @@ if __name__ == "__main__":
         files      = args.file,
         dry_run    = args.dry_run,
         backup     = not args.no_backup,
+        include_users = args.include_users,
     )

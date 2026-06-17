@@ -503,16 +503,14 @@ def kv(label, value, color="") -> str:
 def auth_screen_html() -> str:
     """Màn hình đăng nhập/đăng ký giống demo HTML."""
     return """
-<div class="auth-wrap">
-  <div class="auth-hero">
-    <span class="eyebrow"><svg class="icon sm"><use href="#i-shield-c"/></svg> Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>
-    <h1>Giám sát tập <em>phục hồi chức năng</em> bằng AI, ngay tại nhà.</h1>
-    <p class="lede">Bệnh nhân khai báo triệu chứng (VAS) → AI phân tích khung xương & góc khớp theo thời gian thực → Chuyên gia đối chiếu và đưa ra phác đồ. Một luồng lâm sàng khép kín.</p>
-    <div class="hero-stats">
-      <div class="hstat"><div class="n">33</div><div class="l">điểm khung xương / khung hình</div></div>
-      <div class="hstat"><div class="n">±15°</div><div class="l">sai số mục tiêu giai đoạn 3</div></div>
-      <div class="hstat"><div class="n">5</div><div class="l">vai trò người dùng</div></div>
-    </div>
+<div class="auth-hero">
+  <span class="eyebrow"><svg class="icon sm"><use href="#i-shield-c"/></svg> Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>
+  <h1>Giám sát tập <em>phục hồi chức năng</em> bằng AI, ngay tại nhà.</h1>
+  <p class="lede">Bệnh nhân khai báo triệu chứng (VAS) → AI phân tích khung xương & góc khớp theo thời gian thực → Chuyên gia đối chiếu và đưa ra phác đồ. Một luồng lâm sàng khép kín.</p>
+  <div class="hero-stats">
+    <div class="hstat"><div class="n">33</div><div class="l">điểm khung xương / khung hình</div></div>
+    <div class="hstat"><div class="n">±15°</div><div class="l">sai số mục tiêu giai đoạn 3</div></div>
+    <div class="hstat"><div class="n">5</div><div class="l">vai trò người dùng</div></div>
   </div>
 </div>
 """
@@ -649,6 +647,13 @@ def side_info_html(role: str, user_info=None, stats=None) -> str:
 # ============================================================ ADDITIONAL CSS FOR AUTH & NAV
 _AUTH_NAV_CSS = """
 /* ============================================================ AUTH SCREEN */
+.auth-shell{
+  min-height:calc(100vh - 64px);
+  padding:clamp(18px,3.5vw,42px) 0 clamp(28px,5vw,64px);
+}
+.auth-shell [data-testid="stHorizontalBlock"]{
+  align-items:center;
+}
 .auth-wrap{
   min-height:calc(100vh - 63px);
   display:grid;grid-template-columns:1.05fr .95fr;
@@ -656,7 +661,7 @@ _AUTH_NAV_CSS = """
 }
 .auth-hero{
   position:relative;overflow:hidden;
-  padding:clamp(28px,5vw,64px);
+  padding:clamp(22px,4.5vw,60px) clamp(10px,2vw,22px);
   display:flex;flex-direction:column;justify-content:center;gap:26px;
 }
 .auth-hero .eyebrow{
@@ -677,6 +682,45 @@ _AUTH_NAV_CSS = """
 }
 .hstat .n{font-family:var(--mono);font-size:23px;font-weight:600;color:var(--teal-strong)}
 .hstat .l{font-size:12px;color:var(--ink-3);margin-top:3px}
+
+.auth-card-streamlit,
+.st-key-auth_card_streamlit{
+  width:100%;max-width:460px;margin:0 auto;
+}
+.auth-card-head{
+  width:100%;margin:0 auto 14px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-sm);padding:20px 22px 16px;
+}
+.auth-card-head h2{font-family:var(--display);font-weight:600;font-size:25px;margin:0 0 4px;color:var(--ink)}
+.auth-card-head .sub{font-size:13.5px;color:var(--ink-3);margin:0}
+.st-key-auth_card_streamlit{
+  background:var(--surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--r-lg)!important;
+  box-shadow:var(--shadow)!important;
+  padding:18px 16px!important;
+}
+.st-key-auth_card_streamlit .stTabs [data-baseweb="tab-list"]{
+  display:flex;gap:4px;background:var(--surface-2)!important;border:1px solid var(--line)!important;border-radius:12px!important;
+  padding:4px!important;margin-bottom:18px!important;
+}
+.st-key-auth_card_streamlit .stTabs [data-baseweb="tab"]{
+  flex:1;border-radius:9px!important;background:transparent!important;color:var(--ink-3)!important;
+  padding:9px!important;min-height:38px!important;justify-content:center!important;
+}
+.st-key-auth_card_streamlit .stTabs [data-baseweb="tab"][aria-selected="true"]{
+  background:var(--surface)!important;color:var(--teal-strong)!important;box-shadow:var(--shadow-sm)!important;
+}
+.st-key-auth_card_streamlit .stTabs [data-baseweb="tab-highlight"]{display:none!important}
+.st-key-auth_card_streamlit [data-testid="stVerticalBlock"]{gap:.55rem}
+.st-key-auth_card_streamlit .stSelectbox,
+.st-key-auth_card_streamlit .stTextInput{margin-bottom:.25rem}
+.st-key-auth_card_streamlit .stButton>button{width:100%}
+.st-key-auth_card_streamlit .stSelectbox label,
+.st-key-auth_card_streamlit .stTextInput label{
+  color:var(--ink-2)!important;
+}
 
 /* ============================================================ TOP BAR */
 .topbar{
@@ -729,6 +773,7 @@ _AUTH_NAV_CSS = """
 @media (max-width:980px){
   .auth-wrap{grid-template-columns:1fr}
   .auth-hero{min-height:auto;padding-bottom:0}
+  .auth-panel{padding-top:10px}
 }
 """
 

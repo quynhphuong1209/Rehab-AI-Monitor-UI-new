@@ -110,9 +110,23 @@ except Exception:
 import streamlit as st
 
 try:
-    from pro_ui_theme import inject_pro_ui_theme
+    from demo_ui import (
+        auth_screen_html,
+        inject_auth_nav_css,
+        inject_design_system,
+        inject_streamlit_skin,
+        side_info_html,
+        sidebar_nav_html,
+        topbar_html,
+    )
 except Exception:
-    inject_pro_ui_theme = None
+    auth_screen_html = None
+    inject_auth_nav_css = None
+    inject_design_system = None
+    inject_streamlit_skin = None
+    side_info_html = None
+    sidebar_nav_html = None
+    topbar_html = None
 
 # Gọi sớm nhất có thể — trình duyệt nhận layout ngay, giảm màn hình trống trên HF Space
 st.set_page_config(
@@ -161,8 +175,15 @@ import zipfile
 from io import BytesIO
 import subprocess
 import hashlib
+import hmac
+import secrets
 import gc
 import unicodedata
+
+try:
+    from storage.json_store import write_json as _atomic_write_json
+except Exception:
+    _atomic_write_json = None
 
 try:
     from pose_classifier_utils import (
@@ -450,7 +471,7 @@ def sync_transcode_to_h264(src_path, dst_path=None, audio_path=None, timeout=180
         '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
         '-crf', '28',
         '-movflags', '+faststart',
-        '-threads', '0',
+        '-threads', '2',
         '-f', 'mp4',
         tmp_dst,
     ])
@@ -1488,7 +1509,7 @@ def ensure_playable_video(video_path):
                 '-maxrate', '500k',
                 '-bufsize', '1000k',
                 '-movflags', '+faststart',
-                '-threads', '0',
+                '-threads', '2',
                 '-map', '0:v:0', '-map', '0:a?',
             ]
             if a_codec:
@@ -1615,9 +1636,15 @@ def _start_video_http_server():
     import socketserver
     import threading
 
-    # Thư mục gốc của project (chứa patient_uploads, processed_results, ...)
     serve_root = os.path.abspath(".")
     _video_http_server_root = serve_root
+    allowed_media_roots = [
+        os.path.abspath(UPLOAD_DIR),
+        os.path.abspath(PROCESSED_DIR),
+        os.path.abspath(os.path.join(".", "static")),
+        os.path.abspath(tempfile.gettempdir()),
+    ]
+    allowed_media_exts = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 
     class _RangeHandler(http.server.SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -1625,6 +1652,18 @@ def _start_video_http_server():
 
         def log_message(self, format, *args):
             pass  # tắt log tràn console
+
+        def translate_path(self, path):
+            candidate = os.path.abspath(super().translate_path(path))
+            ext = os.path.splitext(candidate)[1].lower()
+            if ext not in allowed_media_exts:
+                return os.path.join(serve_root, "__blocked__")
+            try:
+                if not any(os.path.commonpath([root, candidate]) == root for root in allowed_media_roots):
+                    return os.path.join(serve_root, "__blocked__")
+            except Exception:
+                return os.path.join(serve_root, "__blocked__")
+            return candidate
 
         def do_GET(self):
             import re
@@ -1677,8 +1716,6 @@ def _start_video_http_server():
                 pass
 
         def end_headers(self):
-            # Cho phép browser từ bất kỳ origin (Streamlit dùng iframe/cport khác)
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.send_header('Cache-Control', 'public, max-age=86400')
             super().end_headers()
 
@@ -1714,8 +1751,7 @@ def _get_video_server_url(video_path):
             if os.path.splitdrive(abs_video)[0].upper() != os.path.splitdrive(abs_root)[0].upper():
                 return None  # khác ổ đĩa → không thể dùng relative URL
         rel = os.path.relpath(abs_video, abs_root)
-        # Nếu path bắt đầu bằng '..' quá nhiều bậc, khả năng cao là ngoài root → bỏ qua
-        if rel.startswith('..') and rel.count('..') > 3:
+        if rel.startswith('..'):
             return None
         rel_url = rel.replace('\\', '/')
         return f'http://127.0.0.1:{port}/{rel_url}'
@@ -1761,35 +1797,33 @@ def get_playable_local_copy(target_path):
 
 
 @st.cache_data(ttl=300, show_spinner=False)
-def check_cloud_file_exists(url):
-    """Kiểm tra nhanh xem file có tồn tại trên Cloud (Hugging Face) không bằng HTTP HEAD request (có cache)"""
-    if not url:
+def check_cloud_file_exists(rel_path):
+    """Kiểm tra nhanh file HF Dataset bằng HEAD server-side, không đưa token ra frontend."""
+    if not (rel_path and HF_DATASET_ID):
         return False
     try:
         import requests
-        res = requests.head(url, timeout=3.0)
+        import urllib.parse
+        rel = get_clean_rel_path(rel_path)
+        url = f"https://huggingface.co/datasets/{HF_DATASET_ID}/resolve/main/{urllib.parse.quote(rel, safe='/')}"
+        res = requests.head(url, headers=_hf_auth_headers(), timeout=3.0)
         return res.status_code == 200
     except:
         return False
 
 
 def _hf_dataset_resolve_urls(video_path, prefer_raw=False):
-    """URL stream HF Dataset — processed ưu tiên _f.mp4; raw chỉ dùng file upload gốc."""
-    if not (HF_TOKEN and HF_DATASET_ID and video_path) or _is_scratch_video_path(video_path):
+    """Trả về rel_path HF Dataset cho processed/raw; token chỉ dùng server-side."""
+    if not (HF_DATASET_ID and video_path) or _is_scratch_video_path(video_path):
         return None, None
     try:
-        import urllib.parse
         rel = get_clean_rel_path(_strip_to_original_upload(video_path))  # stripped (original)
         rel_actual = get_clean_rel_path(video_path)                       # actual (might be _f.mp4)
-        base = f"https://huggingface.co/datasets/{HF_DATASET_ID}/resolve/main"
-        token_q = f"?token={HF_TOKEN}"
-        url_raw = f"{base}/{urllib.parse.quote(rel, safe='/')}{token_q}"          # URL cho file gốc (stripped)
-        url_actual = f"{base}/{urllib.parse.quote(rel_actual, safe='/')}{token_q}" # URL cho file thực tế
         if prefer_raw or "patient_uploads" in rel.replace("\\", "/"):
             # Dùng URL thực tế (không strip _f.mp4) để _f.mp4 có URL đúng trên HF Dataset
-            return None, url_actual
+            return None, rel_actual
         if rel.endswith("_ffmp.mp4") or rel.endswith("_f.mp4"):
-            return None, url_raw
+            return None, rel
         rel_f = (
             rel.replace(".mp4", "_f.mp4")
             .replace(".mov", "_f.mp4")
@@ -1797,8 +1831,7 @@ def _hf_dataset_resolve_urls(video_path, prefer_raw=False):
             .replace(".avi", "_f.mp4")
             .replace(".mkv", "_f.mp4")
         )
-        url_f = f"{base}/{urllib.parse.quote(rel_f, safe='/')}{token_q}"
-        return url_f, url_raw
+        return rel_f, rel
     except Exception:
         return None, None
 
@@ -1884,53 +1917,61 @@ def _is_hf_runtime():
 
 
 def _try_render_cloud_video_stream(video_path, key_hint="", optimistic=False, prefer_raw=False):
-    """Stream ngay từ HF Dataset — optimistic=True bỏ qua HEAD (một số CDN chặn HEAD)."""
-    url_f, url_raw = _hf_dataset_resolve_urls(video_path, prefer_raw=prefer_raw)
-    if not url_raw and not url_f:
+    """Tải video HF server-side rồi render local, không đưa HF token vào DOM."""
+    rel_f, rel_raw = _hf_dataset_resolve_urls(video_path, prefer_raw=prefer_raw)
+    if not rel_raw and not rel_f:
         return False
-    h264_ok = bool(url_f and check_cloud_file_exists(url_f))
-    raw_ok = check_cloud_file_exists(url_raw) if url_raw else False
+    h264_ok = bool(rel_f and check_cloud_file_exists(rel_f))
+    raw_ok = check_cloud_file_exists(rel_raw) if rel_raw else False
     if not h264_ok and not raw_ok:
         if not optimistic:
             return False
-        h264_ok = bool(url_f)
-        raw_ok = bool(url_raw)
-    sources = []
+        h264_ok = bool(rel_f)
+        raw_ok = bool(rel_raw)
+    candidates = []
     if prefer_raw:
-        seen_urls = set()
+        seen_rels = set()
         for candidate in video_raw_only_paths(video_path):
             _, cand_raw = _hf_dataset_resolve_urls(candidate, prefer_raw=True)
-            if cand_raw and cand_raw not in seen_urls:
-                seen_urls.add(cand_raw)
-                sources.append(f'<source src="{cand_raw}" type="video/mp4">')
-        # Thêm URL _f.mp4 (H.264) làm nguồn dự phòng — file này tồn tại trên HF Dataset
+            if cand_raw and cand_raw not in seen_rels:
+                seen_rels.add(cand_raw)
+                candidates.append(cand_raw)
+        # Thêm _f.mp4 (H.264) làm nguồn dự phòng — file này tồn tại trên HF Dataset
         # ngay cả khi file gốc chưa được upload lên (chỉ _f.mp4 được sync lên Cloud)
         try:
             _h264_fb = get_final_h264_path(_strip_to_original_upload(video_path))
             if _h264_fb and not _is_scratch_video_path(_h264_fb):
-                _, _h264_url = _hf_dataset_resolve_urls(_h264_fb, prefer_raw=True)
-                if _h264_url and _h264_url not in seen_urls:
-                    seen_urls.add(_h264_url)
-                    sources.append(f'<source src="{_h264_url}" type="video/mp4">')
+                _, _h264_rel = _hf_dataset_resolve_urls(_h264_fb, prefer_raw=True)
+                if _h264_rel and _h264_rel not in seen_rels:
+                    seen_rels.add(_h264_rel)
+                    candidates.append(_h264_rel)
         except Exception:
             pass
-        if not sources and raw_ok and url_raw:
-            sources.append(f'<source src="{url_raw}" type="video/mp4">')
+        if not candidates and raw_ok and rel_raw:
+            candidates.append(rel_raw)
     else:
-        if h264_ok and url_f:
-            sources.append(f'<source src="{url_f}" type="video/mp4">')
-        if raw_ok and url_raw:
-            sources.append(f'<source src="{url_raw}" type="video/mp4">')
-    if not sources:
+        if h264_ok and rel_f:
+            candidates.append(rel_f)
+        if raw_ok and rel_raw:
+            candidates.append(rel_raw)
+    seen_paths = set()
+    for rel in candidates:
+        try:
+            local_candidate = os.path.normpath(os.path.join(DATA_DIR, rel.replace("\\", "/")))
+            if local_candidate in seen_paths:
+                continue
+            seen_paths.add(local_candidate)
+            if ensure_local_file(local_candidate, quiet=True, try_fallbacks=False):
+                if _render_video_streamlit_native(local_candidate, allow_large=True):
+                    return True
+                if _render_video_static_iframe(local_candidate, video_key=f"cloud_local_{key_hint}"):
+                    return True
+        except Exception:
+            continue
+    if not candidates:
         return False
-    label = "📤 Video gốc BN" if prefer_raw else "☁️ Stream từ Cloud"
-    url_hash = hashlib.md5(f"{video_path}|{key_hint}|{prefer_raw}".encode()).hexdigest()[:8]
-    _render_video_html5_iframe(
-        "\n  ".join(sources),
-        f"cloud_fast_{url_hash}",
-        footer_html=f"{label} — {os.path.basename(video_path)}",
-    )
-    return True
+    st.info("☁️ Video đang được tải server-side từ Cloud. Vui lòng thử lại sau giây lát nếu chưa hiển thị.")
+    return False
 
 
 def _render_video_static_iframe(target_path, video_key=None):
@@ -3005,33 +3046,10 @@ def render_video(video_path, check_h264=True, prefer_raw=False):
             # Kiểm tra xem video gốc có tương thích trực tiếp với trình duyệt hay không (phải là h264 MP4)
             is_compatible = (v_codec == 'h264' and video_path.lower().endswith('.mp4'))
             if not is_compatible:
-                # Kích hoạt transcode nền nhưng KHÔNG chặn UI
-                # Thử stream thẳng từ Cloud URL của HF Dataset để người dùng xem được ngay
-                if HF_TOKEN and HF_DATASET_ID:
-                    try:
-                        import urllib.parse, hashlib as _hlib
-                        _rel = get_clean_rel_path(video_path)
-                        _rel_enc = urllib.parse.quote(_rel, safe='/')
-                        _cloud_url = f"https://huggingface.co/datasets/{HF_DATASET_ID}/resolve/main/{_rel_enc}?token={HF_TOKEN}"
-                        _url_hash = _hlib.md5(video_path.encode()).hexdigest()[:8]
-                        import streamlit.components.v1 as _stcomp_
-                        st.info("🔄 Video đang được tối ưu hóa sang H.264 ở nền. Đang stream từ Cloud... (nếu không xem được, nhấn F5 sau 1-2 phút để reload)")
-                        _stcomp_.html(f"""
-<!DOCTYPE html><html><head>
-<style>
-  body{{margin:0;padding:0;background:transparent;overflow:hidden;}}
-  video{{width:100%;border-radius:8px;display:block;height:300px;background:#000;}}
-</style>
-</head><body>
-<video id="cvp_{_url_hash}" controls preload="metadata" playsinline>
-  <source src="{_cloud_url}" type="video/mp4">
-  Trình duyệt không hỗ trợ video HTML5.
-</video>
-</body></html>
-""", height=315)
-                        return
-                    except Exception as _cloud_err:
-                        pass  # fallthrough to static serving below
+                # Kích hoạt transcode nền nhưng KHÔNG đưa HF token ra frontend.
+                if _try_render_cloud_video_stream(video_path, key_hint="raw_transcoding", optimistic=True, prefer_raw=True):
+                    st.info("🔄 Video đang được tối ưu hóa sang H.264 ở nền. Bản Cloud được tải server-side để xem tạm.")
+                    return
                 
                 # Nếu không có cloud URL, hiện thông báo
                 import hashlib as _hashlib
@@ -3406,7 +3424,7 @@ def _get_secret(key, default=""):
 
 HF_TOKEN = _get_secret("HF_TOKEN") or None
 HF_SPACE_ID = (_get_secret("HF_SPACE_ID") or _get_secret("SPACE_ID")).strip() or None
-HF_DATASET_ID = _get_secret("HF_DATASET_ID") or (f"{HF_SPACE_ID}-data" if HF_SPACE_ID else "quynhphuong1209/Rehab-AI-Monitor-2026-data")
+HF_DATASET_ID = _get_secret("HF_DATASET_ID") or (f"{HF_SPACE_ID}-data" if HF_SPACE_ID else None)
 
 _hf_dataset_access_cache = {"ok": None, "msg": None, "fp": None}
 _hf_last_download_error = None
@@ -3426,6 +3444,10 @@ def _hf_min_size_for_path(path):
 
 def _hf_token_fingerprint():
     return hashlib.md5(f"{HF_TOKEN or ''}:{HF_DATASET_ID or ''}".encode()).hexdigest()[:12]
+
+
+def _hf_auth_headers():
+    return {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
 
 
 def _lam_sach_cache_khi_doi_hf_token():
@@ -3472,12 +3494,12 @@ def _hf_verify_dataset_via_http():
         if resp.status_code in (401, 403):
             return False, (
                 f"Token không có quyền đọc Dataset `{HF_DATASET_ID}`. "
-                "Dùng token Write của quynhphuong1209 hoặc thêm collaborator."
+                "Hãy dùng token có quyền đọc/ghi Dataset hoặc thêm tài khoản chạy app làm collaborator."
             )
         if resp.status_code == 404:
             return False, (
                 f"Không tìm thấy Dataset `{HF_DATASET_ID}`. "
-                "Đặt HF_DATASET_ID=quynhphuong1209/Rehab-AI-Monitor-2026-data."
+                "Hãy cấu hình đúng HF_DATASET_ID trong Space Secrets hoặc biến môi trường."
             )
         if resp.status_code != 200:
             return False, f"HTTP {resp.status_code} khi kiểm tra Dataset."
@@ -3576,14 +3598,12 @@ def kiem_tra_quyen_hf_dataset(force=False):
         if any(x in err for x in ("401", "403", "unauthorized", "forbidden", "permission", "credentials")):
             msg = (
                 f"Token không có quyền đọc Dataset `{HF_DATASET_ID}`. "
-                "Hãy dùng token Write của tài khoản sở hữu Dataset (quynhphuong1209), "
-                "hoặc thêm tài khoản mới làm collaborator."
+                "Hãy dùng token có quyền đọc/ghi Dataset hoặc thêm tài khoản chạy app làm collaborator."
             )
         elif "404" in err or "not found" in err:
             msg = (
                 f"Không tìm thấy Dataset `{HF_DATASET_ID}`. "
-                "Kiểm tra biến HF_DATASET_ID — dữ liệu cũ nằm tại "
-                "`quynhphuong1209/Rehab-AI-Monitor-2026-data`."
+                "Hãy kiểm tra HF_DATASET_ID và quyền truy cập của HF_TOKEN."
             )
         else:
             ok_http, msg_http = _hf_verify_dataset_via_http()
@@ -3615,7 +3635,7 @@ def khoi_tao_dong_bo_hf():
         # Kể cả không có HF_TOKEN, vẫn sao chép file mặc định sang /data nếu cần
         if DATA_DIR == "/data":
             _files_to_persist = [
-                "users.json", "patient_symptoms.json", "doctor_evaluations.json",
+                "patient_symptoms.json", "doctor_evaluations.json",
                 "schedules.json", "video_list.json", "research_data.json",
                 "lich_su_tap_luyen.json", "phan_hoi.json"
             ]
@@ -3641,7 +3661,6 @@ def khoi_tao_dong_bo_hf():
         
         # 2. Tải các file cấu hình về máy
         files_to_download = [
-            "users.json",
             "patient_symptoms.json",
             "doctor_evaluations.json",
             "schedules.json",
@@ -3886,10 +3905,36 @@ def check_and_extract_frames_zip(processed_video_path):
     # Nếu đã có file ZIP cục bộ, tiến hành giải nén ra thư mục frames_dir
     if os.path.exists(zip_path) and os.path.getsize(zip_path) >= 5 * 1024:
         try:
-            import zipfile
             os.makedirs(frames_dir, exist_ok=True)
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                zip_ref.extractall(frames_dir)
+                infos = zip_ref.infolist()
+                if len(infos) > 5000:
+                    raise ValueError("Frames ZIP có quá nhiều file.")
+                total_size = 0
+                frames_root = os.path.abspath(frames_dir)
+                allowed_exts = {".jpg", ".jpeg", ".png", ".webp"}
+                for info in infos:
+                    raw_name = info.filename.replace("\\", "/")
+                    base_name = os.path.basename(raw_name)
+                    if not base_name or base_name != raw_name or ".." in raw_name:
+                        raise ValueError(f"Tên file ZIP không an toàn: {info.filename}")
+                    ext = os.path.splitext(base_name)[1].lower()
+                    if ext not in allowed_exts:
+                        raise ValueError(f"ZIP chứa file không phải ảnh: {base_name}")
+                    total_size += int(info.file_size or 0)
+                    if info.file_size > 8 * 1024 * 1024:
+                        raise ValueError(f"Frame quá lớn trong ZIP: {base_name}")
+                    if total_size > 700 * 1024 * 1024:
+                        raise ValueError("Frames ZIP vượt giới hạn dung lượng giải nén.")
+                    target_path = os.path.abspath(os.path.join(frames_root, base_name))
+                    if os.path.commonpath([frames_root, target_path]) != frames_root:
+                        raise ValueError(f"Đường dẫn ZIP vượt thư mục frame: {base_name}")
+                    with zip_ref.open(info, "r") as src, open(target_path, "wb") as dst:
+                        while True:
+                            chunk = src.read(1024 * 1024)
+                            if not chunk:
+                                break
+                            dst.write(chunk)
             print(f"[Frames Extract] Giải nén thành công {os.path.basename(zip_path)} vào {frames_dir}")
         except Exception as e:
             print(f"[Frames Extract] Lỗi giải nén ZIP: {e}")
@@ -3934,9 +3979,12 @@ def save_data(file_path, data):
     last_err = None
     for attempt in range(6):
         try:
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
-            os.replace(tmp_path, file_path)
+            if _atomic_write_json:
+                _atomic_write_json(file_path, data)
+            else:
+                with open(tmp_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=4)
+                os.replace(tmp_path, file_path)
             last_err = None
             break
         except (PermissionError, OSError) as err:
@@ -3966,7 +4014,7 @@ def save_data(file_path, data):
     return True
 
 HF_JSON_CONFIG_FILES = [
-    "users.json", "patient_symptoms.json", "doctor_evaluations.json",
+    "patient_symptoms.json", "doctor_evaluations.json",
     "schedules.json", "video_list.json", "research_data.json",
     "lich_su_tap_luyen.json", "phan_hoi.json",
 ]
@@ -5101,69 +5149,35 @@ def lay_do_chinh_xac_ai_chuan(selected_v):
         return ai_evals[-1].get('ai_accuracy')
     return selected_v.get('accuracy')
 
+def _bootstrap_password_hash():
+    password = _get_secret("REHAB_BOOTSTRAP_PASSWORD") or os.environ.get("REHAB_BOOTSTRAP_PASSWORD", "")
+    if not password:
+        return None
+    return hash_password(password)
+
+
 @st.cache_data(show_spinner=False)
 def _get_cached_users_dict(mtime):
     users = load_data(USER_DATA_FILE)
-    
-    # DANH SÁCH TÀI KHOẢN CỐ ĐỊNH (NCKH)
-    predefined = {
-        "admin": {
-            "password": hash_password("admin123@"),
-            "full_name": "System Administrator",
-            "role": "Quản trị viên",
-            "email": "admin@rehabai.com"
-        },
-        "Đinh Lê Quỳnh Phương": {
-            "password": hash_password("bong0912@"),
-            "full_name": "Đinh Lê Quỳnh Phương",
-            "role": "Quản trị viên",
-            "email": "2211090031@studenthuph.edu.vn",
-            "mssv": "2211090031"
-        },
-        "doctor1": {
-            "password": hash_password("bs123@"),
-            "full_name": "Doctor 1",
-            "role": "Bác sĩ / KTV PHCN"
-        },
-        "doctor2": {
-            "password": hash_password("bs123@"),
-            "full_name": "Doctor 2",
-            "role": "Bác sĩ / KTV PHCN"
-        },
-        "doctor3": {
-            "password": hash_password("bs123@"),
-            "full_name": "Doctor 3",
-            "role": "Bác sĩ / KTV PHCN"
-        },
-        "doctor4": {
-            "password": hash_password("bs123@"),
-            "full_name": "Doctor 4",
-            "role": "Bác sĩ / KTV PHCN"
-        },
-        "doctor5": {
-            "password": hash_password("bs123@"),
-            "full_name": "Doctor 5",
-            "role": "Bác sĩ / KTV PHCN"
-        },
-        "Kim Mạnh Hưng": {"password": hash_password("ncv123@"), "full_name": "Kim Mạnh Hưng", "role": "Nghiên cứu viên", "email": "2211090016@studenthuph.edu.vn", "mssv": "2211090016"},
-        "Nguyễn Hải An": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Hải An", "role": "Nghiên cứu viên", "email": "2211090001@studenthuph.edu.vn", "mssv": "2211090001"},
-        "Nguyễn Thị Thanh Nga": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Thị Thanh Nga", "role": "Nghiên cứu viên", "email": "2211090027@studenthuph.edu.vn", "mssv": "2211090027"},
-        "Phan Vân Anh": {"password": hash_password("ncv123@"), "full_name": "Phan Vân Anh", "role": "Nghiên cứu viên", "email": "2211090004@studenthuph.edu.vn", "mssv": "2211090004"},
-        "Nguyễn Thị Thơm": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Thị Thơm", "role": "Nghiên cứu viên", "email": "2216030122@studenthuph.edu.vn", "mssv": "2216030122"},
-        "Nguyễn Thị Thu Hương": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Thị Thu Hương", "role": "Nghiên cứu viên", "email": "2317010071@studenthuph.edu.vn", "mssv": "2317010071"},
-        "2211090016": {"password": hash_password("ncv123@"), "full_name": "Kim Mạnh Hưng", "role": "Nghiên cứu viên", "email": "2211090016@studenthuph.edu.vn", "mssv": "2211090016"},
-        "2211090001": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Hải An", "role": "Nghiên cứu viên", "email": "2211090001@studenthuph.edu.vn", "mssv": "2211090001"},
-        "2211090027": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Thị Thanh Nga", "role": "Nghiên cứu viên", "email": "2211090027@studenthuph.edu.vn", "mssv": "2211090027"},
-        "2211090004": {"password": hash_password("ncv123@"), "full_name": "Phan Vân Anh", "role": "Nghiên cứu viên", "email": "2211090004@studenthuph.edu.vn", "mssv": "2211090004"},
-        "2216030122": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Thị Thơm", "role": "Nghiên cứu viên", "email": "2216030122@studenthuph.edu.vn", "mssv": "2216030122"},
-        "2317010071": {"password": hash_password("ncv123@"), "full_name": "Nguyễn Thị Thu Hương", "role": "Nghiên cứu viên", "email": "2317010071@studenthuph.edu.vn", "mssv": "2317010071"},
-        "2211090031": {"password": hash_password("ncv123@"), "full_name": "Đinh Lê Quỳnh Phương", "role": "Nghiên cứu viên", "email": "2211090031@studenthuph.edu.vn", "mssv": "2211090031"},
-        "Đinh Lê Quỳnh Phương (NCV)": {"password": hash_password("ncv123@"), "full_name": "Đinh Lê Quỳnh Phương", "role": "Nghiên cứu viên", "email": "2211090031@studenthuph.edu.vn", "mssv": "2211090031"}
-    }
-    
-    # Cập nhật hoặc thêm mới các tài khoản cố định (Luôn đảm bảo vai trò và pass đúng)
+
+    seed_hash = _bootstrap_password_hash()
+    predefined = {}
+    if seed_hash and not users:
+        predefined = {
+            "admin": {
+                "password": seed_hash,
+                "full_name": "System Administrator",
+                "role": "Quản trị viên",
+                "email": "admin@rehabai.local",
+                "must_change_password": True,
+            },
+        }
+
     for u, data in predefined.items():
-        users[u] = data
+        if u not in users:
+            data.setdefault("created_at", get_vn_now().isoformat())
+            data.setdefault("hash_version", "pbkdf2_sha256")
+            users[u] = data
             
     # Đảm bảo các user cũ có role mặc định là Bệnh nhân
     for username in users:
@@ -5186,10 +5200,46 @@ def save_users(users):
         pass
 
 def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    salt = secrets.token_hex(16)
+    rounds = int(os.environ.get("REHAB_PBKDF2_ROUNDS", "260000"))
+    digest = hashlib.pbkdf2_hmac("sha256", str(password).encode("utf-8"), salt.encode("utf-8"), rounds)
+    return f"pbkdf2_sha256${rounds}${salt}${digest.hex()}"
+
+def _legacy_sha256_password(password):
+    return hashlib.sha256(str(password).encode("utf-8")).hexdigest()
 
 def verify_password(password, hashed):
-    return hash_password(password) == hashed
+    hashed = str(hashed or "")
+    if hashed.startswith("pbkdf2_sha256$"):
+        try:
+            _, rounds, salt, digest_hex = hashed.split("$", 3)
+            calc = hashlib.pbkdf2_hmac(
+                "sha256",
+                str(password).encode("utf-8"),
+                salt.encode("utf-8"),
+                int(rounds),
+            ).hex()
+            return hmac.compare_digest(calc, digest_hex)
+        except Exception:
+            return False
+    if len(hashed) == 64 and all(c in "0123456789abcdefABCDEF" for c in hashed):
+        return hmac.compare_digest(_legacy_sha256_password(password), hashed)
+    return False
+
+def _password_needs_rehash(user_record):
+    return not str((user_record or {}).get("password", "")).startswith("pbkdf2_sha256$")
+
+def _upgrade_password_hash_if_needed(users, username_key, password):
+    try:
+        record = users.get(username_key) or {}
+        if _password_needs_rehash(record):
+            record["password"] = hash_password(password)
+            record["hash_version"] = "pbkdf2_sha256"
+            record["updated_at"] = get_vn_now().isoformat()
+            users[username_key] = record
+            save_users(users)
+    except Exception as exc:
+        print(f"[Auth] Could not upgrade password hash for {username_key}: {exc}")
 
 def _normalize_auth_text(value):
     """Chuẩn hóa chuỗi đăng nhập để tránh lệch dấu Unicode/khoảng trắng sau F5 hoặc copy-paste."""
@@ -5224,15 +5274,6 @@ def _verify_auth_password(username_key, password, user_record):
     stored_hash = (user_record or {}).get("password", "")
     return verify_password(password, stored_hash)
 
-
-def _query_param_text(name):
-    try:
-        value = st.query_params.get(name, "")
-    except Exception:
-        value = ""
-    if isinstance(value, (list, tuple)):
-        value = value[0] if value else ""
-    return _normalize_auth_text(value)
 
 def don_dep_file_tam():
     """Dọn dẹp file tạm cũ trong /tmp để ngăn OOM khi chạy nhiều phân tích liên tiếp"""
@@ -5378,31 +5419,11 @@ def thuc_hien_khoi_tao_he_thong_mot_lan():
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-# Thử khôi phục phiên từ query parameters khi F5 refresh trang / mở link bookmark
 if not st.session_state.logged_in:
-    if "logged_in_user" in st.query_params and "logged_in_role" in st.query_params:
-        try:
-            logged_user = _query_param_text("logged_in_user")
-            logged_role = _query_param_text("logged_in_role")
-            users = load_users()
-            user_key = _auth_lookup_key(users, logged_user)
-            stored_role = users[user_key].get('role', 'Bệnh nhân') if user_key else None
-            if user_key and _roles_match(stored_role, logged_role):
-                st.session_state.logged_in = True
-                st.session_state.user_info = {
-                    "username": user_key,
-                    "full_name": users[user_key].get('full_name', user_key),
-                    "email": users[user_key].get('email'),
-                    "role": stored_role,
-                }
-                # Luôn về TRANG CHỦ khi mở link — tránh tab phân tích trống, thiếu danh sách BN
-                st.session_state.active_tab = "🏠 TRANG CHỦ"
-                st.session_state.pop("active_tab_widget", None)
-                st.session_state._need_home_sync = True
-                for _fk in ("filter_video_patient", "filter_video_status", "vid_list_page", "_vid_filter_heal_rerun"):
-                    st.session_state.pop(_fk, None)
-        except Exception:
-            pass
+    try:
+        st.query_params.clear()
+    except Exception:
+        pass
 
 if 'user_info' not in st.session_state:
     st.session_state.user_info = None
@@ -5453,8 +5474,6 @@ def _hoan_tat_dang_nhap(username, user_record):
         "email": user_record.get('email'),
         "role": role,
     }
-    st.query_params["logged_in_user"] = username
-    st.query_params["logged_in_role"] = role
     st.session_state.show_login_dialog = False
     st.session_state.active_tab = "🏠 TRANG CHỦ"
     st.session_state.pop("active_tab_widget", None)
@@ -7323,10 +7342,17 @@ if st.session_state.get('theme') == 'light' and _current_theme != _last_injected
     """, unsafe_allow_html=True)
     st.session_state['_last_injected_theme'] = 'light'
 
-if inject_pro_ui_theme:
-    inject_pro_ui_theme()
+if inject_design_system:
+    inject_design_system(is_light=(st.session_state.get('theme') == 'light'))
+if inject_auth_nav_css:
+    inject_auth_nav_css()
+if inject_streamlit_skin:
+    inject_streamlit_skin(is_light=(st.session_state.get('theme') == 'light'))
 
-MAX_FILE_SIZE_MB = 10000
+MAX_UPLOAD_SIZE_MB = int(os.environ.get("REHAB_MAX_UPLOAD_SIZE_MB", "300"))
+MAX_FILE_SIZE_MB = MAX_UPLOAD_SIZE_MB
+ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv"}
+ALLOWED_VIDEO_MIME_PREFIXES = ("video/",)
 
 # ============================================
 # CẤU HÌNH XỬ LÝ - TỐI ƯU ĐỘ CHÍNH XÁC CAO
@@ -7337,6 +7363,24 @@ OUTPUT_QUALITY = 50
 MAX_FRAMES = 100000  # Hỗ trợ tối đa 100000 frame (~55 phút @ 30fps)
 THUMBNAIL_QUALITY = 80
 THUMBNAIL_WIDTH = 320
+
+def validate_uploaded_video(file_upload):
+    if file_upload is None:
+        return False, "Chưa chọn file video."
+    name = getattr(file_upload, "name", "") or ""
+    ext = os.path.splitext(name)[1].lower()
+    if ext not in ALLOWED_VIDEO_EXTENSIONS:
+        return False, "Định dạng video không được hỗ trợ. Chỉ nhận MP4, MOV, AVI, MKV."
+    size = int(getattr(file_upload, "size", 0) or 0)
+    max_bytes = MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    if size <= 0:
+        return False, "File video trống hoặc không đọc được dung lượng."
+    if size > max_bytes:
+        return False, f"File vượt quá {MAX_UPLOAD_SIZE_MB}MB. Vui lòng nén hoặc cắt ngắn video trước khi tải lên."
+    mime = (getattr(file_upload, "type", "") or "").lower()
+    if mime and not mime.startswith(ALLOWED_VIDEO_MIME_PREFIXES):
+        return False, "MIME type của file không phải video."
+    return True, ""
 
 # ============================================
 # HÀM CHUYỂN ĐỔI MOV SANG MP4
@@ -11800,13 +11844,13 @@ def download_file_with_progress(file_path, write_progress_fn, start_t, username,
         import urllib.parse
         rel_path = get_clean_rel_path(file_path)
         rel_path_encoded = urllib.parse.quote(rel_path, safe='/')
-        url = f"https://huggingface.co/datasets/{HF_DATASET_ID}/resolve/main/{rel_path_encoded}?token={HF_TOKEN}"
+        url = f"https://huggingface.co/datasets/{HF_DATASET_ID}/resolve/main/{rel_path_encoded}"
 
         # Đảm bảo thư mục cha tồn tại (fallback DATA_DIR nếu dirname trả về '')
         os.makedirs(os.path.dirname(file_path) or DATA_DIR, exist_ok=True)
         
         # Gọi requests stream
-        response = requests.get(url, stream=True, timeout=30)
+        response = requests.get(url, headers=_hf_auth_headers(), stream=True, timeout=30)
         if response.status_code != 200:
             print(f"[Download Progress] Lỗi HTTP {response.status_code} khi tải {rel_path}")
             return False
@@ -12367,7 +12411,7 @@ def bat_dau_phan_tich_background(
                             '-maxrate', '800k',
                             '-bufsize', '1600k',
                             '-vf', 'scale=-2:720',
-                            '-threads', '0',
+                            '-threads', '2',
                             '-map', '0:v:0', '-map', '0:a?', '-c:a', 'aac',
                             video_path_mp4
                         ]
@@ -17883,18 +17927,24 @@ def hien_thi_dang_nhap_dang_ky():
                   on_change=lambda: st.session_state.update({"theme": "dark" if st.session_state.get("theme_toggle_login", True) else "light"}))
         st.markdown("---")
 
-    # Định nghĩa màu sắc tiêu đề theo theme để tránh lỗi nền trắng chữ trắng
     is_light = st.session_state.get('theme') == 'light'
-    header_color = "#ffffff" if not is_light else "#1a1a2e"
-    sub_color = "#ffffff" if not is_light else "#333333"
-    _hien_thi_header_chinh(header_color, sub_color, is_light=is_light, extra_style="margin-bottom: 1.5rem;")
-    
-    # Sử dụng cột để tạo khung hình vuông ở giữa màn hình
-    _, col_mid, _ = st.columns([1, 1.8, 1])
-    
+    if topbar_html:
+        st.markdown(topbar_html(None, is_light=is_light), unsafe_allow_html=True)
+    st.markdown('<main class="auth-shell">', unsafe_allow_html=True)
+    hero_col, col_mid = st.columns([1.05, 0.95], gap="large")
+    with hero_col:
+        if auth_screen_html:
+            st.markdown(auth_screen_html(), unsafe_allow_html=True)
     with col_mid:
+        st.markdown(
+            '<div class="auth-card-head">'
+            '<h2>Truy cập hệ thống</h2>'
+            '<p class="sub">Chọn đúng vai trò để mở không gian làm việc tương ứng.</p>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
         # Dùng container với border=True để tạo ô vuông bao quanh chuẩn web
-        with st.container(border=True):
+        with st.container(border=True, key="auth_card_streamlit"):
             # CHẾ ĐỘ QUÊN MẬT KHẨU
             if st.session_state.get('forgot_password_mode', False):
                 st.markdown("### 🔄 KHÔI PHỤC MẬT KHẨU")
@@ -17921,6 +17971,7 @@ def hien_thi_dang_nhap_dang_ky():
                     if st.button("Hủy bỏ", width="stretch"):
                         st.session_state.forgot_password_mode = False
                         st.rerun()
+                st.markdown('</main>', unsafe_allow_html=True)
                 return
 
             # GIAO DIỆN CHÍNH (TABS)
@@ -17972,6 +18023,7 @@ def hien_thi_dang_nhap_dang_ky():
                             u_key = _auth_lookup_key(users, u)
                             if u_key and _verify_auth_password(u_key, p, users[u_key]):
                                 if _roles_match(users[u_key].get('role', 'Bệnh nhân'), login_role):
+                                    _upgrade_password_hash_if_needed(users, u_key, p)
                                     _hoan_tat_dang_nhap(u_key, users[u_key])
                                     _rerun_toan_bo_app()
                                 else:
@@ -18039,6 +18091,7 @@ def hien_thi_dang_nhap_dang_ky():
                             st.login("google")
                         except Exception as e:
                             st.error(f"⚠️ Lỗi Google: {e}")
+    st.markdown('</main>', unsafe_allow_html=True)
 
 # ============================================
 # HÀM HIỂN TRỊ TAB QUẢN TRỊ VIÊN
@@ -19010,10 +19063,9 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                                     st.markdown("**Trạng thái Cloud:**")
                                     if HF_TOKEN and HF_DATASET_ID and active_display_path:
                                         rel_path = get_clean_rel_path(active_display_path)
-                                        import urllib.parse
-                                        rel_path_encoded = urllib.parse.quote(rel_path, safe='/')
-                                        cloud_url = f"https://huggingface.co/datasets/{HF_DATASET_ID}/resolve/main/{rel_path_encoded}?token={HF_TOKEN}"
-                                        st.write(f"- URL: `{cloud_url}`")
+                                        st.write(f"- Dataset: `{HF_DATASET_ID}`")
+                                        st.write(f"- File: `{rel_path}`")
+                                        st.write("- Token: `đã ẩn, chỉ dùng server-side`")
                                     else:
                                         st.write("- Chưa cấu hình Cloud Dataset.")
                         
@@ -19383,6 +19435,10 @@ def _render_main_tab_content(tab_titles, user_role):
             
                     # XỬ LÝ VIDEO
                     if file_upload is not None and not st.session_state.processing:
+                        is_valid_upload, upload_error = validate_uploaded_video(file_upload)
+                        if not is_valid_upload:
+                            st.error(f"🚨 {upload_error}")
+                            return
                         # NẾU FILE MỚI KHÁC FILE CŨ -> RESET DATA ĐỂ PHÂN TÍCH MỚI
                         if st.session_state.get('uploaded_file_name') != file_upload.name:
                             # === GIẢI PHÓNG BỘ NHỚ TOÀN DIỆN TRƯỚC KHI PHÂN TÍCH MỚI (CHỐNG OOM) ===
@@ -19558,7 +19614,7 @@ def _render_main_tab_content(tab_titles, user_role):
                                             '-maxrate', '800k',
                                             '-bufsize', '1600k',
                                             '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
-                                            '-threads', '0',
+                                            '-threads', '2',
                                         ]
                                         if a_codec:
                                             cmd.extend(['-c:a', 'aac'])
@@ -19881,7 +19937,7 @@ def main():
     # Nạp nhẹ kết quả phân tích nền đã hoàn tất (không rerun) -> hiện ngay khi tải trang
     poll_background_analysis_complete()
 
-    # Đồng bộ nền khi vừa đăng nhập qua link ?logged_in_user=... — hiện UI ngay, không chờ Cloud
+    # Đồng bộ nền ngay sau đăng nhập hợp lệ — hiện UI ngay, không chờ Cloud
     if st.session_state.pop("_need_home_sync", False):
         _dong_bo_video_list_nen(force=True)
 
