@@ -1,9 +1,9 @@
 @echo off
 cd /d "%~dp0.."
-echo Đang chuẩn bị đẩy code lên GitHub...
+echo Dang chuan bi day code len GitHub UI-new...
 git add .
-git commit -m "Bo sung Slide 5 ve Phan he Lam sang ICD-10 va chi tiet hoa kien truc he thong"
-git push
+git commit -m "Update Rehab AI Monitor UI"
+git push gh-new main
 echo.
-echo Hoàn tất! Nhấn phím bất kỳ để thoát.
+echo Hoan tat! Nhan phim bat ky de thoat.
 pause

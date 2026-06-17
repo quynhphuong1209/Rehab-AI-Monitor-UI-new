@@ -40,7 +40,11 @@ jobs:
           git commit -m "deploy clean version to huggingface spaces"
           
           # Day de len nhanh main cua Hugging Face — retry khi HF tra 429 (rate limit)
-          HF_REMOTE="https://quynhphuong1209:$HF_TOKEN@huggingface.co/spaces/quynhphuong1209/Rehab-AI-Monitor-2026"
+          HF_REMOTE="https://quynhphuong1209:$HF_TOKEN@huggingface.co/spaces/quynhphuong1209/Rehab-AI-Monitor-UI-new"
+          if echo "$HF_REMOTE" | grep -q "huggingface.co/spaces/quynhphuong1209/Rehab-AI-Monitor-2026"; then
+            echo "Blocked deploy target: Rehab-AI-Monitor-2026"
+            exit 42
+          fi
           for attempt in 1 2 3 4 5; do
             if git push --force "$HF_REMOTE" temp-hf-branch:main; then
               echo "Push thanh cong (lan $attempt)"

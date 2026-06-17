@@ -14,7 +14,7 @@ pinned: false
 
 **Hệ thống giám sát tập luyện Phục hồi chức năng từ xa dựa trên Trí tuệ nhân tạo (AI) và Thị giác máy tính - Giải pháp Clinical-Grade chuyên nghiệp.**
 
-[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue?style=for-the-badge)](https://quynhphuong1209-rehab-ai-monitor-2026.hf.space/)
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue?style=for-the-badge)](https://huggingface.co/spaces/quynhphuong1209/Rehab-AI-Monitor-UI-new)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 📚 Giới thiệu đề tài & Đặt vấn đề (Introduction & Rationale)
@@ -59,7 +59,7 @@ Hệ thống tự động thay đổi cấu trúc dựa trên vai trò người 
 # BÁO CÁO TOÀN DIỆN KẾT QUẢ NGHIÊN CỨU LÂM SÀNG & NCKH (NCV)
 ## HỆ THỐNG GIÁM SÁT PHỤC HỒI CHỨC NĂNG BẰNG AI (REHAB-AI-MONITOR)
 
-Báo cáo này được cập nhật đầy đủ và chính xác theo giao diện nghiên cứu của website [Hugging Face Space](https://quynhphuong1209-rehab-ai-monitor-2026.hf.space/?logged_in_user=2211090031&logged_in_role=Nghi%C3%AAn+c%E1%BB%A9u+vi%C3%AAn) và cổng Bác sĩ / KTV PHCN. Các chỉ số đã được đối soát trùng khớp hoàn toàn với cơ sở dữ liệu hệ thống, bao gồm thông tin bệnh sử, triệu chứng lâm sàng và trạng thái duyệt hồ sơ của bác sĩ.
+Báo cáo này được cập nhật đầy đủ và chính xác theo giao diện nghiên cứu của website [Hugging Face Space](https://huggingface.co/spaces/quynhphuong1209/Rehab-AI-Monitor-UI-new) và cổng Bác sĩ / KTV PHCN. Các chỉ số đã được đối soát trùng khớp hoàn toàn với cơ sở dữ liệu hệ thống, bao gồm thông tin bệnh sử, triệu chứng lâm sàng và trạng thái duyệt hồ sơ của bác sĩ.
 
 ---
 
