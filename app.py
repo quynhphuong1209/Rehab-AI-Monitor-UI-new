@@ -17489,8 +17489,8 @@ Dòng **Xác suất 3 lớp** (nếu có): tổng ~100%, cho biết mô hình ph
             background-color: {card_bg} !important;
             border: 1.5px solid {card_border} !important;
             border-radius: 8px;
-            padding: 8px;
-            margin-bottom: 12px;
+            padding: 10px;
+            margin-bottom: 18px;
             transition: all 0.2s ease-in-out;
             box-shadow: {card_shadow} !important;
             position: relative;
@@ -17532,6 +17532,7 @@ Dòng **Xác suất 3 lớp** (nếu có): tổng ~100%, cho biết mô hình ph
             text-align: center;
             background-color: {img_bg} !important;
             border-radius: 4px;
+            padding: 4px;
         }}
         .frame-card-img {{
             max-width: 100%;
@@ -17784,7 +17785,7 @@ Dòng **Xác suất 3 lớp** (nếu có): tổng ~100%, cho biết mô hình ph
             cap_recover.release()
 
         # Gộp toàn bộ trang thành 1 st.markdown() → 1 ForwardMsg duy nhất, tránh "Cached ForwardMsg MISS"
-        grid_parts = [f'<div style="display:grid;grid-template-columns:repeat({grid_cols},1fr);gap:12px;">']
+        grid_parts = [f'<div style="display:grid;grid-template-columns:repeat({grid_cols},1fr);gap:22px 18px;">']
         any_missing_img = False
 
         for i, orig_idx in enumerate(page_inds):
@@ -19248,7 +19249,8 @@ def _render_main_tab_content(tab_titles, user_role):
         if selected_tab == "🏠 TRANG CHỦ":
             if True:
                 if user_role == "Quản trị viên":
-                    hien_thi_home_quan_tri_vien()
+                    if not st.session_state.pop("_admin_package_rendered_home", False):
+                        hien_thi_home_quan_tri_vien()
                 else:
                     # Nếu là Bác sĩ hoặc NCV, hiển thị danh sách triệu chứng
                     if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:

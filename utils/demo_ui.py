@@ -512,6 +512,30 @@ def auth_screen_html() -> str:
     <div class="hstat"><div class="n">±15°</div><div class="l">sai số mục tiêu giai đoạn 3</div></div>
     <div class="hstat"><div class="n">5</div><div class="l">vai trò người dùng</div></div>
   </div>
+  <div class="pose-card" aria-hidden="true">
+    <svg class="pose-svg" viewBox="0 0 240 260">
+      <line x1="120" y1="92" x2="210" y2="92" stroke="var(--ink-3)" stroke-width="2" stroke-dasharray="5 6" opacity=".5"/>
+      <path class="pose-arc" d="M150 92 A30 30 0 0 0 132 64"/>
+      <text x="158" y="80" fill="var(--ai)" font-family="var(--mono)" font-size="13" font-weight="600">128°</text>
+      <circle cx="120" cy="40" r="16" class="pose-joint"/>
+      <line x1="120" y1="56" x2="120" y2="150" class="pose-bone"/>
+      <line x1="120" y1="92" x2="86" y2="138" class="pose-bone dim"/>
+      <line x1="86" y1="138" x2="74" y2="178" class="pose-bone dim"/>
+      <circle cx="86" cy="138" r="6" class="pose-joint dim"/>
+      <g id="poseArm">
+        <line x1="120" y1="92" x2="170" y2="118" class="pose-bone"/>
+        <line x1="170" y1="118" x2="206" y2="132" class="pose-bone"/>
+        <circle cx="170" cy="118" r="6" class="pose-joint"/>
+        <circle cx="206" cy="132" r="5.5" class="pose-joint"/>
+      </g>
+      <circle cx="120" cy="92" r="7" class="pose-joint"/>
+      <line x1="120" y1="150" x2="100" y2="214" class="pose-bone"/>
+      <line x1="120" y1="150" x2="140" y2="214" class="pose-bone"/>
+      <circle cx="120" cy="150" r="6" class="pose-joint"/>
+      <circle cx="100" cy="214" r="5.5" class="pose-joint"/>
+      <circle cx="140" cy="214" r="5.5" class="pose-joint"/>
+    </svg>
+  </div>
 </div>
 """
 
@@ -651,13 +675,14 @@ _AUTH_NAV_CSS = """
   min-height:calc(100vh - 86px);
   display:flex;
   align-items:center;
-  padding:clamp(10px,2vh,22px) 0 clamp(18px,4vh,44px);
+  padding:clamp(14px,2vh,24px) 0 clamp(18px,4vh,44px);
+  color:var(--ink)!important;
 }
 .st-key-auth_theme_icon_button{
   position:fixed;
-  top:12px;
+  top:13px;
   right:28px;
-  z-index:100;
+  z-index:1000;
 }
 .st-key-auth_theme_icon_button .stButton>button,
 .st-key-auth_theme_icon_button button{
@@ -672,7 +697,13 @@ _AUTH_NAV_CSS = """
   border:1px solid var(--line)!important;
   color:var(--ink-2)!important;
   box-shadow:none!important;
-  font-size:18px!important;
+  font-size:20px!important;
+  line-height:1!important;
+}
+.st-key-auth_theme_icon_button .stButton>button *,
+.st-key-auth_theme_icon_button button *{
+  color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
 }
 .st-key-auth_theme_icon_button .stButton>button:hover,
 .st-key-auth_theme_icon_button button:hover{
@@ -682,7 +713,7 @@ _AUTH_NAV_CSS = """
 }
 .auth-shell [data-testid="stHorizontalBlock"]{
   align-items:center;
-  gap:clamp(34px,5vw,96px)!important;
+  gap:clamp(26px,4vw,72px)!important;
   width:100%;
 }
 .auth-wrap{
@@ -695,6 +726,7 @@ _AUTH_NAV_CSS = """
   padding:clamp(12px,2.4vw,30px) clamp(10px,2vw,18px);
   display:flex;flex-direction:column;justify-content:center;gap:24px;
   min-height:500px;
+  color:var(--ink)!important;
 }
 .auth-hero .eyebrow{
   display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
@@ -704,16 +736,28 @@ _AUTH_NAV_CSS = """
 .auth-hero h1{
   font-family:var(--display);font-weight:600;font-size:clamp(38px,4.8vw,56px);
   line-height:1.05;margin:0;letter-spacing:-.5px;
+  color:var(--ink)!important;
 }
 .auth-hero h1 em{font-style:italic;color:var(--teal)}
-.auth-hero p.lede{font-size:16px;color:var(--ink-2);max-width:46ch;margin:0}
+.auth-hero p.lede{font-size:16px;color:var(--ink-2)!important;max-width:46ch;margin:0}
 .hero-stats{display:flex;gap:14px;flex-wrap:wrap}
 .hstat{
   background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
   padding:14px 16px;min-width:130px;box-shadow:var(--shadow-sm);
 }
 .hstat .n{font-family:var(--mono);font-size:23px;font-weight:600;color:var(--teal-strong)}
-.hstat .l{font-size:12px;color:var(--ink-3);margin-top:3px}
+.hstat .l{font-size:12px;color:var(--ink-3)!important;margin-top:3px}
+.pose-card{
+  position:absolute;right:-30px;bottom:-20px;width:min(46%,360px);opacity:.9;pointer-events:none;
+}
+.pose-svg{width:100%;height:auto;overflow:visible}
+.pose-bone{stroke:var(--teal);stroke-width:5;stroke-linecap:round;fill:none}
+.pose-bone.dim{stroke:var(--ink-3);opacity:.35}
+.pose-joint{fill:var(--surface);stroke:var(--teal);stroke-width:3.4}
+.pose-joint.dim{stroke:var(--ink-3);opacity:.45}
+.pose-arc{stroke:var(--ai);stroke-width:4;fill:none;stroke-linecap:round;opacity:.85}
+#poseArm{transform-box:fill-box;transform-origin:right top;animation:armswing 4.4s ease-in-out infinite}
+@keyframes armswing{0%,100%{transform:rotate(8deg)}50%{transform:rotate(-86deg)}}
 
 .auth-card-streamlit,
 .st-key-auth_card_streamlit{
@@ -728,17 +772,25 @@ _AUTH_NAV_CSS = """
   border-radius:var(--r-lg)!important;
   box-shadow:var(--shadow-lg)!important;
   padding:34px 34px 30px!important;
+  color:var(--ink)!important;
+}
+.st-key-auth_card_streamlit [data-testid="stVerticalBlockBorderWrapper"],
+.st-key-auth_card_streamlit [data-testid="stVerticalBlockBorderWrapper"] > div{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  padding:0!important;
 }
 .auth-card-title h2{
   font-family:var(--display);
   font-weight:600;
   font-size:25px;
   line-height:1.1;
-  color:var(--ink);
+  color:var(--ink)!important;
   margin:0 0 4px;
 }
 .auth-card-title p{
-  color:var(--ink-3);
+  color:var(--ink-3)!important;
   font-size:13.5px;
   margin:0 0 22px;
 }
@@ -753,6 +805,11 @@ _AUTH_NAV_CSS = """
   flex:1;border-radius:9px!important;background:transparent!important;color:var(--ink-3)!important;
   padding:9px!important;min-height:38px!important;justify-content:center!important;
 }
+.st-key-auth_card_streamlit .stTabs [data-baseweb="tab"] *,
+.st-key-auth_card_streamlit .stTabs [data-baseweb="tab"] p{
+  color:inherit!important;
+  -webkit-text-fill-color:inherit!important;
+}
 .st-key-auth_card_streamlit .stTabs [data-baseweb="tab"][aria-selected="true"]{
   background:var(--surface)!important;color:var(--teal-strong)!important;box-shadow:var(--shadow-sm)!important;
 }
@@ -762,17 +819,40 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .stTextInput{margin-bottom:.25rem}
 .st-key-auth_card_streamlit .stButton>button{width:100%}
 .st-key-auth_card_streamlit .stSelectbox label,
-.st-key-auth_card_streamlit .stTextInput label{
+.st-key-auth_card_streamlit .stTextInput label,
+.st-key-auth_card_streamlit [data-testid="stWidgetLabel"],
+.st-key-auth_card_streamlit [data-testid="stWidgetLabel"] *{
   color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
 }
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"],
 .st-key-auth_card_streamlit .stSelectbox div[data-baseweb="select"]>div{
   min-height:46px!important;
+  background:var(--surface-2)!important;
+  border:1px solid var(--line)!important;
+  border-radius:11px!important;
+}
+.st-key-auth_card_streamlit .stTextInput input,
+.st-key-auth_card_streamlit .stTextArea textarea,
+.st-key-auth_card_streamlit .stSelectbox div[data-baseweb="select"] *,
+.st-key-auth_card_streamlit .stRadio label,
+.st-key-auth_card_streamlit .stRadio label *{
+  color:var(--ink)!important;
+  -webkit-text-fill-color:var(--ink)!important;
+}
+.st-key-auth_card_streamlit .stTextInput input::placeholder{
+  color:var(--ink-3)!important;
+  -webkit-text-fill-color:var(--ink-3)!important;
 }
 .st-key-auth_card_streamlit .stButton>button,
 .st-key-auth_card_streamlit .stFormSubmitButton>button{
   min-height:48px!important;
   border-radius:11px!important;
+}
+.st-key-auth_card_streamlit .stButton>button[kind="primary"],
+.st-key-auth_card_streamlit button[data-testid="stBaseButton-primary"]{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
 }
 
 /* ============================================================ TOP BAR */
@@ -863,11 +943,16 @@ _AUTH_NAV_CSS = """
   border:1px solid var(--line)!important;
   border-radius:11px!important;
   padding:9px 10px!important;
+  color:var(--ink-2)!important;
 }
 .st-key-auth_card_streamlit .stRadio label:has(input:checked){
   border-color:var(--teal)!important;
   background:var(--teal-12)!important;
   color:var(--teal-strong)!important;
+}
+.st-key-auth_card_streamlit .stRadio label:has(input:checked) *{
+  color:var(--teal-strong)!important;
+  -webkit-text-fill-color:var(--teal-strong)!important;
 }
 
 @media (max-width:980px){
@@ -876,6 +961,7 @@ _AUTH_NAV_CSS = """
   .auth-shell [data-testid="stHorizontalBlock"]{gap:18px!important}
   .auth-hero{min-height:auto;padding:8px 0 4px;gap:12px}
   .auth-hero h1{font-size:clamp(30px,9vw,42px)}
+  .pose-card{position:relative;right:auto;bottom:auto;width:200px;align-self:center;margin-top:6px}
   .auth-panel{padding-top:0}
   .st-key-auth_card_streamlit{padding:24px 18px!important}
 }
