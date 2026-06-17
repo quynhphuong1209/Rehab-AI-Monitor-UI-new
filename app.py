@@ -109,6 +109,20 @@ except Exception:
 
 import streamlit as st
 
+from frontend.auth.screens import (
+    close_auth_shell,
+    open_auth_shell,
+    render_auth_card_title,
+    render_auth_hero,
+    render_auth_screen,
+    render_auth_theme_button,
+    render_auth_topbar,
+)
+from frontend.roles import admin as admin_frontend
+from frontend.roles import doctor_ktv as doctor_ktv_frontend
+from frontend.roles import patient as patient_frontend
+from frontend.roles import researcher as researcher_frontend
+
 try:
     from demo_ui import (
         auth_screen_html,
@@ -5434,7 +5448,7 @@ if 'show_login_dialog' not in st.session_state:
 if 'processed_video_path' not in st.session_state:
     st.session_state.processed_video_path = None
 if 'theme' not in st.session_state:
-    st.session_state.theme = 'dark'
+    st.session_state.theme = 'light'
 
 _lam_sach_cache_khi_doi_hf_token()
 
@@ -17918,23 +17932,13 @@ def update_theme_callback():
 # GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ
 # ============================================
 def hien_thi_dang_nhap_dang_ky():
-    with st.sidebar:
-        st.markdown("### 🛠️ CẤU HÌNH GIAO DIỆN")
-        current_theme = st.session_state.get('theme', 'dark')
-        t_label = "🌙 Chế độ Tối" if current_theme == 'dark' else "☀️ Chế độ Sáng"
-        st.toggle(t_label, value=(current_theme == 'dark'), 
-                  key="theme_toggle_login", 
-                  on_change=lambda: st.session_state.update({"theme": "dark" if st.session_state.get("theme_toggle_login", True) else "light"}))
-        st.markdown("---")
-
     is_light = st.session_state.get('theme') == 'light'
-    if topbar_html:
-        st.markdown(topbar_html(None, is_light=is_light), unsafe_allow_html=True)
-    st.markdown('<main class="auth-shell">', unsafe_allow_html=True)
+    render_auth_topbar(topbar_html, is_light=is_light)
+    render_auth_theme_button(is_light=is_light)
+    open_auth_shell()
     hero_col, col_mid = st.columns([1.05, 0.95], gap="large")
     with hero_col:
-        if auth_screen_html:
-            st.markdown(auth_screen_html(), unsafe_allow_html=True)
+        render_auth_hero(auth_screen_html)
     with col_mid:
         st.markdown(
             '<div class="auth-card-head">'
@@ -17945,6 +17949,7 @@ def hien_thi_dang_nhap_dang_ky():
         )
         # Dùng container với border=True để tạo ô vuông bao quanh chuẩn web
         with st.container(border=True, key="auth_card_streamlit"):
+            render_auth_card_title()
             # CHẾ ĐỘ QUÊN MẬT KHẨU
             if st.session_state.get('forgot_password_mode', False):
                 st.markdown("### 🔄 KHÔI PHỤC MẬT KHẨU")
@@ -17971,7 +17976,7 @@ def hien_thi_dang_nhap_dang_ky():
                     if st.button("Hủy bỏ", width="stretch"):
                         st.session_state.forgot_password_mode = False
                         st.rerun()
-                st.markdown('</main>', unsafe_allow_html=True)
+                close_auth_shell()
                 return
 
             # GIAO DIỆN CHÍNH (TABS) - giống auth card HTML demo
@@ -18089,7 +18094,7 @@ def hien_thi_dang_nhap_dang_ky():
                             st.login("google")
                         except Exception as e:
                             st.error(f"⚠️ Lỗi Google: {e}")
-    st.markdown('</main>', unsafe_allow_html=True)
+    close_auth_shell()
 
 # ============================================
 # HÀM HIỂN TRỊ TAB QUẢN TRỊ VIÊN
@@ -20056,7 +20061,7 @@ def main():
     if not st.session_state.get("logged_in") or not st.session_state.get("user_info"):
         if st.session_state.get("logged_in") and not st.session_state.get("user_info"):
             st.session_state.logged_in = False
-        hien_thi_dang_nhap_dang_ky()
+        render_auth_screen(hien_thi_dang_nhap_dang_ky)
         return
 
     # Nạp nhẹ kết quả phân tích nền đã hoàn tất (không rerun) -> hiện ngay khi tải trang
@@ -20358,7 +20363,13 @@ def main():
         st.session_state.active_tab = tab_titles[0]
 
     try:
-        _render_main_tab_content(tab_titles, user_role)
+        role_renderers = {
+            "Bệnh nhân": patient_frontend.render,
+            "Bác sĩ / KTV PHCN": doctor_ktv_frontend.render,
+            "Nghiên cứu viên": researcher_frontend.render,
+            "Quản trị viên": admin_frontend.render,
+        }
+        role_renderers.get(user_role, patient_frontend.render)(tab_titles, _render_main_tab_content)
     except Exception as tab_err:
         st.error(f"💥 Lỗi hiển thị nội dung tab: {tab_err}")
         import traceback

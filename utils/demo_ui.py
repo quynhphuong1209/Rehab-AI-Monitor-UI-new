@@ -648,10 +648,37 @@ def side_info_html(role: str, user_info=None, stats=None) -> str:
 _AUTH_NAV_CSS = """
 /* ============================================================ AUTH SCREEN */
 .auth-shell{
-  min-height:calc(100vh - 65px);
+  min-height:calc(100vh - 86px);
   display:flex;
   align-items:center;
-  padding:clamp(18px,3vh,34px) 0 clamp(18px,4vh,44px);
+  padding:clamp(10px,2vh,22px) 0 clamp(18px,4vh,44px);
+}
+.st-key-auth_theme_icon_button{
+  position:fixed;
+  top:12px;
+  right:28px;
+  z-index:100;
+}
+.st-key-auth_theme_icon_button .stButton>button,
+.st-key-auth_theme_icon_button button{
+  width:38px!important;
+  height:38px!important;
+  min-height:38px!important;
+  padding:0!important;
+  border-radius:11px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:var(--surface)!important;
+  border:1px solid var(--line)!important;
+  color:var(--ink-2)!important;
+  box-shadow:none!important;
+  font-size:18px!important;
+}
+.st-key-auth_theme_icon_button .stButton>button:hover,
+.st-key-auth_theme_icon_button button:hover{
+  border-color:var(--teal)!important;
+  color:var(--teal)!important;
+  transform:translateY(-1px)!important;
 }
 .auth-shell [data-testid="stHorizontalBlock"]{
   align-items:center;
@@ -665,9 +692,9 @@ _AUTH_NAV_CSS = """
 }
 .auth-hero{
   position:relative;overflow:hidden;
-  padding:clamp(18px,3vw,38px) clamp(10px,2vw,18px);
+  padding:clamp(12px,2.4vw,30px) clamp(10px,2vw,18px);
   display:flex;flex-direction:column;justify-content:center;gap:24px;
-  min-height:520px;
+  min-height:500px;
 }
 .auth-hero .eyebrow{
   display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
@@ -702,26 +729,18 @@ _AUTH_NAV_CSS = """
   box-shadow:var(--shadow-lg)!important;
   padding:34px 34px 30px!important;
 }
-.st-key-auth_card_streamlit::before{
-  content:"Đăng nhập hệ thống";
-  display:block;
+.auth-card-title h2{
   font-family:var(--display);
   font-weight:600;
-  font-size:28px;
+  font-size:25px;
   line-height:1.1;
   color:var(--ink);
-  margin-bottom:8px;
+  margin:0 0 4px;
 }
-.st-key-auth_card_streamlit::after{
-  content:none;
-  display:none;
-}
-.st-key-auth_card_streamlit > div:first-child::before{
-  content:"Truy cập bảng điều khiển theo vai trò của bạn.";
-  display:block;
+.auth-card-title p{
   color:var(--ink-3);
   font-size:13.5px;
-  margin:-2px 0 22px;
+  margin:0 0 22px;
 }
 .st-key-auth_card_streamlit [data-testid="stSelectbox"]{
   margin-bottom:14px!important;
