@@ -117,6 +117,7 @@ except Exception:
 import streamlit as st
 
 from frontend.auth import screens as auth_screens
+from frontend.ui import emit_shell_mount, ui_component
 
 close_auth_shell = auth_screens.close_auth_shell
 open_auth_shell = auth_screens.open_auth_shell
@@ -5646,12 +5647,6 @@ def thuc_hien_khoi_tao_he_thong_mot_lan():
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-if not st.session_state.logged_in:
-    try:
-        st.query_params.clear()
-    except Exception:
-        pass
-
 if 'user_info' not in st.session_state:
     st.session_state.user_info = None
 if 'forgot_password_mode' not in st.session_state:
@@ -5702,6 +5697,33 @@ def _route_slug_for_role(role):
     return "benh-nhan"
 
 
+def _ascii_slug(value, fallback="item"):
+    text = unicodedata.normalize("NFKD", str(value or ""))
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    text = re.sub(r"[^0-9A-Za-z]+", "-", text).strip("-").lower()
+    return text or fallback
+
+
+def _tab_slug(tab_title):
+    if "_demo_nav_label_for_tab" in globals():
+        label, _icon = _demo_nav_label_for_tab(tab_title)
+    else:
+        label = tab_title
+    return _ascii_slug(label or tab_title, "tab")
+
+
+def _tab_from_slug(tab_titles, slug):
+    if not tab_titles:
+        return None
+    if not slug:
+        return tab_titles[0]
+    slug_text = str(slug)
+    for title in tab_titles:
+        if _tab_slug(title) == slug_text or str(title) == slug_text:
+            return title
+    return tab_titles[0]
+
+
 def _query_value(name, default=None):
     try:
         value = st.query_params.get(name, default)
@@ -5712,7 +5734,58 @@ def _query_value(name, default=None):
         return default
 
 
-def _sync_route_query(username=None, role=None):
+def _role_from_route_value(value):
+    """Map URL role aliases to the canonical role labels used by the app."""
+    raw = _normalize_auth_text(value)
+    slug = _ascii_slug(raw, "")
+    folded = raw.casefold()
+    if not raw:
+        return None
+    if slug in {"admin", "qtv", "quan-tri", "quan-tri-vien"} or "quản" in folded or "quan" in folded:
+        return "Quản trị viên"
+    if slug in {"ncv", "researcher", "nghien-cuu", "nghien-cuu-vien"} or "nghiên" in folded or "nghien" in folded:
+        return "Nghiên cứu viên"
+    if slug in {"doctor", "doctor-ktv", "bac-si", "bac-si-ktv", "ktv", "bsi", "bs"} or "bác" in folded or "bac" in folded or "ktv" in folded:
+        return "Bác sĩ / KTV PHCN"
+    if slug in {"patient", "benh-nhan", "bn"} or "bệnh" in folded or "benh" in folded:
+        return "Bệnh nhân"
+    return None
+
+
+def _restore_login_from_route():
+    """Allow direct HF/localhost links like ?role=ncv&user=... without exposing passwords in the URL."""
+    if st.session_state.get("logged_in") and st.session_state.get("user_info"):
+        return False
+
+    route_role = _role_from_route_value(_query_value("role") or _query_value("ui_role"))
+    route_user = _normalize_auth_text(_query_value("user") or _query_value("username") or "")
+    if not route_role or not route_user:
+        return False
+
+    requested_theme = _query_value("theme") or _query_value("ui_theme")
+    if requested_theme in ("light", "dark"):
+        st.session_state.theme = requested_theme
+
+    users = load_users()
+    user_key = _auth_lookup_key(users, route_user)
+    record = users.get(user_key, {}) if user_key else {}
+    username = user_key or _ascii_slug(route_user, "route-user")
+    st.session_state.logged_in = True
+    st.session_state.user_info = {
+        "username": username,
+        "full_name": record.get("full_name") or route_user,
+        "email": record.get("email"),
+        "role": route_role,
+        "route_user": route_user,
+        "auth_type": "route",
+    }
+    st.session_state.show_login_dialog = False
+    st.session_state.pop("forgot_password_mode", None)
+    st.session_state.pop("change_password_mode", None)
+    return True
+
+
+def _sync_route_query(username=None, role=None, tab_titles=None):
     """Show role/user in URL so every logged-in shell has a clear route."""
     try:
         info = st.session_state.get("user_info") or {}
@@ -5722,9 +5795,14 @@ def _sync_route_query(username=None, role=None):
             return
         desired = {
             "role": _route_slug_for_role(role),
-            "user": str(username),
+            "user": str(info.get("route_user") or username),
             "theme": st.session_state.get("theme", "light"),
         }
+        current_tab = st.session_state.get("active_tab_widget") or st.session_state.get("active_tab")
+        if tab_titles and current_tab in tab_titles:
+            desired["tab"] = _tab_slug(current_tab)
+        elif _query_value("tab") is not None:
+            desired["tab"] = _query_value("tab")
         current = {key: _query_value(key) for key in desired}
         if current == desired and _query_value("logout") is None and _query_value("ui_theme") is None:
             return
@@ -5795,6 +5873,113 @@ def _dang_nhap_demo_theo_vai_tro(role_label):
             _rerun_toan_bo_app()
             return
     st.error(f"Không tìm thấy tài khoản demo cho vai trò {role_label}.")
+
+
+def _consume_rehab_ui_event(event, tab_titles=None):
+    """Handle events sent by the JavaScript UI bridge."""
+    if not event or not isinstance(event, dict):
+        return
+    event_id = event.get("id")
+    if event_id and st.session_state.get("_rehab_ui_last_event_id") == event_id:
+        return
+    if event_id:
+        st.session_state["_rehab_ui_last_event_id"] = event_id
+
+    event_type = event.get("type")
+    if event_type == "theme":
+        next_theme = event.get("theme")
+        if next_theme in ("light", "dark"):
+            st.session_state.theme = next_theme
+            _rerun_toan_bo_app()
+        return
+
+    if event_type == "logout":
+        _dang_xuat_ve_dang_nhap()
+        return
+
+    if event_type == "tab" and tab_titles:
+        target = _tab_from_slug(tab_titles, event.get("tab"))
+        if target:
+            st.session_state.active_tab = target
+            st.session_state.active_tab_widget = target
+            st.session_state["inline_active_tab_widget"] = target
+            _sync_route_query(tab_titles=tab_titles)
+            _rerun_toan_bo_app()
+        return
+
+    if event_type == "demo_login":
+        role = event.get("role") or "Bệnh nhân"
+        _dang_nhap_demo_theo_vai_tro(role)
+        return
+
+    if event_type == "forgot_password":
+        st.session_state["_auth_notice"] = {
+            "kind": "error",
+            "message": "Vui lòng liên hệ Quản trị viên để khôi phục mật khẩu.",
+        }
+        _rerun_toan_bo_app()
+        return
+
+    if event_type == "login":
+        username = event.get("username", "")
+        password = event.get("password", "")
+        users = load_users()
+        u_key = _auth_lookup_key(users, username)
+        if u_key and _verify_auth_password(u_key, password, users[u_key]):
+            _upgrade_password_hash_if_needed(users, u_key, password)
+            st.session_state.pop("_auth_notice", None)
+            _hoan_tat_dang_nhap(u_key, users[u_key])
+            _rerun_toan_bo_app()
+        else:
+            st.session_state["_auth_notice"] = {
+                "kind": "error",
+                "message": "Tài khoản hoặc mật khẩu không đúng.",
+            }
+            _rerun_toan_bo_app()
+        return
+
+    if event_type == "register":
+        username = _normalize_auth_text(event.get("username", ""))
+        email = _normalize_auth_text(event.get("email", ""))
+        password = event.get("password", "")
+        password2 = event.get("password2", "")
+        role = event.get("role") or "Bệnh nhân"
+        full_name = _normalize_auth_text(event.get("full_name", "")) or username
+        if not username or not email or len(password) < 6:
+            st.session_state["_auth_notice"] = {
+                "kind": "error",
+                "message": "Vui lòng điền đủ thông tin và mật khẩu tối thiểu 6 ký tự.",
+            }
+            _rerun_toan_bo_app()
+            return
+        if password != password2:
+            st.session_state["_auth_notice"] = {
+                "kind": "error",
+                "message": "Mật khẩu xác nhận không khớp.",
+            }
+            _rerun_toan_bo_app()
+            return
+        users = load_users()
+        if _auth_lookup_key(users, username):
+            st.session_state["_auth_notice"] = {
+                "kind": "error",
+                "message": "Tên đăng nhập này đã tồn tại.",
+            }
+            _rerun_toan_bo_app()
+            return
+        users[username] = {
+            "password": hash_password(password),
+            "email": email,
+            "full_name": full_name,
+            "role": role,
+            "created_at": get_vn_now().isoformat(),
+        }
+        save_users(users)
+        st.session_state["_auth_notice"] = {
+            "kind": "success",
+            "message": "Đăng ký thành công. Bạn có thể đăng nhập ngay.",
+        }
+        _rerun_toan_bo_app()
 
 _xoa_widget_dang_nhap_sau_rerun()
 
@@ -18238,6 +18423,11 @@ def update_theme_callback():
 # GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ
 # ============================================
 def hien_thi_dang_nhap_dang_ky():
+    payload = _build_rehab_ui_payload(mode="auth")
+    event = ui_component(payload=payload, key="rehab_auth_shell")
+    _consume_rehab_ui_event(event)
+    return
+
     is_light = st.session_state.get('theme') == 'light'
     render_auth_topbar(topbar_html, is_light=is_light)
     render_auth_theme_button(is_light=is_light)
@@ -19264,7 +19454,7 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                 st.session_state.vid_list_page = 0
                 page_videos = list(enumerate(filtered_videos))[0:PAGE_SIZE]
 
-            if user_role == "Nghiên cứu viên":
+            if user_role in ["Nghiên cứu viên", "Bác sĩ / KTV PHCN"]:
                 st.markdown(
                     f'<div class="ncv-video-caption">Đang hiển thị <b>{len(page_videos)}</b> / <b>{total_videos}</b> video trong bộ lọc.</div>',
                     unsafe_allow_html=True,
@@ -19286,9 +19476,9 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                         for idx, v in page_videos
                     }
                     _selected_detail = st.selectbox(
-                        "Chọn video để xem chi tiết / phân tích",
+                        "Chọn video để xem chi tiết / phân tích" if user_role == "Nghiên cứu viên" else "Chọn video để đánh giá",
                         list(_detail_options.keys()),
-                        key="ncv_selected_video_detail",
+                        key="ncv_selected_video_detail" if user_role == "Nghiên cứu viên" else "doctor_selected_video_detail",
                     )
                     page_videos = [_detail_options[_selected_detail]]
             else:
@@ -20534,6 +20724,60 @@ def _material_icon_for_demo_icon(icon):
     }.get(icon, "chevron_right")
 
 
+def _rehab_side_stats_for_role(user_role):
+    try:
+        if user_role == "Nghiên cứu viên":
+            total_vids, pending_ai, _avg_acc = _thong_ke_video_nghien_cuu()
+            return {
+                "total_videos": total_vids,
+                "ai_done": max(total_vids - pending_ai, 0),
+                "model": st.session_state.get("ncv_model_type", "MP-Heavy"),
+                "keypoints": 33,
+            }
+        if user_role == "Bác sĩ / KTV PHCN":
+            videos = load_danh_sach_video_nghien_cuu()
+            return {
+                "patients": len(set(v.get("username") for v in videos if v.get("username"))),
+                "pending": 3,
+                "high_vas": 2,
+                "sessions": len(videos),
+            }
+        if user_role == "Quản trị viên":
+            users = load_users()
+            videos = load_danh_sach_video_nghien_cuu()
+            evals = _evals_dedup_cached(_mtimes_video_eval()[1])
+            return {"accounts": len(users), "videos": len(videos), "evals": len(evals)}
+    except Exception:
+        pass
+    return {}
+
+
+def _build_rehab_ui_payload(mode="app", tab_titles=None):
+    is_logged = bool(st.session_state.get("logged_in") and st.session_state.get("user_info"))
+    info = st.session_state.get("user_info") or {}
+    role = info.get("role", "Bệnh nhân")
+    active = st.session_state.get("active_tab_widget") or st.session_state.get("active_tab")
+    tabs = []
+    for title in tab_titles or []:
+        label, icon = _demo_nav_label_for_tab(title)
+        tabs.append({"id": _tab_slug(title), "title": title, "label": label, "icon": icon})
+    return {
+        "mode": mode,
+        "theme": st.session_state.get("theme", "light"),
+        "loggedIn": is_logged,
+        "role": role,
+        "user": {
+            "username": info.get("username", ""),
+            "full_name": info.get("full_name") or info.get("username", ""),
+            "role": role,
+        },
+        "tabs": tabs,
+        "activeTab": _tab_slug(active) if active else "",
+        "sideStats": _rehab_side_stats_for_role(role) if is_logged else {},
+        "notice": st.session_state.pop("_auth_notice", None) if mode == "auth" else None,
+    }
+
+
 def _render_demo_sidebar_nav(tab_titles, user_role):
     st.session_state["_demo_sidebar_nav_enabled"] = True
     if st.session_state.get("active_tab_widget") not in tab_titles:
@@ -20788,6 +21032,7 @@ def main():
     # Streamlit owns reconnect; manual location.reload() can loop into a blank app shell.
     thuc_hien_khoi_tao_he_thong_mot_lan()
     _xu_ly_route_query_actions()
+    _restore_login_from_route()
 
     # Kiểm tra trạng thái đăng nhập ngay đầu hàm main
     if not st.session_state.get("logged_in") or not st.session_state.get("user_info"):
@@ -20818,13 +21063,19 @@ def main():
         st.session_state.active_tab = tab_titles[0]
     if st.session_state.get("active_tab_widget") not in tab_titles:
         st.session_state.active_tab_widget = st.session_state.active_tab
+    route_tab = _tab_from_slug(tab_titles, _query_value("tab"))
+    if route_tab and route_tab != st.session_state.get("active_tab_widget"):
+        st.session_state.active_tab = route_tab
+        st.session_state.active_tab_widget = route_tab
 
-    _render_demo_topbar(user_role)
+    ui_event = ui_component(payload=_build_rehab_ui_payload(mode="app", tab_titles=tab_titles), key="rehab_app_shell")
+    _consume_rehab_ui_event(ui_event, tab_titles=tab_titles)
+    emit_shell_mount(spacing_top=74)
+    _sync_route_query(tab_titles=tab_titles)
     if user_role == "Nghiên cứu viên":
         st.markdown('<span class="ncv-workspace-anchor"></span>', unsafe_allow_html=True)
-    _render_sidebar_open_handle()
-    _render_topbar_tab_nav(tab_titles, user_role)
-    _force_sidebar_expanded_once()
+    st.session_state["_demo_sidebar_nav_enabled"] = True
+    st.session_state["_topbar_nav_enabled"] = True
 
     # Callback xử lý đổi theme nhanh
     def update_theme_callback():

@@ -2,6 +2,8 @@
 venv/
 env/
 __pycache__/
+node_modules/
+tmp_playwright/
 *.pyc
 .DS_Store
 .env
@@ -12,6 +14,8 @@ __pycache__/
 *.rar
 *.exe
 *.json
+!package.json
+!package-lock.json
 !BAI_TAP.json
 !reference_*.json
 !database/video_list.json

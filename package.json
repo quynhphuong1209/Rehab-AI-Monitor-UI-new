@@ -1,0 +1,14 @@
+{
+  "name": "rehab-ai-monitor-ui-new",
+  "version": "0.1.0",
+  "private": true,
+  "description": "JS UI shell and design checks for Rehab AI Monitor.",
+  "scripts": {
+    "design:check": "npm run design:lint",
+    "design:lint": "node ./node_modules/@google/design.md/dist/index.js lint DESIGN.md",
+    "design:tokens": "node ./node_modules/@google/design.md/dist/index.js export DESIGN.md --format css-tailwind"
+  },
+  "devDependencies": {
+    "@google/design.md": "^0.3.0"
+  }
+}

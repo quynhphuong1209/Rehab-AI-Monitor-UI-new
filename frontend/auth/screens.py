@@ -1,4 +1,8 @@
-"""Authentication screen layout helpers."""
+"""Authentication screen layout helpers.
+
+The real auth surface is now mounted by ``frontend/auth/auth_ui.js`` through the
+shared JS bridge. These helpers remain as safe fallbacks for old imports.
+"""
 
 import streamlit as st
 
@@ -45,8 +49,8 @@ def render_auth_hero(auth_screen_html):
 def render_auth_card_title():
     st.markdown(
         '<div class="auth-card-title">'
-        '<h2>Đăng nhập hệ thống</h2>'
-        '<p>Truy cập bảng điều khiển theo vai trò của bạn.</p>'
-        '</div>',
+        "<h2>Đăng nhập hệ thống</h2>"
+        "<p>Truy cập bảng điều khiển theo vai trò của bạn.</p>"
+        "</div>",
         unsafe_allow_html=True,
     )
