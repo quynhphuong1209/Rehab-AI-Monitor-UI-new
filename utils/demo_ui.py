@@ -530,7 +530,9 @@ def auth_screen_html() -> str:
     return """
 <div class="auth-hero">
   <span class="eyebrow"><svg class="icon sm"><use href="#i-shield-c"/></svg> Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>
-  <h1 class="auth-hero-title">Giám sát tập <em>phục hồi chức năng</em> bằng<br/>AI, ngay tại nhà.</h1>
+  <div class="auth-hero-title" role="heading" aria-level="1" style="display:block!important;margin:0!important;max-width:19ch!important;font-family:var(--display, Georgia, 'Times New Roman', serif)!important;font-size:clamp(50px,4.8vw,64px)!important;line-height:1.03!important;font-weight:600!important;letter-spacing:0!important;color:var(--ink,#111827)!important;text-wrap:balance!important;">
+    Giám sát tập <em style="font-family:inherit!important;font-style:italic!important;color:var(--teal,#1d6fe8)!important;">phục hồi chức năng</em> bằng<br/>AI, ngay tại nhà.
+  </div>
   <p class="lede">Bệnh nhân khai báo triệu chứng (VAS) → AI phân tích khung xương & góc khớp theo thời gian thực → Chuyên gia đối chiếu và đưa ra phác đồ. Một luồng lâm sàng khép kín.</p>
   <div class="hero-stats">
     <div class="hstat"><div class="n">33</div><div class="l">điểm khung xương / khung hình</div></div>
@@ -1421,6 +1423,29 @@ _AUTH_NAV_CSS = """
   .pose-card{position:relative;right:auto;bottom:auto;width:200px;align-self:center;margin-top:6px}
   .auth-panel{padding-top:0}
   .st-key-auth_card_streamlit{padding:24px 18px!important}
+}
+.stApp:has(.auth-shell-anchor) .auth-hero-title,
+.auth-hero-title{
+  display:block!important;
+  margin:0!important;
+  max-width:19ch!important;
+  font-family:var(--display, Georgia, 'Times New Roman', serif)!important;
+  font-size:clamp(50px,4.8vw,64px)!important;
+  line-height:1.03!important;
+  font-weight:600!important;
+  letter-spacing:0!important;
+  color:var(--ink,#111827)!important;
+  text-wrap:balance!important;
+}
+.stApp:has(.auth-shell-anchor) .auth-hero-title em,
+.auth-hero-title em{
+  font-family:inherit!important;
+  font-style:italic!important;
+  color:var(--teal,#1d6fe8)!important;
+}
+@media (max-width:640px){
+  .stApp:has(.auth-shell-anchor) .auth-hero-title,
+  .auth-hero-title{font-size:clamp(38px,10.5vw,46px)!important;line-height:1.05!important}
 }
 """
 
