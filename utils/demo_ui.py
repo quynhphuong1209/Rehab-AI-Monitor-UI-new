@@ -724,10 +724,18 @@ _AUTH_NAV_CSS = """
   padding:0!important;
   max-width:100%!important;
 }
+.stApp:has(.auth-shell-anchor) [data-testid="stMain"],
+.stApp:has(.auth-shell-anchor) section.main,
+.stApp:has(.auth-shell-anchor) .main,
 .stApp:has(.auth-shell-anchor) div.block-container,
 .stApp:has(.auth-shell-anchor) [data-testid="stMainBlockContainer"],
 .stApp:has(.auth-shell-anchor) [data-testid="stAppViewBlockContainer"]{
+  margin-top:0!important;
   padding-top:0!important;
+}
+.stApp:has(.auth-shell-anchor) [data-testid="stVerticalBlock"],
+.stApp:has(.auth-shell-anchor) [data-testid="stVerticalBlockBorderWrapper"]{
+  row-gap:0!important;
 }
 .stApp:has(.auth-shell-anchor) .element-container:has(.topbar),
 .stApp:has(.auth-shell-anchor) [data-testid="stMarkdownContainer"]:has(.topbar){
@@ -1092,6 +1100,22 @@ _AUTH_NAV_CSS = """
   text-align:center;
   margin-bottom:10px;
 }
+.st-key-auth_demo_role_favorite,
+.st-key-auth_demo_role_medical_services,
+.st-key-auth_demo_role_construction,
+.st-key-auth_demo_role_science,
+.st-key-auth_demo_role_admin_panel_settings{
+  overflow:visible!important;
+}
+.st-key-auth_demo_role_favorite .stButton,
+.st-key-auth_demo_role_medical_services .stButton,
+.st-key-auth_demo_role_construction .stButton,
+.st-key-auth_demo_role_science .stButton,
+.st-key-auth_demo_role_admin_panel_settings .stButton{
+  width:max-content!important;
+  max-width:none!important;
+  overflow:visible!important;
+}
 .st-key-auth_demo_role_favorite button,
 .st-key-auth_demo_role_medical_services button,
 .st-key-auth_demo_role_construction button,
@@ -1113,7 +1137,7 @@ _AUTH_NAV_CSS = """
   gap:4px!important;
 }
 .st-key-auth_demo_role_favorite button{
-  min-width:100px!important;
+  min-width:112px!important;
 }
 .st-key-auth_demo_role_favorite button *,
 .st-key-auth_demo_role_medical_services button *,
