@@ -1,0 +1,2 @@
+"""Authentication screen wrapper."""
+

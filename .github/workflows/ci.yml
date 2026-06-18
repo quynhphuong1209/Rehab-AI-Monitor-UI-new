@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Compile
+        run: |
+          python -m py_compile app.py utils/reference_utils.py utils/pose_classifier_utils.py utils/checkpoint_utils.py scripts/sync_from_hf.py scripts/sync_data_and_report.py scripts/reset_data.py storage/json_store.py storage/migrations.py models/schemas.py auth/permissions.py jobs/models.py
+      - name: Migration dry-run
+        run: |
+          python -m storage.migrations --dry-run
+      - name: Secret/bypass scan
+        run: |
+          ! grep -R "logged_in_user\|logged_in_role\|?token={HF_TOKEN}\|server.enableCORS=false\|server.enableXsrfProtection=false" app.py scripts README.md Dockerfile .streamlit || exit 1
