@@ -1022,7 +1022,7 @@ _AUTH_NAV_CSS = """
 
 .auth-card-streamlit,
 .st-key-auth_card_streamlit{
-  width:100%;max-width:430px;margin:0;
+  width:100%;max-width:460px;margin:0;
   align-self:flex-start!important;
 }
 .auth-card-head{
@@ -1033,7 +1033,7 @@ _AUTH_NAV_CSS = """
   border:1px solid var(--line)!important;
   border-radius:var(--r-lg)!important;
   box-shadow:var(--shadow-lg)!important;
-  padding:34px 34px 30px!important;
+  padding:38px 36px 34px!important;
   color:var(--ink)!important;
 }
 .st-key-auth_card_streamlit [data-testid="stVerticalBlockBorderWrapper"],
@@ -1044,33 +1044,39 @@ _AUTH_NAV_CSS = """
   padding:0!important;
 }
 .auth-card-title h2{
-  font-family:var(--display);
-  font-weight:600;
-  font-size:25px;
-  line-height:1.1;
+  font-family:var(--display,'Fraunces',Georgia,serif)!important;
+  font-weight:600!important;
+  font-size:27px!important;
+  line-height:1.08!important;
+  letter-spacing:0!important;
   color:var(--ink)!important;
-  margin:0 0 4px;
+  margin:0 0 8px!important;
 }
 .auth-card-title p{
+  font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
   color:var(--ink-3)!important;
-  font-size:13.5px;
-  margin:0 0 22px;
+  font-size:13.5px!important;
+  line-height:1.45!important;
+  margin:0 0 24px!important;
 }
 .st-key-auth_card_streamlit [data-testid="stSelectbox"]{
   margin-bottom:14px!important;
 }
 .st-key-auth_card_streamlit .stTabs [data-baseweb="tab-list"]{
   display:flex;gap:4px;background:var(--surface-2)!important;border:1px solid var(--line)!important;border-radius:12px!important;
-  padding:4px!important;margin-bottom:22px!important;
+  padding:4px!important;margin-bottom:24px!important;
 }
 .st-key-auth_card_streamlit .stTabs [data-baseweb="tab"]{
   flex:1;border-radius:9px!important;background:transparent!important;color:var(--ink-3)!important;
-  padding:9px!important;min-height:38px!important;justify-content:center!important;
+  padding:8px!important;min-height:36px!important;justify-content:center!important;
 }
 .st-key-auth_card_streamlit .stTabs [data-baseweb="tab"] *,
 .st-key-auth_card_streamlit .stTabs [data-baseweb="tab"] p{
   color:inherit!important;
   -webkit-text-fill-color:inherit!important;
+  font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
+  font-size:13px!important;
+  font-weight:700!important;
 }
 .st-key-auth_card_streamlit .stTabs [data-baseweb="tab"][aria-selected="true"]{
   background:var(--surface)!important;color:var(--teal-strong)!important;box-shadow:var(--shadow-sm)!important;
@@ -1086,6 +1092,9 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit [data-testid="stWidgetLabel"] *{
   color:var(--ink-2)!important;
   -webkit-text-fill-color:var(--ink-2)!important;
+  font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
+  font-size:12px!important;
+  font-weight:700!important;
 }
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"],
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="base-input"],
@@ -1107,6 +1116,9 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .stRadio label *{
   color:var(--ink)!important;
   -webkit-text-fill-color:var(--ink)!important;
+  font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
+  font-size:14px!important;
+  font-weight:500!important;
 }
 .st-key-auth_card_streamlit .stTextInput input::placeholder{
   color:var(--ink-3)!important;
@@ -1116,6 +1128,9 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .stFormSubmitButton>button{
   min-height:48px!important;
   border-radius:11px!important;
+  font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
+  font-size:14px!important;
+  font-weight:700!important;
 }
 .st-key-auth_card_streamlit .stButton>button:not([kind="primary"]),
 .st-key-auth_card_streamlit button[data-testid="stBaseButton-secondary"]{
@@ -1180,7 +1195,7 @@ _AUTH_NAV_CSS = """
 }
 .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_favorite),
 .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_admin_panel_settings){
-  gap:4px!important;
+  gap:8px!important;
   justify-content:center!important;
 }
 .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_favorite){
@@ -1217,12 +1232,14 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button{
   min-height:32px!important;
-  height:32px!important;
+  height:30px!important;
   width:auto!important;
   min-width:0!important;
-  border-radius:12px!important;
-  padding:0 6px!important;
-  font-size:10px!important;
+  border-radius:999px!important;
+  padding:0 12px!important;
+  font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
+  font-size:12px!important;
+  font-weight:600!important;
   background:var(--surface-2)!important;
   border:1px solid var(--line)!important;
   color:var(--ink-2)!important;
@@ -1231,7 +1248,7 @@ _AUTH_NAV_CSS = """
   white-space:nowrap!important;
   overflow:visible!important;
   text-overflow:clip!important;
-  gap:5px!important;
+  gap:6px!important;
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
