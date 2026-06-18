@@ -2050,6 +2050,29 @@ _AUTH_NAV_CSS = """
   color:var(--ink-3)!important;
   -webkit-text-fill-color:var(--ink-3)!important;
 }
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] > div:has([data-testid="stIconMaterial"]){
+  width:34px!important;
+  min-width:34px!important;
+  height:34px!important;
+  min-height:34px!important;
+  margin-left:2px!important;
+  border-radius:9px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:transparent!important;
+  border:1px solid transparent!important;
+  box-shadow:none!important;
+}
+html[data-theme="dark"] .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] > div:has([data-testid="stIconMaterial"]),
+.stApp:has(.auth-shell-anchor) .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] > div:has([data-testid="stIconMaterial"]){
+  background:var(--surface-2)!important;
+  border-color:rgba(232,238,247,.46)!important;
+}
+html[data-theme="dark"] .st-key-auth_card_streamlit .stTextInput [data-testid="stIconMaterial"],
+.stApp:has(.auth-shell-anchor) .st-key-auth_card_streamlit .stTextInput [data-testid="stIconMaterial"]{
+  color:var(--ink)!important;
+  -webkit-text-fill-color:var(--ink)!important;
+}
 .st-key-auth_card_streamlit .stTextInput button{
   width:34px!important;
   min-width:34px!important;
