@@ -1608,6 +1608,164 @@ _AUTH_NAV_CSS = """
   .stApp:has(.auth-shell-anchor) .auth-hero-title,
   .auth-hero-title{font-size:clamp(38px,10.5vw,46px)!important;line-height:1.05!important}
 }
+@media (max-width:760px){
+  .stApp:has(.auth-shell-anchor) [data-testid="stAppViewContainer"]>.main .block-container{
+    padding:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+  }
+  .topbar{
+    min-height:58px!important;
+    padding:9px 54px 9px 14px!important;
+    gap:9px!important;
+    overflow:hidden!important;
+  }
+  .brand{gap:9px!important;max-width:100%!important}
+  .brand-mark{
+    width:34px!important;
+    height:34px!important;
+    border-radius:10px!important;
+  }
+  .brand-mark .icon{width:20px!important;height:20px!important}
+  .brand-name{
+    font-size:17px!important;
+    line-height:1.05!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .brand-sub{
+    max-width:calc(100vw - 112px)!important;
+    font-size:11px!important;
+    line-height:1.18!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .st-key-auth_theme_icon_button{
+    top:10px!important;
+    right:12px!important;
+    width:36px!important;
+    height:36px!important;
+  }
+  .st-key-auth_theme_icon_button .stButton>button,
+  .st-key-auth_theme_icon_button button{
+    width:36px!important;
+    height:36px!important;
+    min-height:36px!important;
+    border-radius:10px!important;
+    font-size:18px!important;
+  }
+  .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"],
+  .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit){
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    gap:0!important;
+    width:100%!important;
+    min-height:calc(100svh - 58px)!important;
+    padding:36px 14px 24px!important;
+    overflow:hidden!important;
+  }
+  .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"],
+  .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit) > div[data-testid="stColumn"]{
+    width:100%!important;
+    min-width:0!important;
+    max-width:430px!important;
+    flex:0 0 auto!important;
+  }
+  .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:first-child,
+  .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit) > div[data-testid="stColumn"]:first-child{
+    display:none!important;
+  }
+  .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:last-child,
+  .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit) > div[data-testid="stColumn"]:last-child{
+    display:block!important;
+    max-width:430px!important;
+    margin:0 auto!important;
+  }
+  .auth-hero,
+  .auth-hero .eyebrow,
+  .auth-hero .auth-hero-title,
+  .auth-hero p.lede,
+  .hero-stats,
+  .pose-card{
+    display:none!important;
+    min-height:0!important;
+  }
+  .auth-card-streamlit,
+  .st-key-auth_card_streamlit{
+    width:100%!important;
+    max-width:430px!important;
+    margin:0 auto!important;
+    align-self:center!important;
+  }
+  .st-key-auth_card_streamlit{
+    border-radius:18px!important;
+    padding:26px 18px 22px!important;
+  }
+  .auth-card-title h2{
+    font-size:22px!important;
+    line-height:1.14!important;
+    margin-bottom:8px!important;
+  }
+  .auth-card-title p{
+    font-size:13px!important;
+    line-height:1.45!important;
+    margin-bottom:18px!important;
+  }
+  .st-key-auth_card_streamlit .stTabs [data-baseweb="tab-list"]{
+    margin-bottom:18px!important;
+  }
+  .st-key-auth_card_streamlit .stTabs [data-baseweb="tab"]{
+    min-height:34px!important;
+    padding:7px!important;
+  }
+  .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"],
+  .st-key-auth_card_streamlit .stTextInput div[data-baseweb="base-input"],
+  .st-key-auth_card_streamlit .stSelectbox div[data-baseweb="select"]>div{
+    height:42px!important;
+    min-height:42px!important;
+  }
+  .st-key-auth_card_streamlit .stTextInput input{
+    height:40px!important;
+    line-height:40px!important;
+    font-size:13px!important;
+  }
+  .st-key-auth_card_streamlit .stButton>button,
+  .st-key-auth_card_streamlit .stFormSubmitButton>button{
+    min-height:44px!important;
+  }
+  .st-key-auth_forgot_link .stButton>button,
+  .st-key-auth_forgot_link button{
+    width:auto!important;
+    min-height:22px!important;
+    margin:7px auto 0!important;
+    padding:0!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    white-space:normal!important;
+  }
+  .auth-demo-strip{
+    margin-top:15px!important;
+    padding-top:11px!important;
+  }
+  .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_favorite),
+  .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_admin_panel_settings){
+    display:flex!important;
+    flex-wrap:wrap!important;
+    justify-content:center!important;
+    gap:6px!important;
+  }
+  .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_favorite) > div[data-testid="stColumn"],
+  .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_admin_panel_settings) > div[data-testid="stColumn"]{
+    width:auto!important;
+    flex:0 0 auto!important;
+    min-width:max-content!important;
+  }
+}
 """
 
 def inject_auth_nav_css():
