@@ -18184,10 +18184,9 @@ def hien_thi_dang_nhap_dang_ky():
                 st.markdown('<div class="auth-role-label">Bạn đăng ký với tư cách</div>', unsafe_allow_html=True)
                 reg_role_choice = st.radio(
                     "Bạn đăng ký với tư cách",
-                    ["Bác sĩ", "Kỹ thuật viên", "Nghiên cứu viên", "Bệnh nhân", "Quản trị viên"],
+                    ["Bác sĩ / KTV", "Nghiên cứu viên", "Bệnh nhân", "Quản trị viên"],
                     captions=[
-                        "Đánh giá lâm sàng",
-                        "Soát kỹ thuật bài tập",
+                        "Đánh giá & soát kỹ thuật",
                         "Phân tích & hiệu chỉnh AI",
                         "Tập luyện & theo dõi",
                         "Vận hành hệ thống",
@@ -18198,8 +18197,7 @@ def hien_thi_dang_nhap_dang_ky():
                     width="stretch",
                 )
                 role_value_map = {
-                    "Bác sĩ": "Bác sĩ / KTV PHCN",
-                    "Kỹ thuật viên": "Bác sĩ / KTV PHCN",
+                    "Bác sĩ / KTV": "Bác sĩ / KTV PHCN",
                     "Nghiên cứu viên": "Nghiên cứu viên",
                     "Bệnh nhân": "Bệnh nhân",
                     "Quản trị viên": "Quản trị viên",
@@ -18238,11 +18236,10 @@ def hien_thi_dang_nhap_dang_ky():
                 '</div>',
                 unsafe_allow_html=True,
             )
-            demo_cols = st.columns([1.1, 0.92, 0.82, 0.86], gap="small")
+            demo_cols = st.columns([1.08, 1.34, 0.82], gap="small")
             demo_roles_top = [
                 ("Bệnh nhân", "Bệnh nhân", "favorite"),
-                ("Bác sĩ", "Bác sĩ / KTV PHCN", "stethoscope"),
-                ("KTV", "Bác sĩ / KTV PHCN", "construction"),
+                ("Bác sĩ / KTV", "Bác sĩ / KTV PHCN", "stethoscope"),
                 ("NCV", "Nghiên cứu viên", "science"),
             ]
             for col, (button_label, role_label, icon_name) in zip(demo_cols, demo_roles_top):

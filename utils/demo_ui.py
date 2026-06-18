@@ -2160,9 +2160,6 @@ html[data-theme="dark"] .st-key-auth_card_streamlit .stTextInput [data-testid="s
   background:var(--surface-2)!important;
   box-shadow:none!important;
 }
-.st-key-reg_role_demo [role="radiogroup"] label:last-child{
-  grid-column:1 / -1!important;
-}
 .st-key-reg_role_demo [role="radiogroup"] label:hover{
   border-color:var(--teal)!important;
   transform:translateY(-1px)!important;
@@ -2202,15 +2199,12 @@ html[data-theme="dark"] .st-key-auth_card_streamlit .stTextInput [data-testid="s
   content:"stethoscope";
 }
 .st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(2)::before{
-  content:"construction";
-}
-.st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(3)::before{
   content:"science";
 }
-.st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(4)::before{
+.st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(3)::before{
   content:"favorite";
 }
-.st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(5)::before{
+.st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(4)::before{
   content:"settings";
 }
 .st-key-reg_role_demo [role="radiogroup"] label *{
