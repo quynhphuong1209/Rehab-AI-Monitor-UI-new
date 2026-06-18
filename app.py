@@ -18028,6 +18028,7 @@ def hien_thi_dang_nhap_dang_ky():
     render_auth_topbar(topbar_html, is_light=is_light)
     render_auth_theme_button(is_light=is_light)
     open_auth_shell()
+    st.markdown('<div class="auth-layout-row-anchor"></div>', unsafe_allow_html=True)
     hero_col, col_mid = st.columns([1.0, 0.78], gap="small")
     with hero_col:
         render_auth_hero(auth_screen_html)

@@ -767,17 +767,22 @@ _AUTH_NAV_CSS = """
   overflow:hidden!important;
   color:var(--ink)!important;
 }
-.st-key-auth_theme_icon_button + div [data-testid="stHorizontalBlock"],
-.auth-shell-anchor + div [data-testid="stHorizontalBlock"]{
-  align-items:flex-start;
-  gap:clamp(28px,4vw,82px)!important;
-  width:100%;
-  padding:clamp(86px,16vh,190px) clamp(28px,3.5vw,66px) clamp(36px,6vh,72px)!important;
+.auth-layout-row-anchor{
+  display:block!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
 }
-.stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero){
-  align-items:flex-start!important;
-  gap:clamp(28px,4vw,82px)!important;
-  padding:clamp(86px,16vh,190px) clamp(28px,3.5vw,66px) clamp(36px,6vh,72px)!important;
+.auth-layout-row-anchor + div [data-testid="stHorizontalBlock"],
+.stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit){
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(360px,430px)!important;
+  align-items:start!important;
+  column-gap:clamp(54px,8vw,168px)!important;
+  width:100%!important;
+  padding:clamp(138px,18vh,208px) clamp(64px,3.5vw,82px) clamp(32px,5vh,58px)!important;
 }
 .auth-shell-anchor + div{
   margin-top:0!important;
@@ -887,9 +892,9 @@ _AUTH_NAV_CSS = """
 }
 .auth-hero{
   position:relative;overflow:hidden;
-  padding:clamp(28px,3.5vw,54px) clamp(18px,4vw,64px);
+  padding:0 0 0 0;
   display:flex;flex-direction:column;justify-content:center;gap:24px;
-  min-height:620px;
+  min-height:650px;
   color:var(--ink)!important;
 }
 .auth-hero .eyebrow,
@@ -944,7 +949,7 @@ _AUTH_NAV_CSS = """
 .hstat .n{font-family:var(--mono);font-size:23px;font-weight:600;color:var(--teal-strong)}
 .hstat .l{font-size:12px;color:var(--ink-3)!important;margin-top:3px}
 .pose-card{
-  position:absolute;right:-22px;bottom:-126px;width:min(44%,360px);opacity:.9;pointer-events:none;
+  position:absolute;right:0;bottom:0;width:min(34vw,300px);opacity:.9;pointer-events:none;
 }
 .pose-svg{width:100%;height:auto;overflow:visible}
 .pose-bone{stroke:var(--teal);stroke-width:5;stroke-linecap:round;fill:none}
@@ -957,7 +962,7 @@ _AUTH_NAV_CSS = """
 
 .auth-card-streamlit,
 .st-key-auth_card_streamlit{
-  width:100%;max-width:430px;margin:0 auto;
+  width:100%;max-width:430px;margin:0;
   align-self:flex-start!important;
 }
 .auth-card-head{
@@ -1337,9 +1342,12 @@ _AUTH_NAV_CSS = """
 
 @media (max-width:980px){
   .auth-wrap{grid-template-columns:1fr}
-  .auth-shell-anchor + div [data-testid="stHorizontalBlock"]{
+  .auth-layout-row-anchor + div [data-testid="stHorizontalBlock"],
+  .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit){
+    display:grid!important;
+    grid-template-columns:1fr!important;
     gap:18px!important;
-    padding:28px 14px 24px!important;
+    padding:42px 16px 24px!important;
   }
   .auth-hero{min-height:auto;padding:8px 0 4px;gap:12px}
   .auth-hero h1{font-size:clamp(30px,8vw,42px)!important;line-height:1.08!important}
