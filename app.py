@@ -10,6 +10,7 @@ import math
 import json
 import base64
 import html as _html
+import re
 
 # FIX LỖI LIBGL CHO OPENCV TRÊN HEADLESS ENVIRONMENT
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '1'
@@ -1253,6 +1254,125 @@ def _ncv_patient_cards(patient_summary):
 """
         )
     return '<div class="ncv-patient-grid">' + "".join(cards) + "</div>" if cards else ""
+
+
+def _ncv_status_class(status):
+    text = str(status or "").casefold()
+    if "tiến" in text or "ổn" in text or "đã" in text or "pass" in text:
+        return "good"
+    if "chờ" in text or "đang" in text or "pending" in text:
+        return "wait"
+    return "neutral"
+
+
+def _ncv_vas_class(vas):
+    try:
+        value = float(str(vas).replace(",", "."))
+    except Exception:
+        value = 0
+    if value >= 7:
+        return "high"
+    if value >= 4:
+        return "mid"
+    return "low"
+
+
+def _ncv_patient_table(rows, title="Bệnh nhân", subtitle="Sắp xếp: ưu tiên", icon_id="i-users"):
+    body = []
+    for row in rows or []:
+        name = row.get("name") or row.get("full_name") or row.get("patient") or "Bệnh nhân"
+        diagnosis = row.get("diagnosis") or row.get("exercise") or row.get("subtitle") or "Theo dõi phục hồi chức năng"
+        sub = row.get("sub") or row.get("patient_id") or row.get("username") or diagnosis
+        vas = row.get("vas", "N/A")
+        rom = row.get("rom") or row.get("analysis") or row.get("last_analysis") or "Chưa có"
+        status = row.get("status") or "Chờ đánh giá"
+        body.append(
+            f"""
+<tr>
+  <td>
+    <div class="ncv-table-person">
+      <span class="ncv-table-avatar">{_esc_html(_initials(name, "BN"))}</span>
+      <span><b>{_esc_html(name)}</b><small>{_esc_html(sub)}</small></span>
+    </div>
+  </td>
+  <td>{_esc_html(diagnosis)}</td>
+  <td><span class="ncv-vas {_ncv_vas_class(vas)}">{_esc_html(vas)}</span></td>
+  <td>{_esc_html(rom)}</td>
+  <td><span class="ncv-status {_ncv_status_class(status)}">{_esc_html(status)}</span></td>
+  <td><span class="ncv-row-arrow">→</span></td>
+</tr>
+"""
+        )
+    empty = """
+<tr><td colspan="6"><div class="ncv-table-empty">Chưa có dữ liệu phù hợp.</div></td></tr>
+"""
+    return f"""
+<div class="ncv-table-card">
+  <div class="ncv-table-head">
+    <div>{_svg_use(icon_id)}<b>{_esc_html(title)}</b></div>
+    <span>{_esc_html(subtitle)}</span>
+  </div>
+  <div class="ncv-table-scroll">
+    <table class="ncv-table">
+      <thead><tr><th>Bệnh nhân</th><th>Chẩn đoán</th><th>VAS</th><th>ROM (AI)</th><th>Trạng thái</th><th></th></tr></thead>
+      <tbody>{''.join(body) if body else empty}</tbody>
+    </table>
+  </div>
+</div>
+"""
+
+
+def _ncv_symptom_table(symptoms):
+    rows = []
+    for s in symptoms or []:
+        name = s.get("full_name") or "Bệnh nhân"
+        exercises = ", ".join(s.get("exercises") or [])
+        rows.append(
+            {
+                "name": name,
+                "sub": s.get("patient_id") or "Theo khai báo VAS",
+                "diagnosis": exercises or "Bài tập phục hồi chức năng",
+                "vas": s.get("vas", "N/A"),
+                "rom": _format_vn_time(s.get("time"), default="N/A"),
+                "status": "Chờ đánh giá",
+            }
+        )
+    return _ncv_patient_table(rows, title="Danh sách triệu chứng BN mới nhất", subtitle="Sắp xếp: mới nhất")
+
+
+def _ncv_summary_table(patient_summary):
+    rows = []
+    for row in patient_summary or []:
+        rows.append(
+            {
+                "name": row.get("full_name") or row.get("username") or "Bệnh nhân",
+                "sub": f"{row.get('video_count', 0)} video",
+                "diagnosis": "Dataset nghiên cứu",
+                "vas": row.get("vas", "N/A"),
+                "rom": row.get("last_analysis") or "Chưa phân tích",
+                "status": "Đã đồng bộ",
+            }
+        )
+    return _ncv_patient_table(rows, title="Danh sách bệnh nhân", subtitle="Phân tích gần nhất")
+
+
+def _ncv_video_rows_table(page_videos, ai_eval_lookup, ai_eval_by_exercise, doc_eval_lookup, doc_eval_by_exercise, user_role):
+    rows = []
+    for idx, v in page_videos or []:
+        ev_key = _normalize_video_key(v.get('username'), v.get('video_name'), v.get('exercise'))
+        ai_eval = ai_eval_lookup.get(ev_key) or ai_eval_by_exercise.get((v.get("username"), v.get("exercise")))
+        doc_eval = doc_eval_lookup.get(ev_key) or doc_eval_by_exercise.get((v.get("username"), v.get("exercise")))
+        rows.append(
+            {
+                "name": v.get("full_name") or v.get("username") or "Bệnh nhân",
+                "sub": v.get("video_name") or v.get("username") or "",
+                "diagnosis": v.get("exercise") or "Bài tập",
+                "vas": v.get("vas") or "N/A",
+                "rom": _lay_thoi_gian_phan_tich_on_dinh(v, ai_eval) or "Chưa phân tích",
+                "status": _lay_trang_thai_video_danh_sach(v, ai_eval, doc_eval, user_role),
+            }
+        )
+    return _ncv_patient_table(rows, title="Danh sách video bệnh nhân đã quay", subtitle="Mở từng hàng bên dưới để thao tác", icon_id="i-video")
 
 
 # --- OPTIMIZED CACHING FOR FASTER PAGE LOADS ---
@@ -18956,9 +19076,8 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
 
         patient_summary = _tom_tat_benh_nhan_tu_video(video_list, ai_eval_lookup, ai_eval_by_exercise)
         if patient_summary:
-            if user_role == "Nghiên cứu viên":
-                st.markdown(_ncv_section_label("Danh sách bệnh nhân", "i-users"), unsafe_allow_html=True)
-                st.markdown(_ncv_patient_cards(patient_summary), unsafe_allow_html=True)
+            if user_role in ["Nghiên cứu viên", "Bác sĩ / KTV PHCN"]:
+                st.markdown(_ncv_summary_table(patient_summary), unsafe_allow_html=True)
             else:
                 st.markdown("##### 👥 DANH SÁCH BỆNH NHÂN — THỜI GIAN PHÂN TÍCH GẦN NHẤT")
                 for row in patient_summary:
@@ -19150,6 +19269,28 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                     f'<div class="ncv-video-caption">Đang hiển thị <b>{len(page_videos)}</b> / <b>{total_videos}</b> video trong bộ lọc.</div>',
                     unsafe_allow_html=True,
                 )
+                st.markdown(
+                    _ncv_video_rows_table(
+                        page_videos,
+                        ai_eval_lookup,
+                        ai_eval_by_exercise,
+                        doc_eval_lookup,
+                        doc_eval_by_exercise,
+                        user_role,
+                    ),
+                    unsafe_allow_html=True,
+                )
+                if page_videos:
+                    _detail_options = {
+                        f"{v.get('full_name', v.get('username', 'Bệnh nhân'))} — {v.get('exercise', 'Bài tập')} · {_lay_thoi_gian_upload_video(v)}": (idx, v)
+                        for idx, v in page_videos
+                    }
+                    _selected_detail = st.selectbox(
+                        "Chọn video để xem chi tiết / phân tích",
+                        list(_detail_options.keys()),
+                        key="ncv_selected_video_detail",
+                    )
+                    page_videos = [_detail_options[_selected_detail]]
             else:
                 st.caption(f"📌 Đang hiển thị **{len(page_videos)}** / **{total_videos}** video trong bộ lọc.")
 
@@ -19572,23 +19713,8 @@ def _render_main_tab_content(tab_titles, user_role):
                                     grouped_symptoms[key]["vas"] = item.get('vas', grouped_symptoms[key]["vas"])
                         
                             display_list = list(reversed(list(grouped_symptoms.values())))[:4]
-                            if user_role == "Nghiên cứu viên":
-                                rows_html = []
-                                for s in display_list:
-                                    name = s.get("full_name") or "Bệnh nhân"
-                                    exs = ", ".join(s.get("exercises") or [])
-                                    rows_html.append(
-                                        f"""
-<div class="ncv-patient-card">
-  <div class="ncv-avatar">{_esc_html(_initials(name, "BN"))}</div>
-  <div>
-    <b>{_esc_html(name)}</b>
-    <span>VAS { _esc_html(s.get('vas', 'N/A')) }/10 · {_esc_html(_format_vn_time(s.get('time'), default='N/A'))}<br>{_esc_html(exs)}</span>
-  </div>
-</div>
-"""
-                                    )
-                                st.markdown('<div class="ncv-patient-grid">' + "".join(rows_html) + "</div>", unsafe_allow_html=True)
+                            if user_role in ["Nghiên cứu viên", "Bác sĩ / KTV PHCN"]:
+                                st.markdown(_ncv_symptom_table(display_list), unsafe_allow_html=True)
                             else:
                                 symp_cols = st.columns(3)
                                 for i, s in enumerate(display_list):
@@ -20295,15 +20421,56 @@ def _demo_nav_label_for_tab(tab_title):
     current_role = st.session_state.user_info.get("role") if st.session_state.get("user_info") else ""
     if current_role == "Nghiên cứu viên":
         if "TRANG CHỦ" in raw:
-            return "Quản lý Dataset", "i-db"
+            return "Dataset", "i-db"
         if "KẾT QUẢ" in raw or "ĐÁNH GIÁ" in raw:
-            return "AI vs Lâm sàng", "i-bars"
+            return "AI vs LS", "i-bars"
         if "PHÂN TÍCH" in raw:
-            return "Phân tích kỹ thuật", "i-flask"
+            return "Phân tích", "i-flask"
         if "THÔNG TIN TỔNG HỢP" in raw:
-            return "Cấu hình mô hình AI", "i-cog"
+            return "Mô hình", "i-cog"
         if "HỒ SƠ" in raw:
-            return "Hồ sơ đề tài", "i-users"
+            return "Hồ sơ", "i-users"
+        if "PHẢN HỒI" in raw:
+            return "Phản hồi", "i-log"
+    if current_role == "Bác sĩ / KTV PHCN":
+        if "TRANG CHỦ" in raw:
+            return "Bệnh nhân", "i-users"
+        if "QUẢN LÝ" in raw or "ĐÁNH GIÁ" in raw:
+            return "Đánh giá", "i-stetho"
+        if "VIDEO" in raw:
+            return "Video", "i-video"
+        if "LỊCH" in raw:
+            return "Lịch", "i-bell"
+        if "THÔNG TIN TỔNG HỢP" in raw:
+            return "Thông tin", "i-doc"
+        if "HỒ SƠ" in raw:
+            return "Hồ sơ", "i-users"
+        if "LIÊN HỆ" in raw:
+            return "Liên hệ", "i-mail"
+        if "PHẢN HỒI" in raw:
+            return "Phản hồi", "i-log"
+    if current_role == "Bệnh nhân":
+        if "TRANG CHỦ" in raw:
+            return "Tập luyện", "i-dumbbell"
+        if "KẾT QUẢ" in raw or "ĐÁNH GIÁ" in raw:
+            return "Kết quả", "i-spark"
+        if "LỊCH" in raw:
+            return "Lịch", "i-bell"
+        if "THÔNG TIN TỔNG HỢP" in raw:
+            return "Thông tin", "i-doc"
+        if "LIÊN HỆ" in raw:
+            return "Liên hệ", "i-mail"
+        if "PHẢN HỒI" in raw:
+            return "Phản hồi", "i-log"
+    if current_role == "Quản trị viên":
+        if "TRANG CHỦ" in raw:
+            return "Trang chủ", "i-shield"
+        if "QUẢN TRỊ" in raw:
+            return "Quản trị", "i-cog"
+        if "THÔNG TIN TỔNG HỢP" in raw:
+            return "Thông tin", "i-doc"
+        if "HỒ SƠ" in raw:
+            return "Hồ sơ", "i-users"
         if "PHẢN HỒI" in raw:
             return "Phản hồi", "i-log"
     cleaned = raw
@@ -20348,7 +20515,7 @@ def _material_icon_for_demo_icon(icon):
     return {
         "i-db": "database",
         "i-cog": "settings",
-        "i-bars": "bar_chart",
+        "i-bars": "bar_chart_4_bars",
         "i-flask": "science",
         "i-users": "groups",
         "i-log": "forum",
@@ -20359,6 +20526,11 @@ def _material_icon_for_demo_icon(icon):
         "i-doc": "description",
         "i-mail": "mail",
         "i-target": "adjust",
+        "i-heart": "favorite",
+        "i-stetho": "stethoscope",
+        "i-shield": "shield",
+        "i-broom": "cleaning_services",
+        "i-search": "search",
     }.get(icon, "chevron_right")
 
 
@@ -20423,6 +20595,83 @@ def _render_demo_topbar(user_role):
         is_light=(st.session_state.get('theme') == 'light'),
         on_logout=_dang_xuat_ve_dang_nhap,
     )
+
+
+def _stable_widget_slug(value):
+    text = str(value or "")
+    text = re.sub(r"[^0-9A-Za-zÀ-ỹ]+", "_", text, flags=re.UNICODE).strip("_")
+    return text[:46] or "item"
+
+
+def _render_topbar_tab_nav(tab_titles, user_role):
+    """Render role tabs as a BabyShark-style topbar navigation."""
+    if not tab_titles:
+        return
+
+    current = st.session_state.get("active_tab_widget") or st.session_state.get("active_tab") or tab_titles[0]
+    if current not in tab_titles:
+        current = tab_titles[0]
+        st.session_state.active_tab = current
+        st.session_state.active_tab_widget = current
+
+    st.session_state["_demo_sidebar_nav_enabled"] = True
+    st.session_state["_topbar_nav_enabled"] = True
+    st.markdown('<span class="topbar-nav-anchor" aria-hidden="true"></span>', unsafe_allow_html=True)
+    with st.container(key="topbar_nav_shell"):
+        for index, tab_title in enumerate(tab_titles):
+            label, icon = _demo_nav_label_for_tab(tab_title)
+            active = current == tab_title
+            key = f"topbar_nav_{_stable_widget_slug(user_role)}_{index}_{_stable_widget_slug(tab_title)}"
+            if st.button(
+                label,
+                key=key,
+                type="primary" if active else "secondary",
+                icon=f":material/{_material_icon_for_demo_icon(icon)}:",
+            ):
+                st.session_state.active_tab = tab_title
+                st.session_state.active_tab_widget = tab_title
+                st.session_state["inline_active_tab_widget"] = tab_title
+                st.rerun()
+
+
+def _render_sidebar_open_handle():
+    """Keep an always-visible control that can reopen Streamlit's collapsed sidebar."""
+    with st.container(key="open_sidebar_handle"):
+        if st.button("☰", key="open_sidebar_button", help="Mở / thu sidebar"):
+            st.session_state["_sidebar_toggle_request"] = int(st.session_state.get("_sidebar_toggle_request", 0)) + 1
+            st.rerun()
+    toggle_request = st.session_state.get("_sidebar_toggle_request", 0)
+    if toggle_request:
+        try:
+            _st_components.html(
+                f"""
+                <script>
+                (function(){{
+                  const token = {toggle_request};
+                  const key = 'rehab-sidebar-toggle-token';
+                  const doc = window.parent.document;
+                  if (doc.documentElement.dataset[key] === String(token)) return;
+                  doc.documentElement.dataset[key] = String(token);
+                  const buttons = Array.from(doc.querySelectorAll('button'));
+                  const match = buttons.find(function(btn){{
+                    const txt = [
+                      btn.getAttribute('aria-label') || '',
+                      btn.getAttribute('title') || '',
+                      btn.textContent || ''
+                    ].join(' ').toLowerCase();
+                    return txt.includes('sidebar') || txt.includes('collapse') ||
+                           txt.includes('expand') || txt.includes('menu') ||
+                           txt.includes('keyboard_double_arrow');
+                  }});
+                  if (match) setTimeout(function(){{ match.click(); }}, 30);
+                }})();
+                </script>
+                """,
+                height=0,
+                width=0,
+            )
+        except Exception:
+            pass
 
 
 def _force_sidebar_expanded_once():
@@ -20573,9 +20822,9 @@ def main():
     _render_demo_topbar(user_role)
     if user_role == "Nghiên cứu viên":
         st.markdown('<span class="ncv-workspace-anchor"></span>', unsafe_allow_html=True)
+    _render_sidebar_open_handle()
+    _render_topbar_tab_nav(tab_titles, user_role)
     _force_sidebar_expanded_once()
-    if user_role != "Nghiên cứu viên":
-        _render_demo_inline_nav(tab_titles, user_role)
 
     # Callback xử lý đổi theme nhanh
     def update_theme_callback():
@@ -20583,16 +20832,16 @@ def main():
 
     # Chuyển các điều khiển hệ thống vào Sidebar
     with st.sidebar:
-        _render_demo_sidebar_nav(tab_titles, user_role)
-        st.markdown("---")
+        st.markdown('<div class="side-section">PANEL PHỤ TRỢ</div>', unsafe_allow_html=True)
         st.markdown("### 🛠️ HỆ THỐNG")
         
         # 1. Chế độ Sáng/Tối
         current_theme = st.session_state.get('theme', 'dark')
         label = "🌙 Chế độ Tối" if current_theme == 'dark' else "☀️ Chế độ Sáng"
-        st.toggle(label, value=(current_theme == 'dark'), 
-                  key="theme_toggle_top", 
-                  on_change=update_theme_callback)
+        desired_toggle_state = current_theme == 'dark'
+        if st.session_state.get("theme_toggle_top") != desired_toggle_state:
+            st.session_state["theme_toggle_top"] = desired_toggle_state
+        st.toggle(label, key="theme_toggle_top", on_change=update_theme_callback)
         
         # 2. Thông tin người dùng & Đăng xuất
         st.markdown(f"""
