@@ -530,8 +530,8 @@ def auth_screen_html() -> str:
     return """
 <div class="auth-hero">
   <span class="eyebrow"><svg class="icon sm"><use href="#i-shield-c"/></svg> Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>
-  <div class="auth-hero-title" role="heading" aria-level="1" style="display:block!important;margin:0!important;max-width:21ch!important;font-family:var(--display, Georgia, 'Times New Roman', serif)!important;font-size:clamp(50px,4.6vw,64px)!important;line-height:1.03!important;font-weight:600!important;letter-spacing:0!important;color:var(--ink,#111827)!important;text-wrap:wrap!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none!important;">
-    Giám sát tập <em style="font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;font-weight:inherit!important;font-style:italic!important;color:var(--teal,#1d6fe8)!important;white-space:nowrap!important;">phục hồi chức năng</em> <span style="font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;font-weight:inherit!important;color:inherit!important;white-space:nowrap!important;">bằng</span><br/>AI, ngay tại nhà.
+  <div class="auth-hero-title" role="heading" aria-level="1" style="display:block!important;margin:0!important;max-width:21ch!important;font-family:Georgia,'Times New Roman',serif!important;font-size:clamp(50px,4.6vw,64px)!important;line-height:1.03!important;font-weight:600!important;letter-spacing:0!important;color:var(--ink,#111827)!important;text-wrap:wrap!important;word-break:keep-all!important;overflow-wrap:normal!important;hyphens:none!important;">
+    <span class="auth-word">Giám</span> <span class="auth-word">sát</span> <span class="auth-word">tập</span> <em style="font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;font-weight:inherit!important;font-style:italic!important;color:var(--teal,#1d6fe8)!important;"><span class="auth-word">phục</span> <span class="auth-word">hồi</span> <span class="auth-word">chức</span> <span class="auth-word">năng</span></em> <span class="auth-word">bằng</span><br/><span class="auth-word">AI,</span> <span class="auth-word">ngay</span> <span class="auth-word">tại</span> <span class="auth-word">nhà.</span>
   </div>
   <p class="lede">Bệnh nhân khai báo triệu chứng (VAS) → AI phân tích khung xương & góc khớp theo thời gian thực → Chuyên gia đối chiếu và đưa ra phác đồ. Một luồng lâm sàng khép kín.</p>
   <div class="hero-stats">
@@ -950,7 +950,7 @@ _AUTH_NAV_CSS = """
 [data-testid="stMarkdownContainer"] .auth-hero .auth-hero-title{
   display:block!important;
   visibility:visible!important;
-  font-family:var(--display)!important;
+  font-family:Georgia,'Times New Roman',serif!important;
   font-weight:600!important;
   font-size:clamp(56px,5.25vw,76px)!important;
   line-height:1.02!important;
@@ -959,7 +959,7 @@ _AUTH_NAV_CSS = """
   color:var(--ink)!important;
   max-width:21ch!important;
   text-wrap:wrap!important;
-  word-break:normal!important;
+  word-break:keep-all!important;
   overflow-wrap:normal!important;
   hyphens:none!important;
 }
@@ -977,6 +977,19 @@ _AUTH_NAV_CSS = """
   font-weight:inherit!important;
   font-style:italic;
   color:var(--teal)!important;
+  white-space:normal!important;
+}
+.auth-hero .auth-hero-title .auth-word,
+[data-testid="stMarkdownContainer"] .auth-hero .auth-hero-title .auth-word{
+  display:inline-block!important;
+  font-family:inherit!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+  font-weight:inherit!important;
+  letter-spacing:0!important;
+  word-break:keep-all!important;
+  overflow-wrap:normal!important;
+  hyphens:none!important;
   white-space:nowrap!important;
 }
 .auth-hero p.lede,
@@ -1436,14 +1449,14 @@ _AUTH_NAV_CSS = """
   display:block!important;
   margin:0!important;
   max-width:21ch!important;
-  font-family:var(--display, Georgia, 'Times New Roman', serif)!important;
+  font-family:Georgia,'Times New Roman',serif!important;
   font-size:clamp(50px,4.6vw,64px)!important;
   line-height:1.03!important;
   font-weight:600!important;
   letter-spacing:0!important;
   color:var(--ink,#111827)!important;
   text-wrap:wrap!important;
-  word-break:normal!important;
+  word-break:keep-all!important;
   overflow-wrap:normal!important;
   hyphens:none!important;
 }
@@ -1455,7 +1468,7 @@ _AUTH_NAV_CSS = """
   font-weight:inherit!important;
   font-style:italic!important;
   color:var(--teal,#1d6fe8)!important;
-  white-space:nowrap!important;
+  white-space:normal!important;
 }
 .stApp:has(.auth-shell-anchor) .auth-hero-title span,
 .auth-hero-title span{
@@ -1464,6 +1477,19 @@ _AUTH_NAV_CSS = """
   line-height:inherit!important;
   font-weight:inherit!important;
   color:inherit!important;
+  white-space:nowrap!important;
+}
+.stApp:has(.auth-shell-anchor) .auth-hero-title .auth-word,
+.auth-hero-title .auth-word{
+  display:inline-block!important;
+  font-family:inherit!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+  font-weight:inherit!important;
+  letter-spacing:0!important;
+  word-break:keep-all!important;
+  overflow-wrap:normal!important;
+  hyphens:none!important;
   white-space:nowrap!important;
 }
 @media (max-width:640px){
