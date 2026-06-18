@@ -775,7 +775,7 @@ _AUTH_NAV_CSS = """
   padding:0!important;
   overflow:hidden!important;
 }
-.auth-layout-row-anchor + div [data-testid="stHorizontalBlock"],
+.auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"],
 .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit){
   display:grid!important;
   grid-template-columns:minmax(0,1fr) minmax(360px,430px)!important;
@@ -783,6 +783,22 @@ _AUTH_NAV_CSS = """
   column-gap:clamp(54px,8vw,168px)!important;
   width:100%!important;
   padding:clamp(138px,18vh,208px) clamp(64px,3.5vw,82px) clamp(32px,5vh,58px)!important;
+}
+.auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"],
+.stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit) > div[data-testid="stColumn"]{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  flex:unset!important;
+}
+.auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:first-child,
+.stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit) > div[data-testid="stColumn"]:first-child{
+  grid-column:1!important;
+}
+.auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:last-child,
+.stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit) > div[data-testid="stColumn"]:last-child{
+  grid-column:2!important;
+  justify-self:stretch!important;
 }
 .auth-shell-anchor + div{
   margin-top:0!important;
@@ -1342,12 +1358,17 @@ _AUTH_NAV_CSS = """
 
 @media (max-width:980px){
   .auth-wrap{grid-template-columns:1fr}
-  .auth-layout-row-anchor + div [data-testid="stHorizontalBlock"],
+  .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"],
   .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit){
     display:grid!important;
     grid-template-columns:1fr!important;
     gap:18px!important;
     padding:42px 16px 24px!important;
+  }
+  .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"],
+  .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit) > div[data-testid="stColumn"]{
+    grid-column:1!important;
+    width:100%!important;
   }
   .auth-hero{min-height:auto;padding:8px 0 4px;gap:12px}
   .auth-hero h1{font-size:clamp(30px,8vw,42px)!important;line-height:1.08!important}
