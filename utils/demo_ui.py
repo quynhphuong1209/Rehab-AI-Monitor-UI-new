@@ -530,8 +530,8 @@ def auth_screen_html() -> str:
     return """
 <div class="auth-hero">
   <span class="eyebrow"><svg class="icon sm"><use href="#i-shield-c"/></svg> Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>
-  <div class="auth-hero-title" role="heading" aria-level="1" style="display:block!important;margin:0!important;max-width:21ch!important;font-family:var(--display, Georgia, 'Times New Roman', serif)!important;font-size:clamp(50px,4.6vw,64px)!important;line-height:1.03!important;font-weight:600!important;letter-spacing:0!important;color:var(--ink,#111827)!important;text-wrap:balance!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none!important;">
-    Giám sát tập <em style="font-family:inherit!important;font-style:italic!important;color:var(--teal,#1d6fe8)!important;white-space:nowrap!important;">phục hồi chức năng</em> <span style="white-space:nowrap!important;">bằng</span><br/>AI, ngay tại nhà.
+  <div class="auth-hero-title" role="heading" aria-level="1" style="display:block!important;margin:0!important;max-width:21ch!important;font-family:var(--display, Georgia, 'Times New Roman', serif)!important;font-size:clamp(50px,4.6vw,64px)!important;line-height:1.03!important;font-weight:600!important;letter-spacing:0!important;color:var(--ink,#111827)!important;text-wrap:wrap!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none!important;">
+    Giám sát tập <em style="font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;font-weight:inherit!important;font-style:italic!important;color:var(--teal,#1d6fe8)!important;white-space:nowrap!important;">phục hồi chức năng</em> <span style="font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;font-weight:inherit!important;color:inherit!important;white-space:nowrap!important;">bằng</span><br/>AI, ngay tại nhà.
   </div>
   <p class="lede">Bệnh nhân khai báo triệu chứng (VAS) → AI phân tích khung xương & góc khớp theo thời gian thực → Chuyên gia đối chiếu và đưa ra phác đồ. Một luồng lâm sàng khép kín.</p>
   <div class="hero-stats">
@@ -958,7 +958,7 @@ _AUTH_NAV_CSS = """
   letter-spacing:0!important;
   color:var(--ink)!important;
   max-width:21ch!important;
-  text-wrap:balance!important;
+  text-wrap:wrap!important;
   word-break:normal!important;
   overflow-wrap:normal!important;
   hyphens:none!important;
@@ -972,6 +972,9 @@ _AUTH_NAV_CSS = """
 [data-testid="stMarkdownContainer"] .auth-hero h1 em,
 [data-testid="stMarkdownContainer"] .auth-hero .auth-hero-title em{
   font-family:inherit!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+  font-weight:inherit!important;
   font-style:italic;
   color:var(--teal)!important;
   white-space:nowrap!important;
@@ -1439,7 +1442,7 @@ _AUTH_NAV_CSS = """
   font-weight:600!important;
   letter-spacing:0!important;
   color:var(--ink,#111827)!important;
-  text-wrap:balance!important;
+  text-wrap:wrap!important;
   word-break:normal!important;
   overflow-wrap:normal!important;
   hyphens:none!important;
@@ -1447,12 +1450,20 @@ _AUTH_NAV_CSS = """
 .stApp:has(.auth-shell-anchor) .auth-hero-title em,
 .auth-hero-title em{
   font-family:inherit!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+  font-weight:inherit!important;
   font-style:italic!important;
   color:var(--teal,#1d6fe8)!important;
   white-space:nowrap!important;
 }
 .stApp:has(.auth-shell-anchor) .auth-hero-title span,
 .auth-hero-title span{
+  font-family:inherit!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+  font-weight:inherit!important;
+  color:inherit!important;
   white-space:nowrap!important;
 }
 @media (max-width:640px){
