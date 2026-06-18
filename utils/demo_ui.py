@@ -238,12 +238,16 @@ def inject_design_system(is_light: bool = True):
 _STREAMLIT_SKIN_CSS = """
 <style id="duk-st-skin">
 /* ---------- NỀN APP (mesh gradient giống demo) ---------- */
-.stApp{
+html, body,
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMainViewContainer"]{
   background-color:var(--bg)!important;
   background-image:
     radial-gradient(60vw 50vh at 8% -8%, var(--teal-12), transparent 60%),
     radial-gradient(55vw 50vh at 105% 0%, var(--ai-50), transparent 55%)!important;
   background-attachment:fixed!important;
+  color:var(--ink)!important;
 }
 [data-testid="stAppViewContainer"]>.main .block-container{
   padding-top:0!important;
@@ -544,6 +548,7 @@ def auth_screen_html() -> str:
       <line x1="86" y1="138" x2="74" y2="178" class="pose-bone dim"/>
       <circle cx="86" cy="138" r="6" class="pose-joint dim"/>
       <g id="poseArm">
+        <animateTransform attributeName="transform" type="rotate" values="8 120 92;-78 120 92;8 120 92" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
         <line x1="120" y1="92" x2="170" y2="118" class="pose-bone"/>
         <line x1="170" y1="118" x2="206" y2="132" class="pose-bone"/>
         <circle cx="170" cy="118" r="6" class="pose-joint"/>
@@ -691,6 +696,45 @@ def side_info_html(role: str, user_info=None, stats=None) -> str:
 
 # ============================================================ ADDITIONAL CSS FOR AUTH & NAV
 _AUTH_NAV_CSS = """
+/* Icons used outside the .duk content wrapper: auth hero, topbar, badges. */
+.icon{
+  width:18px!important;
+  height:18px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.7!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  flex:none!important;
+  vertical-align:middle!important;
+}
+.icon.sm{width:15px!important;height:15px!important}
+.icon.lg{width:26px!important;height:26px!important}
+.icon.xl{width:34px!important;height:34px!important}
+.stApp:has(.auth-shell-anchor),
+.stApp:has(.auth-shell-anchor) [data-testid="stAppViewContainer"]{
+  background-color:var(--bg)!important;
+  background-image:
+    radial-gradient(60vw 50vh at 8% -8%,var(--bg-mesh-1),transparent 60%),
+    radial-gradient(55vw 50vh at 105% 0%,var(--bg-mesh-2),transparent 55%)!important;
+  background-attachment:fixed!important;
+  color:var(--ink)!important;
+}
+.stApp:has(.auth-shell-anchor) [data-testid="stAppViewContainer"]>.main .block-container{
+  padding-top:0!important;
+  padding-bottom:0!important;
+  max-width:100%!important;
+}
+.stApp:has(.auth-shell-anchor) [data-testid="stMarkdownContainer"],
+.stApp:has(.auth-shell-anchor) [data-testid="stMarkdownContainer"] *,
+.stApp:has(.auth-shell-anchor) label,
+.stApp:has(.auth-shell-anchor) label *,
+.stApp:has(.auth-shell-anchor) p,
+.stApp:has(.auth-shell-anchor) span,
+.stApp:has(.auth-shell-anchor) h1,
+.stApp:has(.auth-shell-anchor) h2{
+  color:inherit;
+}
 /* ============================================================ AUTH SCREEN */
 .auth-shell-anchor{
   display:block!important;
@@ -723,6 +767,9 @@ _AUTH_NAV_CSS = """
   top:13px;
   right:28px;
   z-index:1000;
+  width:38px!important;
+  height:38px!important;
+  pointer-events:auto!important;
 }
 .st-key-auth_theme_icon_button .stButton>button,
 .st-key-auth_theme_icon_button button{
@@ -753,12 +800,19 @@ _AUTH_NAV_CSS = """
 }
 .st-key-app_logout_icon_button,
 .st-key-app_theme_icon_button{
-  position:fixed;
-  top:12px;
-  z-index:1001;
+  position:fixed!important;
+  top:12px!important;
+  z-index:2147483000!important;
+  width:38px!important;
+  height:38px!important;
+  pointer-events:auto!important;
 }
-.st-key-app_logout_icon_button{right:72px}
-.st-key-app_theme_icon_button{right:28px}
+.st-key-app_logout_icon_button{right:72px!important}
+.st-key-app_theme_icon_button{right:28px!important}
+.st-key-app_logout_icon_button *,
+.st-key-app_theme_icon_button *{
+  pointer-events:auto!important;
+}
 .st-key-app_logout_icon_button .stButton>button,
 .st-key-app_theme_icon_button .stButton>button,
 .st-key-app_logout_icon_button button,
@@ -806,7 +860,7 @@ _AUTH_NAV_CSS = """
 }
 .auth-hero{
   position:relative;overflow:hidden;
-  padding:clamp(8px,2vw,22px) clamp(6px,1.4vw,14px);
+  padding:clamp(28px,5vw,64px);
   display:flex;flex-direction:column;justify-content:center;gap:24px;
   min-height:520px;
   color:var(--ink)!important;
@@ -817,6 +871,8 @@ _AUTH_NAV_CSS = """
   background:var(--teal-50);color:var(--teal-strong);border:1px solid var(--teal-50);
 }
 .auth-hero h1{
+  display:block!important;
+  visibility:visible!important;
   font-family:var(--display);font-weight:600;font-size:clamp(38px,4.8vw,56px);
   line-height:1.05;margin:0;letter-spacing:-.5px;
   color:var(--ink)!important;
@@ -959,6 +1015,53 @@ _AUTH_NAV_CSS = """
   color:#fff!important;
   -webkit-text-fill-color:#fff!important;
 }
+.auth-demo-strip{
+  margin-top:18px;
+  border-top:1px dashed var(--line);
+  padding-top:14px;
+}
+.auth-demo-strip .dt{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  color:var(--ink-3)!important;
+  text-align:center;
+  margin-bottom:10px;
+}
+.st-key-auth_demo_role_favorite button,
+.st-key-auth_demo_role_medical_services button,
+.st-key-auth_demo_role_construction button,
+.st-key-auth_demo_role_science button,
+.st-key-auth_demo_role_admin_panel_settings button{
+  min-height:34px!important;
+  height:34px!important;
+  border-radius:999px!important;
+  padding:0 10px!important;
+  font-size:11.5px!important;
+  background:var(--surface-2)!important;
+  border:1px solid var(--line)!important;
+  color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
+  box-shadow:none!important;
+}
+.st-key-auth_demo_role_favorite button *,
+.st-key-auth_demo_role_medical_services button *,
+.st-key-auth_demo_role_construction button *,
+.st-key-auth_demo_role_science button *,
+.st-key-auth_demo_role_admin_panel_settings button *{
+  color:inherit!important;
+  -webkit-text-fill-color:inherit!important;
+}
+.st-key-auth_demo_role_favorite button:hover,
+.st-key-auth_demo_role_medical_services button:hover,
+.st-key-auth_demo_role_construction button:hover,
+.st-key-auth_demo_role_science button:hover,
+.st-key-auth_demo_role_admin_panel_settings button:hover{
+  border-color:var(--teal)!important;
+  color:var(--teal)!important;
+  -webkit-text-fill-color:var(--teal)!important;
+}
 
 /* ============================================================ TOP BAR */
 .topbar{
@@ -977,6 +1080,7 @@ _AUTH_NAV_CSS = """
   background:linear-gradient(145deg,var(--teal),var(--teal-strong));
   box-shadow:0 6px 16px var(--teal-50);
 }
+.brand-mark .icon{width:23px!important;height:23px!important;stroke-width:2!important}
 .brand-txt{display:flex;flex-direction:column;line-height:1.1;min-width:0}
 .brand-name{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.1px;color:var(--ink)!important}
 .brand-name b{color:var(--teal)}
@@ -1034,6 +1138,7 @@ _AUTH_NAV_CSS = """
 [data-testid="stSidebar"]{
   background:color-mix(in srgb,var(--bg) 88%,var(--surface) 12%)!important;
   border-right:1px solid var(--line)!important;
+  visibility:visible!important;
 }
 [data-testid="stSidebar"] [data-testid="stSidebarContent"]{
   padding-top:18px!important;
@@ -1058,6 +1163,37 @@ _AUTH_NAV_CSS = """
   background:var(--surface-2)!important;
   color:var(--teal-strong)!important;
   transform:none!important;
+}
+.st-key-inline_active_tab_widget{
+  margin:12px clamp(14px,3vw,30px) 18px!important;
+  padding:10px 12px!important;
+  background:var(--glass)!important;
+  border:1px solid var(--line)!important;
+  border-radius:14px!important;
+  backdrop-filter:saturate(160%) blur(14px)!important;
+  -webkit-backdrop-filter:saturate(160%) blur(14px)!important;
+  box-shadow:var(--shadow-sm)!important;
+}
+.st-key-inline_active_tab_widget [data-testid="stSegmentedControl"]{
+  width:100%!important;
+}
+.st-key-inline_active_tab_widget [role="radiogroup"],
+.st-key-inline_active_tab_widget [role="group"]{
+  display:flex!important;
+  gap:7px!important;
+  overflow-x:auto!important;
+  padding:2px!important;
+}
+.st-key-inline_active_tab_widget button{
+  white-space:nowrap!important;
+  color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
+}
+.st-key-inline_active_tab_widget button[aria-checked="true"],
+.st-key-inline_active_tab_widget button[aria-pressed="true"],
+.st-key-inline_active_tab_widget button[kind="segmented_controlActive"]{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
 }
 .st-key-auth_card_streamlit .stRadio [role="radiogroup"]{
   display:grid!important;

@@ -5573,6 +5573,17 @@ def _hoan_tat_dang_nhap(username, user_record):
     st.session_state._clear_login_widgets_next_run = True
     _sync_route_query(username=username, role=role)
 
+
+def _dang_nhap_demo_theo_vai_tro(role_label):
+    """Open a role shell from the auth demo buttons, using an existing local account."""
+    users = load_users()
+    for username, record in users.items():
+        if _roles_match((record or {}).get("role"), role_label):
+            _hoan_tat_dang_nhap(username, record)
+            _rerun_toan_bo_app()
+            return
+    st.error(f"Không tìm thấy tài khoản demo cho vai trò {role_label}.")
+
 _xoa_widget_dang_nhap_sau_rerun()
 
 # KIỂM TRA ĐĂNG NHẬP GOOGLE (Hỗ trợ Streamlit Cloud Identity)
@@ -18062,7 +18073,7 @@ def hien_thi_dang_nhap_dang_ky():
 
             # GIAO DIỆN CHÍNH (TABS) - giống auth card HTML demo
             login_role = st.session_state.get("login_role_main", "Bác sĩ / KTV PHCN")
-            tab_list = ["Đăng nhập", "Đăng ký", "Google ID"]
+            tab_list = ["Đăng nhập", "Đăng ký"]
             all_login_tabs = st.tabs(tab_list)
             t_map = {name: all_login_tabs[i] for i, name in enumerate(tab_list)}
             
@@ -18159,22 +18170,29 @@ def hien_thi_dang_nhap_dang_ky():
                                 save_users(users)
                                 st.success("🎉 Đăng ký thành công! Bạn có thể đăng nhập ngay.")
                                 
-            if "Google ID" in t_map:
-                with t_map["Google ID"]:
-                    st.markdown("""
-                    <div style="text-align: center; padding: 10px;">
-                        <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" width="40" style="margin-bottom: 5px;">
-                        <h5 style="color: var(--ink);">Đăng nhập nhanh</h5>
-                        <p style="color: var(--ink-3); font-size: 0.85rem;">Truy cập an toàn qua Google ID</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    if st.button("🌐 TIẾP TỤC ĐĂNG NHẬP VỚI GOOGLE", width="stretch", type="primary"):
-                        try:
-                            st.session_state.auth_initiated = True
-                            st.login("google")
-                        except Exception as e:
-                            st.error(f"⚠️ Lỗi Google: {e}")
+            st.markdown(
+                '<div class="auth-demo-strip">'
+                '<div class="dt">Xem nhanh demo theo vai trò</div>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+            demo_cols = st.columns([1, 1, 1, 1, 1], gap="small")
+            demo_roles = [
+                ("Bệnh nhân", "Bệnh nhân", "favorite"),
+                ("Bác sĩ", "Bác sĩ / KTV PHCN", "medical_services"),
+                ("KTV", "Bác sĩ / KTV PHCN", "construction"),
+                ("NCV", "Nghiên cứu viên", "science"),
+                ("Quản trị", "Quản trị viên", "admin_panel_settings"),
+            ]
+            for col, (button_label, role_label, icon_name) in zip(demo_cols, demo_roles):
+                with col:
+                    if st.button(
+                        button_label,
+                        key=f"auth_demo_role_{icon_name}",
+                        width="stretch",
+                        icon=f":material/{icon_name}:",
+                    ):
+                        _dang_nhap_demo_theo_vai_tro(role_label)
     close_auth_shell()
 
 # ============================================
@@ -20114,6 +20132,91 @@ def _render_demo_topbar(user_role):
     )
 
 
+def _force_sidebar_expanded_once():
+    """Nudge Streamlit's sidebar open after HF iframe/router restores a collapsed shell."""
+    if st.session_state.get("_sidebar_expand_nudged"):
+        return
+    st.session_state["_sidebar_expand_nudged"] = True
+    try:
+        _st_components.html(
+            """
+            <script>
+            (function(){
+              function nudge(){
+                const doc = window.parent.document;
+                const sidebar = doc.querySelector('[data-testid="stSidebar"]');
+                if (sidebar && sidebar.getBoundingClientRect().width > 120) return;
+                const candidates = Array.from(doc.querySelectorAll('button'));
+                const btn = candidates.find(function(b){
+                  const txt = [
+                    b.getAttribute('aria-label') || '',
+                    b.getAttribute('title') || '',
+                    b.textContent || ''
+                  ].join(' ').toLowerCase();
+                  return txt.includes('sidebar') || txt.includes('expand') || txt.includes('menu');
+                });
+                if (btn) btn.click();
+              }
+              setTimeout(nudge, 120);
+              setTimeout(nudge, 650);
+            })();
+            </script>
+            """,
+            height=0,
+            width=0,
+        )
+    except Exception:
+        pass
+
+
+def _render_demo_inline_nav(tab_titles, user_role):
+    """Visible role navigation when the Streamlit sidebar is collapsed by browser/HF shell state."""
+    if not tab_titles:
+        return
+    current = st.session_state.get("active_tab_widget") or st.session_state.get("active_tab") or tab_titles[0]
+    if current not in tab_titles:
+        current = tab_titles[0]
+    inline_value = st.session_state.get("inline_active_tab_widget")
+    last_inline_value = st.session_state.get("_inline_nav_last_value")
+    inline_changed_by_user = (
+        inline_value in tab_titles
+        and last_inline_value in tab_titles
+        and inline_value != last_inline_value
+    )
+    if (
+        st.session_state.get("_inline_nav_role") != user_role
+        or st.session_state.get("inline_active_tab_widget") not in tab_titles
+    ):
+        st.session_state["_inline_nav_role"] = user_role
+        st.session_state["inline_active_tab_widget"] = current
+    elif not inline_changed_by_user and st.session_state.get("inline_active_tab_widget") != current:
+        st.session_state["inline_active_tab_widget"] = current
+
+    try:
+        selected = st.segmented_control(
+            label="Điều hướng",
+            options=tab_titles,
+            selection_mode="single",
+            key="inline_active_tab_widget",
+            label_visibility="collapsed",
+        )
+    except Exception:
+        selected = st.radio(
+            label="Điều hướng",
+            options=tab_titles,
+            index=tab_titles.index(current),
+            horizontal=True,
+            key="inline_active_tab_widget",
+            label_visibility="collapsed",
+        )
+    if selected and selected != st.session_state.get("active_tab_widget"):
+        st.session_state.active_tab = selected
+        st.session_state.active_tab_widget = selected
+        st.session_state["_inline_nav_last_value"] = selected
+        st.rerun()
+    st.session_state["_inline_nav_last_value"] = selected or current
+
+
 def _get_main_tab_titles_for_role(user_role):
     if user_role == "Quản trị viên":
         return ["🏠 TRANG CHỦ", "🛠️ QUẢN TRỊ VIÊN", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
@@ -20175,6 +20278,8 @@ def main():
         st.session_state.active_tab_widget = st.session_state.active_tab
 
     _render_demo_topbar(user_role)
+    _force_sidebar_expanded_once()
+    _render_demo_inline_nav(tab_titles, user_role)
 
     # Callback xử lý đổi theme nhanh
     def update_theme_callback():
