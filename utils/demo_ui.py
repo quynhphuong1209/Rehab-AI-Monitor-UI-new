@@ -2396,3 +2396,455 @@ html[data-theme="dark"] .st-key-auth_card_streamlit .stTextInput [data-testid="s
 def inject_auth_nav_css():
     """Inject CSS cho auth screen và navigation."""
     st.markdown("<style>" + _AUTH_NAV_CSS + "</style>", unsafe_allow_html=True)
+
+
+_NCV_DASHBOARD_CSS = """
+.stApp:has(.ncv-workspace-anchor) [data-testid="stAppViewContainer"]>.main .block-container,
+.stApp:has(.ncv-workspace-anchor) [data-testid="stMainBlockContainer"],
+.stApp:has(.ncv-workspace-anchor) [data-testid="stAppViewBlockContainer"]{
+  max-width:1040px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  padding:86px 0 42px!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"],
+.stApp:has(.ncv-workspace-anchor) [data-testid="stMainBlockContainer"] .stVerticalBlock:first-child{
+  gap:0!important;
+  row-gap:0!important;
+}
+.stApp:has(.ncv-workspace-anchor) div.element-container:has(.topbar),
+.stApp:has(.ncv-workspace-anchor) [data-testid="stMarkdownContainer"]:has(.topbar){
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stHeader"]{
+  display:none!important;
+  height:0!important;
+  min-height:0!important;
+}
+.stApp:has(.ncv-workspace-anchor) .topbar{
+  position:fixed!important;
+  top:0!important;
+  left:0!important;
+  right:0!important;
+  z-index:2147482400!important;
+  min-height:58px!important;
+  padding:9px clamp(22px,3vw,30px)!important;
+  margin:0!important;
+  width:100vw!important;
+  max-width:100vw!important;
+}
+.stApp:has(.ncv-workspace-anchor) .st-key-inline_active_tab_widget{
+  display:none!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebar"]{
+  background:color-mix(in srgb,var(--bg) 88%,var(--surface) 12%)!important;
+  border-right:1px solid var(--line)!important;
+  box-shadow:none!important;
+  top:58px!important;
+  height:calc(100vh - 58px)!important;
+  z-index:2147481200!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebarContent"]{
+  padding-top:16px!important;
+  padding-left:12px!important;
+  padding-right:12px!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebarHeader"],
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebarCollapseButton"],
+.stApp:has(.ncv-workspace-anchor) [data-testid="stLogoSpacer"]{
+  display:none!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+}
+.stApp:has(.ncv-workspace-anchor) .side-section{
+  margin:2px 10px 9px!important;
+  font-size:10.5px!important;
+  font-weight:800!important;
+  letter-spacing:.7px!important;
+  color:var(--ink-3)!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebar"] .stButton>button{
+  min-height:38px!important;
+  justify-content:flex-start!important;
+  padding:0 12px!important;
+  border-radius:11px!important;
+  font-family:var(--ui)!important;
+  font-size:13.5px!important;
+  font-weight:600!important;
+  color:var(--ink-2)!important;
+  background:transparent!important;
+  border:1px solid transparent!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebar"] .stButton>button [data-testid="stIconMaterial"]{
+  display:none!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebar"] .stButton>button *{
+  color:inherit!important;
+  -webkit-text-fill-color:inherit!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebar"] .stButton>button[kind="primary"],
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebar"] button[data-testid="stBaseButton-primary"]{
+  background:var(--teal-12)!important;
+  color:var(--teal-strong)!important;
+  border-color:transparent!important;
+  box-shadow:inset 3px 0 0 var(--teal)!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebar"] .stButton>button::before{
+  content:"";
+  width:18px;
+  height:18px;
+  flex:0 0 18px;
+  display:inline-grid;
+  place-items:center;
+  color:currentColor;
+  background:transparent;
+  font-family:"Segoe UI Symbol","Inter",system-ui,sans-serif;
+  font-size:15px;
+  font-weight:700;
+  line-height:1;
+}
+.stApp:has(.ncv-workspace-anchor) .st-key-demo_nav_Nghi-n-c-u-vi-n_0 button::before{
+  content:"▣"!important;
+}
+.stApp:has(.ncv-workspace-anchor) .st-key-demo_nav_Nghi-n-c-u-vi-n_1 button::before{
+  content:"▥"!important;
+}
+.stApp:has(.ncv-workspace-anchor) .st-key-demo_nav_Nghi-n-c-u-vi-n_2 button::before{
+  content:"⚗"!important;
+}
+.stApp:has(.ncv-workspace-anchor) .st-key-demo_nav_Nghi-n-c-u-vi-n_3 button::before{
+  content:"⚙"!important;
+}
+.stApp:has(.ncv-workspace-anchor) .st-key-demo_nav_Nghi-n-c-u-vi-n_4 button::before{
+  content:"♙"!important;
+}
+.stApp:has(.ncv-workspace-anchor) .st-key-demo_nav_Nghi-n-c-u-vi-n_5 button::before{
+  content:"◌"!important;
+}
+.stApp:has(.ncv-workspace-anchor) [class*="st-key-demo_nav_Nghi-n-c-u-vi-n_0"] button::before{
+  content:"▣"!important;
+}
+.stApp:has(.ncv-workspace-anchor) [class*="st-key-demo_nav_Nghi-n-c-u-vi-n_1"] button::before{
+  content:"▥"!important;
+}
+.stApp:has(.ncv-workspace-anchor) [class*="st-key-demo_nav_Nghi-n-c-u-vi-n_2"] button::before{
+  content:"⚗"!important;
+}
+.stApp:has(.ncv-workspace-anchor) [class*="st-key-demo_nav_Nghi-n-c-u-vi-n_3"] button::before{
+  content:"⚙"!important;
+}
+.stApp:has(.ncv-workspace-anchor) [class*="st-key-demo_nav_Nghi-n-c-u-vi-n_4"] button::before{
+  content:"♙"!important;
+}
+.stApp:has(.ncv-workspace-anchor) [class*="st-key-demo_nav_Nghi-n-c-u-vi-n_5"] button::before{
+  content:"◌"!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebar"] .side-card{
+  margin-top:18px!important;
+  background:var(--surface-2)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--r)!important;
+  padding:14px!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebar"] div.element-container:has(.side-card) ~ div{
+  display:none!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stSidebar"] hr{
+  margin:20px 0!important;
+  border-color:var(--line)!important;
+}
+.stApp:has(.ncv-workspace-anchor) h1,
+.stApp:has(.ncv-workspace-anchor) h2,
+.stApp:has(.ncv-workspace-anchor) h3{
+  color:var(--ink)!important;
+}
+.ncv-workspace-anchor{
+  display:block!important;
+  height:0!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+.ncv-page{
+  width:min(100%,1040px);
+  margin:28px auto 0;
+  color:var(--ink);
+  font-family:var(--ui);
+}
+.ncv-page-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:18px;
+}
+.ncv-title h1{
+  font-family:var(--display);
+  font-size:clamp(26px,2.5vw,32px);
+  line-height:1.05;
+  font-weight:600;
+  letter-spacing:-.2px;
+  margin:0;
+  color:var(--ink);
+}
+.ncv-title p{
+  margin:6px 0 0;
+  color:var(--ink-3);
+  font-size:13.5px;
+  line-height:1.35;
+}
+.ncv-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.ncv-action{
+  height:36px;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:0 14px;
+  background:var(--surface);
+  color:var(--ink-2);
+  font-size:13px;
+  font-weight:700;
+  text-decoration:none;
+}
+.ncv-action.primary{
+  background:linear-gradient(145deg,var(--teal),var(--teal-strong));
+  color:#fff;
+  border-color:transparent;
+  box-shadow:0 6px 16px var(--teal-50);
+}
+.ncv-action svg{
+  width:16px;
+  height:16px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.ncv-stat-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+  margin-bottom:16px;
+}
+.ncv-stat-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  padding:16px;
+  box-shadow:var(--shadow-sm);
+}
+.ncv-stat-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+.ncv-stat-ico{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  background:var(--teal-12);
+  color:var(--teal-strong);
+}
+.ncv-stat-ico svg{
+  width:18px;
+  height:18px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.ncv-stat-trend{
+  color:var(--ok);
+  font-family:var(--mono);
+  font-size:11.5px;
+  font-weight:700;
+}
+.ncv-stat-value{
+  font-family:var(--mono);
+  font-size:27px;
+  font-weight:700;
+  color:var(--ink);
+  letter-spacing:-.4px;
+}
+.ncv-stat-label{
+  margin-top:3px;
+  color:var(--ink-3);
+  font-size:12.5px;
+}
+.ncv-section-label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:22px 0 13px;
+  color:var(--ink);
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:.15px;
+}
+.ncv-section-label svg{
+  width:17px;
+  height:17px;
+  fill:none;
+  stroke:var(--teal);
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.ncv-patient-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:18px;
+}
+.ncv-patient-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);
+  padding:14px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:86px;
+}
+.ncv-avatar{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  flex:none;
+  background:var(--teal);
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+}
+.ncv-patient-card b{
+  display:block;
+  color:var(--ink);
+  font-size:13.5px;
+  line-height:1.2;
+  margin-bottom:4px;
+}
+.ncv-patient-card span{
+  color:var(--ink-3);
+  font-size:12px;
+  line-height:1.35;
+}
+.ncv-filter-card,
+.ncv-batch-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);
+  padding:14px 16px;
+  margin:12px 0 16px;
+}
+.ncv-filter-card [data-testid="stHorizontalBlock"],
+.ncv-batch-card [data-testid="stHorizontalBlock"]{
+  gap:12px!important;
+}
+.ncv-batch-card .stButton>button{
+  min-height:42px!important;
+  border-radius:11px!important;
+  font-weight:700!important;
+}
+.ncv-video-caption{
+  margin:16px 0 10px;
+  color:var(--ink-2);
+  font-size:13.5px;
+}
+.stApp:has(.ncv-workspace-anchor) .stExpander{
+  border:1px solid var(--line)!important;
+  border-radius:13px!important;
+  background:var(--surface)!important;
+  box-shadow:var(--shadow-sm)!important;
+  overflow:hidden!important;
+  margin-bottom:10px!important;
+}
+.stApp:has(.ncv-workspace-anchor) .streamlit-expanderHeader,
+.stApp:has(.ncv-workspace-anchor) [data-testid="stExpander"] summary{
+  min-height:44px!important;
+  padding:10px 14px!important;
+  color:var(--ink)!important;
+  font-family:var(--ui)!important;
+  font-size:13.5px!important;
+  font-weight:600!important;
+  background:var(--surface)!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stExpander"] details[open] summary{
+  border-bottom:1px solid var(--line-2)!important;
+}
+.stApp:has(.ncv-workspace-anchor) [data-testid="stExpanderDetails"]{
+  background:var(--surface)!important;
+  padding:14px!important;
+}
+.stApp:has(.ncv-workspace-anchor) .stSelectbox div[data-baseweb="select"]>div,
+.stApp:has(.ncv-workspace-anchor) .stTextInput div[data-baseweb="input"]{
+  min-height:40px!important;
+  border-radius:10px!important;
+  border:1px solid var(--line)!important;
+  background:var(--surface)!important;
+  box-shadow:none!important;
+}
+.stApp:has(.ncv-workspace-anchor) .stButton>button{
+  border-radius:10px!important;
+  font-family:var(--ui)!important;
+}
+.stApp:has(.ncv-workspace-anchor) .stButton>button[kind="primary"],
+.stApp:has(.ncv-workspace-anchor) button[data-testid="stBaseButton-primary"]{
+  background:linear-gradient(145deg,var(--teal),var(--teal-strong))!important;
+  border-color:transparent!important;
+  color:#fff!important;
+  box-shadow:0 6px 16px var(--teal-50)!important;
+}
+.stApp:has(.ncv-workspace-anchor) .stButton>button[kind="primary"] *,
+.stApp:has(.ncv-workspace-anchor) button[data-testid="stBaseButton-primary"] *{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+.stApp:has(.ncv-workspace-anchor) div[data-testid="stMarkdownContainer"],
+.stApp:has(.ncv-workspace-anchor) p,
+.stApp:has(.ncv-workspace-anchor) span,
+.stApp:has(.ncv-workspace-anchor) label,
+.stApp:has(.ncv-workspace-anchor) button,
+.stApp:has(.ncv-workspace-anchor) input{
+  font-family:var(--ui)!important;
+}
+@media (max-width:980px){
+  .ncv-page{margin-top:18px}
+  .ncv-stat-grid,.ncv-patient-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  .stApp:has(.ncv-workspace-anchor) [data-testid="stAppViewContainer"]>.main .block-container,
+  .stApp:has(.ncv-workspace-anchor) [data-testid="stMainBlockContainer"],
+  .stApp:has(.ncv-workspace-anchor) [data-testid="stAppViewBlockContainer"]{
+    max-width:100%!important;
+    padding:76px 14px 28px!important;
+  }
+  .ncv-page-head{align-items:flex-start;flex-direction:column}
+  .ncv-stat-grid,.ncv-patient-grid{grid-template-columns:1fr}
+}
+"""
+
+
+def inject_ncv_dashboard_css():
+    """Inject role-specific CSS for the researcher dashboard shell."""
+    st.markdown("<style>" + _NCV_DASHBOARD_CSS + "</style>", unsafe_allow_html=True)

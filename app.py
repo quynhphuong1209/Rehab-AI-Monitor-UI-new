@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "uti
 import math
 import json
 import base64
+import html as _html
 
 # FIX LỖI LIBGL CHO OPENCV TRÊN HEADLESS ENVIRONMENT
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '1'
@@ -151,6 +152,7 @@ try:
         auth_screen_html,
         inject_auth_nav_css,
         inject_design_system,
+        inject_ncv_dashboard_css,
         inject_streamlit_skin,
         side_info_html,
         sidebar_nav_html,
@@ -161,6 +163,7 @@ except Exception:
     auth_screen_html = None
     inject_auth_nav_css = None
     inject_design_system = None
+    inject_ncv_dashboard_css = None
     inject_streamlit_skin = None
     side_info_html = None
     sidebar_nav_html = None
@@ -1184,6 +1187,72 @@ def _thong_ke_video_nghien_cuu():
         acc_vals.append(_lay_do_chinh_xac_hien_thi(v, ai_eval))
     avg_acc = sum(acc_vals) / len(acc_vals) if acc_vals else 0.0
     return total, pending, avg_acc
+
+
+def _esc_html(value):
+    return _html.escape(str(value if value is not None else ""), quote=True)
+
+
+def _initials(name, fallback="NC"):
+    words = [w for w in str(name or "").replace("-", " ").split() if w]
+    if not words:
+        return fallback[:2].upper()
+    return "".join(w[0] for w in words[-2:]).upper()[:2]
+
+
+def _svg_use(icon_id):
+    return f'<svg aria-hidden="true"><use href="#{_esc_html(icon_id)}"/></svg>'
+
+
+def _ncv_page_head(title, subtitle, actions=""):
+    return f"""
+<div class="ncv-page-head">
+  <div class="ncv-title">
+    <h1>{_esc_html(title)}</h1>
+    <p>{_esc_html(subtitle)}</p>
+  </div>
+  <div class="ncv-actions">{actions}</div>
+</div>
+"""
+
+
+def _ncv_action(label, icon_id="i-search", primary=False):
+    cls = "ncv-action primary" if primary else "ncv-action"
+    return f'<span class="{cls}">{_svg_use(icon_id)}{_esc_html(label)}</span>'
+
+
+def _ncv_stat_card(icon_id, value, label, trend=""):
+    trend_html = f'<span class="ncv-stat-trend">▲ {_esc_html(trend)}</span>' if trend else ""
+    return f"""
+<div class="ncv-stat-card">
+  <div class="ncv-stat-top"><div class="ncv-stat-ico">{_svg_use(icon_id)}</div>{trend_html}</div>
+  <div class="ncv-stat-value">{_esc_html(value)}</div>
+  <div class="ncv-stat-label">{_esc_html(label)}</div>
+</div>
+"""
+
+
+def _ncv_section_label(text, icon_id="i-users"):
+    return f'<div class="ncv-section-label">{_svg_use(icon_id)}<span>{_esc_html(text)}</span></div>'
+
+
+def _ncv_patient_cards(patient_summary):
+    cards = []
+    for row in (patient_summary or [])[:6]:
+        name = row.get("full_name") or row.get("username") or "Bệnh nhân"
+        last_t = row.get("last_analysis") or "Chưa phân tích"
+        cards.append(
+            f"""
+<div class="ncv-patient-card">
+  <div class="ncv-avatar">{_esc_html(_initials(name, "BN"))}</div>
+  <div>
+    <b>{_esc_html(name)}</b>
+    <span>{_esc_html(row.get("video_count", 0))} video · Phân tích gần nhất: {_esc_html(last_t)}</span>
+  </div>
+</div>
+"""
+        )
+    return '<div class="ncv-patient-grid">' + "".join(cards) + "</div>" if cards else ""
 
 
 # --- OPTIMIZED CACHING FOR FASTER PAGE LOADS ---
@@ -7476,6 +7545,8 @@ if inject_auth_nav_css:
     inject_auth_nav_css()
 if inject_streamlit_skin:
     inject_streamlit_skin(is_light=(st.session_state.get('theme') == 'light'))
+if inject_ncv_dashboard_css:
+    inject_ncv_dashboard_css()
 
 MAX_UPLOAD_SIZE_MB = int(os.environ.get("REHAB_MAX_UPLOAD_SIZE_MB", "300"))
 MAX_FILE_SIZE_MB = MAX_UPLOAD_SIZE_MB
@@ -18885,21 +18956,29 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
 
         patient_summary = _tom_tat_benh_nhan_tu_video(video_list, ai_eval_lookup, ai_eval_by_exercise)
         if patient_summary:
-            st.markdown("##### 👥 DANH SÁCH BỆNH NHÂN — THỜI GIAN PHÂN TÍCH GẦN NHẤT")
-            for row in patient_summary:
-                last_t = row.get("last_analysis") or "Chưa phân tích"
-                st.markdown(
-                    f"<div style='background:rgba(0,198,255,0.06);border:1px solid rgba(0,198,255,0.2);"
-                    f"border-left:4px solid #00c6ff;border-radius:10px;padding:10px 14px;margin-bottom:8px;'>"
-                    f"<b>👤 {row.get('full_name')}</b> "
-                    f"<span style='color:#888;font-size:0.85rem;'>({row.get('video_count')} video)</span><br>"
-                    f"<span style='color:#00c6ff;font-size:0.95rem;'>🕒 Phân tích gần nhất: <b>{last_t}</b></span>"
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
+            if user_role == "Nghiên cứu viên":
+                st.markdown(_ncv_section_label("Danh sách bệnh nhân", "i-users"), unsafe_allow_html=True)
+                st.markdown(_ncv_patient_cards(patient_summary), unsafe_allow_html=True)
+            else:
+                st.markdown("##### 👥 DANH SÁCH BỆNH NHÂN — THỜI GIAN PHÂN TÍCH GẦN NHẤT")
+                for row in patient_summary:
+                    last_t = row.get("last_analysis") or "Chưa phân tích"
+                    st.markdown(
+                        f"<div style='background:rgba(0,198,255,0.06);border:1px solid rgba(0,198,255,0.2);"
+                        f"border-left:4px solid #00c6ff;border-radius:10px;padding:10px 14px;margin-bottom:8px;'>"
+                        f"<b>👤 {row.get('full_name')}</b> "
+                        f"<span style='color:#888;font-size:0.85rem;'>({row.get('video_count')} video)</span><br>"
+                        f"<span style='color:#00c6ff;font-size:0.95rem;'>🕒 Phân tích gần nhất: <b>{last_t}</b></span>"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
 
         # --- BỘ LỌC DANH SÁCH VIDEO ---
-        st.markdown("##### 🔍 BỘ LỌC DANH SÁCH")
+        if user_role == "Nghiên cứu viên":
+            st.markdown(_ncv_section_label("Bộ lọc danh sách", "i-search"), unsafe_allow_html=True)
+            st.markdown('<div class="ncv-filter-card">', unsafe_allow_html=True)
+        else:
+            st.markdown("##### 🔍 BỘ LỌC DANH SÁCH")
         
         # Lấy danh sách bệnh nhân duy nhất có video
         patient_options = {}
@@ -18936,6 +19015,8 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                 on_change=reset_vid_list_page,
                 label_visibility="collapsed"
             )
+        if user_role == "Nghiên cứu viên":
+            st.markdown('</div>', unsafe_allow_html=True)
 
         def _video_co_danh_gia_bac_si(v):
             pu, ex = v.get("username"), v.get("exercise")
@@ -18997,7 +19078,8 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
             if user_role == "Nghiên cứu viên":
                 pending_batch = [v for v in filtered_videos if video_can_khoi_dong_phan_tich(v, only_pending=True)]
                 running_n = len(liet_ke_jobs_dang_chay())
-                st.markdown("##### ⚡ Phân tích hàng loạt (chạy nền)")
+                st.markdown(_ncv_section_label("Phân tích hàng loạt", "i-flask"), unsafe_allow_html=True)
+                st.markdown('<div class="ncv-batch-card">', unsafe_allow_html=True)
                 b_col1, b_col2 = st.columns(2)
                 with b_col1:
                     if pending_batch:
@@ -19026,7 +19108,7 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                         f"Tối đa **{MAX_CONCURRENT_ANALYSIS}** video chạy cùng lúc; video tiếp theo tự xếp hàng. "
                         "Theo dõi tiến độ ở tab **🔬 PHÂN TÍCH & TRÍCH XUẤT DỮ LIỆU**."
                     )
-                st.markdown("---")
+                st.markdown('</div>', unsafe_allow_html=True)
 
             # --- Pagination: chỉ render 10 video/trang để tránh render quá nhiều expander ---
             PAGE_SIZE = 10
@@ -19063,7 +19145,13 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                 st.session_state.vid_list_page = 0
                 page_videos = list(enumerate(filtered_videos))[0:PAGE_SIZE]
 
-            st.caption(f"📌 Đang hiển thị **{len(page_videos)}** / **{total_videos}** video trong bộ lọc.")
+            if user_role == "Nghiên cứu viên":
+                st.markdown(
+                    f'<div class="ncv-video-caption">Đang hiển thị <b>{len(page_videos)}</b> / <b>{total_videos}</b> video trong bộ lọc.</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.caption(f"📌 Đang hiển thị **{len(page_videos)}** / **{total_videos}** video trong bộ lọc.")
 
             for idx, v in page_videos:
                 col_list1, col_list2 = st.columns([12, 1])
@@ -19095,10 +19183,16 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                     display_status = _lay_trang_thai_video_danh_sach(v, ai_eval, doc_eval, user_role)
                     analysis_time = _lay_thoi_gian_phan_tich_on_dinh(v, ai_eval) or "Chưa phân tích"
                     upload_time = _lay_thoi_gian_upload_video(v)
-                    with st.expander(
-                        f"👤 {v['full_name']} — {v['exercise']} | "
-                        f"🕒 Phân tích: {analysis_time} | 📤 Upload: {upload_time} | {display_status}"
-                    ):
+                    expander_label = (
+                        f"{v['full_name']} — {v['exercise']} | "
+                        f"Phân tích: {analysis_time} | Upload: {upload_time} | {display_status}"
+                    )
+                    if user_role != "Nghiên cứu viên":
+                        expander_label = (
+                            f"👤 {v['full_name']} — {v['exercise']} | "
+                            f"🕒 Phân tích: {analysis_time} | 📤 Upload: {upload_time} | {display_status}"
+                        )
+                    with st.expander(expander_label):
                         # Tỷ lệ cột [1.3, 1.0] để nới rộng video hiển thị vừa vặn hơn
                         col_v1, col_v2 = st.columns([1.3, 1.0])
                         with col_v1:
@@ -19417,6 +19511,9 @@ def _render_main_tab_content(tab_titles, user_role):
         if not st.session_state.get("_demo_sidebar_nav_enabled"):
             st.caption(f"📍 Đang xem: **{selected_tab}**")
 
+        if user_role == "Nghiên cứu viên":
+            st.markdown('<div class="ncv-page">', unsafe_allow_html=True)
+
         # ==================== TAB 1: TRANG CHỦ ====================
         if selected_tab == "🏠 TRANG CHỦ":
             if True:
@@ -19424,10 +19521,32 @@ def _render_main_tab_content(tab_titles, user_role):
                     if not st.session_state.pop("_admin_package_rendered_home", False):
                         hien_thi_home_quan_tri_vien()
                 else:
+                    if user_role == "Nghiên cứu viên":
+                        total_vids, pending_ai, avg_acc = _thong_ke_video_nghien_cuu()
+                        st.markdown(
+                            _ncv_page_head(
+                                "Quản lý Dataset",
+                                f"{total_vids} video nghiên cứu · {max(total_vids - pending_ai, 0)} mẫu đã có AI · đồng bộ Hugging Face",
+                                _ncv_action("Lọc", "i-search") + _ncv_action("Đồng bộ HF Dataset", "i-db", primary=True),
+                            ),
+                            unsafe_allow_html=True,
+                        )
+                        st.markdown(
+                            '<div class="ncv-stat-grid">'
+                            + _ncv_stat_card("i-db", total_vids, "Tổng video · nghiên cứu")
+                            + _ncv_stat_card("i-check", max(total_vids - pending_ai, 0), "Đã có kết quả AI", f"+{max(total_vids - pending_ai, 0)}")
+                            + _ncv_stat_card("i-bone", "33", "Điểm khung xương / khung hình")
+                            + "</div>",
+                            unsafe_allow_html=True,
+                        )
+
                     # Nếu là Bác sĩ hoặc NCV, hiển thị danh sách triệu chứng
                     if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
                         # --- DANH SÁCH TRIỆU CHỨNG BN (CHUYỂN TỪ SIDEBAR SANG ĐÂY) ---
-                        st.markdown("### 👥 DANH SÁCH TRIỆU CHỨNG BN MỚI NHẤT")
+                        if user_role == "Nghiên cứu viên":
+                            st.markdown(_ncv_section_label("Danh sách triệu chứng BN mới nhất", "i-users"), unsafe_allow_html=True)
+                        else:
+                            st.markdown("### 👥 DANH SÁCH TRIỆU CHỨNG BN MỚI NHẤT")
                         symptoms_data = load_data(SYMPTOMS_FILE)
                         if symptoms_data:
                             # Nhóm các khai báo triệu chứng theo bệnh nhân để gộp bài tập
@@ -19453,27 +19572,44 @@ def _render_main_tab_content(tab_titles, user_role):
                                     grouped_symptoms[key]["vas"] = item.get('vas', grouped_symptoms[key]["vas"])
                         
                             display_list = list(reversed(list(grouped_symptoms.values())))[:4]
-                        
-                            symp_cols = st.columns(3)
-                            for i, s in enumerate(display_list):
-                                with symp_cols[i % 3]:
-                                    with st.container(border=True):
-                                        st.markdown(f"**👤 {s['full_name']}**")
-                                        st.caption(f"🕒 {_format_vn_time(s.get('time'), default='N/A')}")
-                                        st.write(f"**Đau (VAS):** {s['vas']}/10")
-                                        with st.expander("Chi tiết triệu chứng"):
-                                            st.write(f"**Tuổi:** {s['age']} | **Mã:** {s['patient_id']}")
-                                            # Hiển thị hai bài tập đã chọn
-                                            exercises_str = ", ".join(s['exercises'])
-                                            st.write(f"**Bài tập đã chọn:** {exercises_str}")
-                                            st.info(s['symptoms'])
-                                            if st.button("Xóa thông báo", key=f"del_symp_main_{i}"):
-                                                # Xóa các bản ghi có patient_id hoặc full_name trùng khớp
-                                                s_id = s['patient_id']
-                                                s_name = s['full_name']
-                                                s_data_new = [item for item in symptoms_data if item.get('patient_id') != s_id and item.get('full_name') != s_name]
-                                                save_data(SYMPTOMS_FILE, s_data_new)
-                                                st.rerun()
+                            if user_role == "Nghiên cứu viên":
+                                rows_html = []
+                                for s in display_list:
+                                    name = s.get("full_name") or "Bệnh nhân"
+                                    exs = ", ".join(s.get("exercises") or [])
+                                    rows_html.append(
+                                        f"""
+<div class="ncv-patient-card">
+  <div class="ncv-avatar">{_esc_html(_initials(name, "BN"))}</div>
+  <div>
+    <b>{_esc_html(name)}</b>
+    <span>VAS { _esc_html(s.get('vas', 'N/A')) }/10 · {_esc_html(_format_vn_time(s.get('time'), default='N/A'))}<br>{_esc_html(exs)}</span>
+  </div>
+</div>
+"""
+                                    )
+                                st.markdown('<div class="ncv-patient-grid">' + "".join(rows_html) + "</div>", unsafe_allow_html=True)
+                            else:
+                                symp_cols = st.columns(3)
+                                for i, s in enumerate(display_list):
+                                    with symp_cols[i % 3]:
+                                        with st.container(border=True):
+                                            st.markdown(f"**👤 {s['full_name']}**")
+                                            st.caption(f"🕒 {_format_vn_time(s.get('time'), default='N/A')}")
+                                            st.write(f"**Đau (VAS):** {s['vas']}/10")
+                                            with st.expander("Chi tiết triệu chứng"):
+                                                st.write(f"**Tuổi:** {s['age']} | **Mã:** {s['patient_id']}")
+                                                # Hiển thị hai bài tập đã chọn
+                                                exercises_str = ", ".join(s['exercises'])
+                                                st.write(f"**Bài tập đã chọn:** {exercises_str}")
+                                                st.info(s['symptoms'])
+                                                if st.button("Xóa thông báo", key=f"del_symp_main_{i}"):
+                                                    # Xóa các bản ghi có patient_id hoặc full_name trùng khớp
+                                                    s_id = s['patient_id']
+                                                    s_name = s['full_name']
+                                                    s_data_new = [item for item in symptoms_data if item.get('patient_id') != s_id and item.get('full_name') != s_name]
+                                                    save_data(SYMPTOMS_FILE, s_data_new)
+                                                    st.rerun()
                         else:
                             st.info("ℹ️ Hiện chưa có thông tin khai báo triệu chứng mới từ bệnh nhân.")
                     
@@ -19865,8 +20001,11 @@ def _render_main_tab_content(tab_titles, user_role):
 
                     # HIỂN THỊ DANH SÁCH VIDEO CHO BÁC SĨ & NGHIÊN CỨU VIÊN
                     if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
-                        st.markdown("---")
-                        st.markdown("### 🎬 DANH SÁCH VIDEO BỆNH NHÂN ĐÃ QUAY")
+                        if user_role == "Nghiên cứu viên":
+                            st.markdown(_ncv_section_label("Danh sách video bệnh nhân đã quay", "i-video"), unsafe_allow_html=True)
+                        else:
+                            st.markdown("---")
+                            st.markdown("### 🎬 DANH SÁCH VIDEO BỆNH NHÂN ĐÃ QUAY")
                         hien_thi_danh_sach_video_fragment(user_role)
 
                     # === QUY TRÌNH THU THẬP DỮ LIỆU NGHIÊN CỨU KHOA HỌC (CHỈ HIỆN CHO BỆNH NHÂN) ===
@@ -20023,6 +20162,15 @@ def _render_main_tab_content(tab_titles, user_role):
 
         if selected_tab == "🔬 PHÂN TÍCH & TRÍCH XUẤT DỮ LIỆU":
             if True:
+                if user_role == "Nghiên cứu viên":
+                    st.markdown(
+                        _ncv_page_head(
+                            "Phân tích kỹ thuật",
+                            "Pipeline MediaPipe · trích xuất khung xương · xuất CSV và video overlay",
+                            _ncv_action("Chọn video từ Dataset", "i-video", primary=True),
+                        ),
+                        unsafe_allow_html=True,
+                    )
                 hien_thi_tab_phan_tich_va_video_ncv()
 
         if selected_tab == "📊 KẾT QUẢ":
@@ -20030,6 +20178,15 @@ def _render_main_tab_content(tab_titles, user_role):
                 hien_thi_ket_qua_cho_benh_nhan()
         if selected_tab == "📊 KẾT QUẢ ĐÁNH GIÁ":
             if True:
+                if user_role == "Nghiên cứu viên":
+                    st.markdown(
+                        _ncv_page_head(
+                            "AI vs Lâm sàng",
+                            "Đối chiếu kết quả phân tích AI với đánh giá chuyên môn đã lưu",
+                            _ncv_action("Tải lại kết quả", "i-check"),
+                        ),
+                        unsafe_allow_html=True,
+                    )
                 hien_thi_ket_qua_cho_benh_nhan()
 
         # ==================== TAB: KHAI BÁO TRIỆU CHỨNG ====================
@@ -20066,6 +20223,15 @@ def _render_main_tab_content(tab_titles, user_role):
             
         if selected_tab == "📚 THÔNG TIN TỔNG HỢP":
             if True:
+                if user_role == "Nghiên cứu viên":
+                    st.markdown(
+                        _ncv_page_head(
+                            "Cấu hình mô hình AI",
+                            "Thông tin tổng hợp và tham số vận hành mô hình phân tích",
+                            _ncv_action("MediaPipe Heavy", "i-cog", primary=True),
+                        ),
+                        unsafe_allow_html=True,
+                    )
                 if user_role == "Bệnh nhân":
                     hien_thi_tab_thong_tin_tong_hop_benh_nhan()
                 else:
@@ -20077,6 +20243,15 @@ def _render_main_tab_content(tab_titles, user_role):
             
         if selected_tab == "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA":
             if True:
+                if user_role == "Nghiên cứu viên":
+                    st.markdown(
+                        _ncv_page_head(
+                            "Hồ sơ đề tài",
+                            "Thông tin nghiên cứu, đội ngũ chuyên gia và tài liệu liên quan",
+                            _ncv_action("Hồ sơ nhóm", "i-users"),
+                        ),
+                        unsafe_allow_html=True,
+                    )
                 hien_thi_tab_nckh_va_thanh_vien_ncv()
             
         if selected_tab == "📚 ĐỀ TÀI NCKH":
@@ -20093,6 +20268,15 @@ def _render_main_tab_content(tab_titles, user_role):
         
         if selected_tab == "💬 PHẢN HỒI":
             if True:
+                if user_role == "Nghiên cứu viên":
+                    st.markdown(
+                        _ncv_page_head(
+                            "Phản hồi",
+                            "Ghi nhận góp ý vận hành và trao đổi với nhóm triển khai",
+                            _ncv_action("Mở phản hồi", "i-log"),
+                        ),
+                        unsafe_allow_html=True,
+                    )
                 hien_thi_tab_phan_hoi()
 
 
@@ -20102,9 +20286,26 @@ def _render_main_tab_content(tab_titles, user_role):
                 hien_thi_tab_phieu_nckh()
 
 
+        if user_role == "Nghiên cứu viên":
+            st.markdown('</div>', unsafe_allow_html=True)
+
 
 def _demo_nav_label_for_tab(tab_title):
     raw = str(tab_title or "")
+    current_role = st.session_state.user_info.get("role") if st.session_state.get("user_info") else ""
+    if current_role == "Nghiên cứu viên":
+        if "TRANG CHỦ" in raw:
+            return "Quản lý Dataset", "i-db"
+        if "KẾT QUẢ" in raw or "ĐÁNH GIÁ" in raw:
+            return "AI vs Lâm sàng", "i-bars"
+        if "PHÂN TÍCH" in raw:
+            return "Phân tích kỹ thuật", "i-flask"
+        if "THÔNG TIN TỔNG HỢP" in raw:
+            return "Cấu hình mô hình AI", "i-cog"
+        if "HỒ SƠ" in raw:
+            return "Hồ sơ đề tài", "i-users"
+        if "PHẢN HỒI" in raw:
+            return "Phản hồi", "i-log"
     cleaned = raw
     for prefix in ("🏠", "📊", "🔬", "🎬", "⏰", "📚", "👥", "📞", "💬", "🛠️", "🌐", "📖", "📄"):
         cleaned = cleaned.replace(prefix, "")
@@ -20143,6 +20344,24 @@ def _demo_nav_label_for_tab(tab_title):
     return cleaned, icon
 
 
+def _material_icon_for_demo_icon(icon):
+    return {
+        "i-db": "database",
+        "i-cog": "settings",
+        "i-bars": "bar_chart",
+        "i-flask": "science",
+        "i-users": "groups",
+        "i-log": "forum",
+        "i-dumbbell": "fitness_center",
+        "i-spark": "auto_awesome",
+        "i-video": "videocam",
+        "i-bell": "notifications",
+        "i-doc": "description",
+        "i-mail": "mail",
+        "i-target": "adjust",
+    }.get(icon, "chevron_right")
+
+
 def _render_demo_sidebar_nav(tab_titles, user_role):
     st.session_state["_demo_sidebar_nav_enabled"] = True
     if st.session_state.get("active_tab_widget") not in tab_titles:
@@ -20157,7 +20376,7 @@ def _render_demo_sidebar_nav(tab_titles, user_role):
             key=f"demo_nav_{user_role}_{i}",
             type="primary" if active else "secondary",
             width="stretch",
-            icon=":material/chevron_right:" if active else None,
+            icon=f":material/{_material_icon_for_demo_icon(icon)}:",
         ):
             st.session_state.active_tab = tab_title
             st.session_state.active_tab_widget = tab_title
@@ -20352,8 +20571,11 @@ def main():
         st.session_state.active_tab_widget = st.session_state.active_tab
 
     _render_demo_topbar(user_role)
+    if user_role == "Nghiên cứu viên":
+        st.markdown('<span class="ncv-workspace-anchor"></span>', unsafe_allow_html=True)
     _force_sidebar_expanded_once()
-    _render_demo_inline_nav(tab_titles, user_role)
+    if user_role != "Nghiên cứu viên":
+        _render_demo_inline_nav(tab_titles, user_role)
 
     # Callback xử lý đổi theme nhanh
     def update_theme_callback():
