@@ -18108,11 +18108,10 @@ def hien_thi_dang_nhap_dang_ky():
                                     st.session_state.change_password_mode = False
                                     st.rerun()
                     else:
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        u = st.text_input("👤 Tên đăng nhập", placeholder="Nhập tên tài khoản", key="login_u")
-                        p = st.text_input("🔑 Mật khẩu", type="password", placeholder="Nhập mật khẩu", key="login_p")
+                        u = st.text_input("Tài khoản", placeholder="bsi01", key="login_u")
+                        p = st.text_input("Mật khẩu", type="password", placeholder="••••••••", key="login_p")
                         
-                        if st.button("🚀 ĐĂNG NHẬP NGAY", width="stretch", type="primary"):
+                        if st.button("Đăng nhập  →", width="stretch", type="primary"):
                             users = load_users()
                             u_key = _auth_lookup_key(users, u)
                             if u_key and _verify_auth_password(u_key, p, users[u_key]):
@@ -18124,11 +18123,7 @@ def hien_thi_dang_nhap_dang_ky():
                             else:
                                 st.error("❌ Tài khoản hoặc mật khẩu không đúng")
                         
-                        if st.button("🔑 ĐỔI MẬT KHẨU", width="stretch", type="secondary"):
-                            st.session_state.change_password_mode = True
-                            st.rerun()
-
-                        if st.button("❓ Bạn quên mật khẩu?", width="stretch", type="secondary"):
+                        if st.button("Quên mật khẩu? Khôi phục tại đây", width="stretch", key="auth_forgot_link"):
                             st.session_state.forgot_password_mode = True
                             st.rerun()
                             
@@ -18176,15 +18171,14 @@ def hien_thi_dang_nhap_dang_ky():
                 '</div>',
                 unsafe_allow_html=True,
             )
-            demo_cols = st.columns([1, 1, 1, 1, 1], gap="small")
-            demo_roles = [
+            demo_cols = st.columns([1, 1, 1, 1], gap="small")
+            demo_roles_top = [
                 ("Bệnh nhân", "Bệnh nhân", "favorite"),
                 ("Bác sĩ", "Bác sĩ / KTV PHCN", "medical_services"),
                 ("KTV", "Bác sĩ / KTV PHCN", "construction"),
                 ("NCV", "Nghiên cứu viên", "science"),
-                ("Quản trị", "Quản trị viên", "admin_panel_settings"),
             ]
-            for col, (button_label, role_label, icon_name) in zip(demo_cols, demo_roles):
+            for col, (button_label, role_label, icon_name) in zip(demo_cols, demo_roles_top):
                 with col:
                     if st.button(
                         button_label,
@@ -18193,6 +18187,15 @@ def hien_thi_dang_nhap_dang_ky():
                         icon=f":material/{icon_name}:",
                     ):
                         _dang_nhap_demo_theo_vai_tro(role_label)
+            _, demo_admin_col, _ = st.columns([1.1, 1, 1.1], gap="small")
+            with demo_admin_col:
+                if st.button(
+                    "Quản trị",
+                    key="auth_demo_role_admin_panel_settings",
+                    width="stretch",
+                    icon=":material/admin_panel_settings:",
+                ):
+                    _dang_nhap_demo_theo_vai_tro("Quản trị viên")
     close_auth_shell()
 
 # ============================================

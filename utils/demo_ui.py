@@ -1015,6 +1015,33 @@ _AUTH_NAV_CSS = """
   color:#fff!important;
   -webkit-text-fill-color:#fff!important;
 }
+.st-key-auth_forgot_link button{
+  min-height:28px!important;
+  height:28px!important;
+  width:auto!important;
+  margin:8px auto 2px!important;
+  padding:0!important;
+  display:flex!important;
+  justify-content:center!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  color:var(--ink-3)!important;
+  -webkit-text-fill-color:var(--ink-3)!important;
+  font-size:12.5px!important;
+  font-weight:500!important;
+}
+.st-key-auth_forgot_link button p,
+.st-key-auth_forgot_link button span,
+.st-key-auth_forgot_link button *{
+  color:inherit!important;
+  -webkit-text-fill-color:inherit!important;
+}
+.st-key-auth_forgot_link button:hover{
+  transform:none!important;
+  color:var(--teal)!important;
+  -webkit-text-fill-color:var(--teal)!important;
+}
 .auth-demo-strip{
   margin-top:18px;
   border-top:1px dashed var(--line);
@@ -1037,13 +1064,16 @@ _AUTH_NAV_CSS = """
   min-height:34px!important;
   height:34px!important;
   border-radius:999px!important;
-  padding:0 10px!important;
+  padding:0 9px!important;
   font-size:11.5px!important;
   background:var(--surface-2)!important;
   border:1px solid var(--line)!important;
   color:var(--ink-2)!important;
   -webkit-text-fill-color:var(--ink-2)!important;
   box-shadow:none!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
 }
 .st-key-auth_demo_role_favorite button *,
 .st-key-auth_demo_role_medical_services button *,
@@ -1052,6 +1082,7 @@ _AUTH_NAV_CSS = """
 .st-key-auth_demo_role_admin_panel_settings button *{
   color:inherit!important;
   -webkit-text-fill-color:inherit!important;
+  white-space:nowrap!important;
 }
 .st-key-auth_demo_role_favorite button:hover,
 .st-key-auth_demo_role_medical_services button:hover,
