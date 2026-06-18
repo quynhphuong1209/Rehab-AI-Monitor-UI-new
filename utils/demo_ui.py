@@ -548,7 +548,7 @@ def auth_screen_html() -> str:
       <line x1="86" y1="138" x2="74" y2="178" class="pose-bone dim"/>
       <circle cx="86" cy="138" r="6" class="pose-joint dim"/>
       <g id="poseArm">
-        <animateTransform attributeName="transform" type="rotate" values="8 120 92;-78 120 92;8 120 92" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="rotate" values="8 120 92;-46 120 92;8 120 92" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
         <line x1="120" y1="92" x2="170" y2="118" class="pose-bone"/>
         <line x1="170" y1="118" x2="206" y2="132" class="pose-bone"/>
         <circle cx="170" cy="118" r="6" class="pose-joint"/>
@@ -935,12 +935,13 @@ _AUTH_NAV_CSS = """
   visibility:visible!important;
   font-family:var(--display)!important;
   font-weight:600!important;
-  font-size:clamp(38px,4.2vw,58px)!important;
-  line-height:1.06!important;
+  font-size:clamp(48px,4.5vw,64px)!important;
+  line-height:1.04!important;
   margin:0!important;
   letter-spacing:0!important;
   color:var(--ink)!important;
-  max-width:20ch!important;
+  max-width:18ch!important;
+  text-wrap:balance!important;
 }
 .auth-hero h1 em,
 [data-testid="stMarkdownContainer"] .auth-hero h1 em{
@@ -973,8 +974,7 @@ _AUTH_NAV_CSS = """
 .pose-joint{fill:var(--surface);stroke:var(--teal);stroke-width:3.4}
 .pose-joint.dim{stroke:var(--ink-3);opacity:.45}
 .pose-arc{stroke:var(--ai);stroke-width:4;fill:none;stroke-linecap:round;opacity:.85}
-#poseArm{transform-box:fill-box;transform-origin:right top;animation:armswing 4.4s ease-in-out infinite}
-@keyframes armswing{0%,100%{transform:rotate(8deg)}50%{transform:rotate(-86deg)}}
+#poseArm{transform-box:view-box;transform-origin:120px 92px}
 
 .auth-card-streamlit,
 .st-key-auth_card_streamlit{
@@ -1134,6 +1134,23 @@ _AUTH_NAV_CSS = """
   text-align:center;
   margin-bottom:10px;
 }
+.st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_favorite),
+.st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_admin_panel_settings){
+  gap:4px!important;
+  justify-content:center!important;
+}
+.st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_favorite){
+  margin-top:8px!important;
+}
+.st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_admin_panel_settings){
+  margin-top:6px!important;
+}
+.st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_favorite) > div[data-testid="stColumn"],
+.st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_admin_panel_settings) > div[data-testid="stColumn"]{
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:max-content!important;
+}
 .st-key-auth_demo_role_favorite,
 .st-key-auth_demo_role_medical_services,
 .st-key-auth_demo_role_construction,
@@ -1141,25 +1158,27 @@ _AUTH_NAV_CSS = """
 .st-key-auth_demo_role_admin_panel_settings{
   overflow:visible!important;
 }
-.st-key-auth_demo_role_favorite .stButton,
-.st-key-auth_demo_role_medical_services .stButton,
-.st-key-auth_demo_role_construction .stButton,
-.st-key-auth_demo_role_science .stButton,
-.st-key-auth_demo_role_admin_panel_settings .stButton{
+.st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton{
   width:max-content!important;
   max-width:none!important;
   overflow:visible!important;
 }
-.st-key-auth_demo_role_favorite button,
-.st-key-auth_demo_role_medical_services button,
-.st-key-auth_demo_role_construction button,
-.st-key-auth_demo_role_science button,
-.st-key-auth_demo_role_admin_panel_settings button{
-  min-height:33px!important;
-  height:33px!important;
-  border-radius:999px!important;
-  padding:0 8px!important;
-  font-size:11px!important;
+.st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button{
+  min-height:32px!important;
+  height:32px!important;
+  width:auto!important;
+  min-width:0!important;
+  border-radius:12px!important;
+  padding:0 6px!important;
+  font-size:10px!important;
   background:var(--surface-2)!important;
   border:1px solid var(--line)!important;
   color:var(--ink-2)!important;
@@ -1168,32 +1187,38 @@ _AUTH_NAV_CSS = """
   white-space:nowrap!important;
   overflow:visible!important;
   text-overflow:clip!important;
-  gap:4px!important;
+  gap:5px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  line-height:1!important;
 }
-.st-key-auth_demo_role_favorite button{
-  min-width:112px!important;
+.st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button{
+  min-width:0!important;
 }
-.st-key-auth_demo_role_favorite button *,
-.st-key-auth_demo_role_medical_services button *,
-.st-key-auth_demo_role_construction button *,
-.st-key-auth_demo_role_science button *,
-.st-key-auth_demo_role_admin_panel_settings button *{
+.st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button *{
   color:inherit!important;
   -webkit-text-fill-color:inherit!important;
   white-space:nowrap!important;
 }
-.st-key-auth_demo_role_favorite button [data-testid="stIconMaterial"],
-.st-key-auth_demo_role_medical_services button [data-testid="stIconMaterial"],
-.st-key-auth_demo_role_construction button [data-testid="stIconMaterial"],
-.st-key-auth_demo_role_science button [data-testid="stIconMaterial"],
-.st-key-auth_demo_role_admin_panel_settings button [data-testid="stIconMaterial"]{
-  font-size:14px!important;
+.st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button [data-testid="stIconMaterial"],
+.st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button [data-testid="stIconMaterial"],
+.st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button [data-testid="stIconMaterial"],
+.st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button [data-testid="stIconMaterial"],
+.st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button [data-testid="stIconMaterial"]{
+  width:12px!important;
+  min-width:12px!important;
+  font-size:12px!important;
 }
-.st-key-auth_demo_role_favorite button:hover,
-.st-key-auth_demo_role_medical_services button:hover,
-.st-key-auth_demo_role_construction button:hover,
-.st-key-auth_demo_role_science button:hover,
-.st-key-auth_demo_role_admin_panel_settings button:hover{
+.st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button:hover,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button:hover,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button:hover,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button:hover,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button:hover{
   border-color:var(--teal)!important;
   color:var(--teal)!important;
   -webkit-text-fill-color:var(--teal)!important;
@@ -1371,7 +1396,7 @@ _AUTH_NAV_CSS = """
     width:100%!important;
   }
   .auth-hero{min-height:auto;padding:8px 0 4px;gap:12px}
-  .auth-hero h1{font-size:clamp(30px,8vw,42px)!important;line-height:1.08!important}
+  .auth-hero h1{font-size:clamp(34px,9vw,46px)!important;line-height:1.06!important}
   .pose-card{position:relative;right:auto;bottom:auto;width:200px;align-self:center;margin-top:6px}
   .auth-panel{padding-top:0}
   .st-key-auth_card_streamlit{padding:24px 18px!important}
