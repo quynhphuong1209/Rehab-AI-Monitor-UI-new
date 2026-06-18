@@ -548,11 +548,24 @@ def auth_screen_html() -> str:
       <line x1="86" y1="138" x2="74" y2="178" class="pose-bone dim"/>
       <circle cx="86" cy="138" r="6" class="pose-joint dim"/>
       <g id="poseArm">
-        <animateTransform attributeName="transform" type="rotate" values="8 120 92;-46 120 92;8 120 92" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
-        <line x1="120" y1="92" x2="170" y2="118" class="pose-bone"/>
-        <line x1="170" y1="118" x2="206" y2="132" class="pose-bone"/>
-        <circle cx="170" cy="118" r="6" class="pose-joint"/>
-        <circle cx="206" cy="132" r="5.5" class="pose-joint"/>
+        <line x1="120" y1="92" x2="170" y2="118" class="pose-bone">
+          <animate attributeName="x2" values="170;150;170" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+          <animate attributeName="y2" values="118;78;118" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+        </line>
+        <line x1="170" y1="118" x2="206" y2="132" class="pose-bone">
+          <animate attributeName="x1" values="170;150;170" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+          <animate attributeName="y1" values="118;78;118" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+          <animate attributeName="x2" values="206;186;206" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+          <animate attributeName="y2" values="132;58;132" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+        </line>
+        <circle cx="170" cy="118" r="6" class="pose-joint">
+          <animate attributeName="cx" values="170;150;170" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="118;78;118" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="206" cy="132" r="5.5" class="pose-joint">
+          <animate attributeName="cx" values="206;186;206" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="132;58;132" keyTimes="0;0.5;1" dur="4.4s" repeatCount="indefinite"/>
+        </circle>
       </g>
       <circle cx="120" cy="92" r="7" class="pose-joint"/>
       <line x1="120" y1="150" x2="100" y2="214" class="pose-bone"/>
@@ -974,7 +987,6 @@ _AUTH_NAV_CSS = """
 .pose-joint{fill:var(--surface);stroke:var(--teal);stroke-width:3.4}
 .pose-joint.dim{stroke:var(--ink-3);opacity:.45}
 .pose-arc{stroke:var(--ai);stroke-width:4;fill:none;stroke-linecap:round;opacity:.85}
-#poseArm{transform-box:view-box;transform-origin:120px 92px}
 
 .auth-card-streamlit,
 .st-key-auth_card_streamlit{
