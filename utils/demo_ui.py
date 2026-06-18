@@ -530,7 +530,7 @@ def auth_screen_html() -> str:
     return """
 <div class="auth-hero">
   <span class="eyebrow"><svg class="icon sm"><use href="#i-shield-c"/></svg> Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>
-  <div class="auth-hero-title" role="heading" aria-level="1" style="display:block!important;margin:0!important;max-width:21ch!important;font-family:Georgia,'Times New Roman',serif!important;font-size:clamp(50px,4.6vw,64px)!important;line-height:1.03!important;font-weight:600!important;letter-spacing:0!important;color:var(--ink,#111827)!important;text-wrap:wrap!important;word-break:keep-all!important;overflow-wrap:normal!important;hyphens:none!important;">
+  <div class="auth-hero-title" role="heading" aria-level="1" style="display:block!important;margin:0!important;max-width:30ch!important;font-family:var(--display,'Fraunces',Georgia,serif)!important;font-size:clamp(48px,4vw,58px)!important;line-height:1.04!important;font-weight:600!important;letter-spacing:0!important;color:var(--ink,#111827)!important;text-wrap:wrap!important;word-break:keep-all!important;overflow-wrap:normal!important;hyphens:none!important;font-kerning:normal!important;">
     <span class="auth-word">Giám</span> <span class="auth-word">sát</span> <span class="auth-word">tập</span> <em style="font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;font-weight:inherit!important;font-style:italic!important;color:var(--teal,#1d6fe8)!important;"><span class="auth-word">phục</span> <span class="auth-word">hồi</span> <span class="auth-word">chức</span> <span class="auth-word">năng</span></em> <span class="auth-word">bằng</span><br/><span class="auth-word">AI,</span> <span class="auth-word">ngay</span> <span class="auth-word">tại</span> <span class="auth-word">nhà.</span>
   </div>
   <p class="lede">Bệnh nhân khai báo triệu chứng (VAS) → AI phân tích khung xương & góc khớp theo thời gian thực → Chuyên gia đối chiếu và đưa ra phác đồ. Một luồng lâm sàng khép kín.</p>
@@ -711,6 +711,7 @@ def side_info_html(role: str, user_info=None, stats=None) -> str:
 
 # ============================================================ ADDITIONAL CSS FOR AUTH & NAV
 _AUTH_NAV_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,600..700,50,1&family=Inter:wght@400;500;600;700&display=swap');
 /* Icons used outside the .duk content wrapper: auth hero, topbar, badges. */
 .icon{
   width:18px!important;
@@ -950,18 +951,19 @@ _AUTH_NAV_CSS = """
 [data-testid="stMarkdownContainer"] .auth-hero .auth-hero-title{
   display:block!important;
   visibility:visible!important;
-  font-family:Georgia,'Times New Roman',serif!important;
+  font-family:var(--display,'Fraunces',Georgia,serif)!important;
   font-weight:600!important;
-  font-size:clamp(56px,5.25vw,76px)!important;
-  line-height:1.02!important;
+  font-size:clamp(48px,4vw,58px)!important;
+  line-height:1.04!important;
   margin:0!important;
   letter-spacing:0!important;
   color:var(--ink)!important;
-  max-width:21ch!important;
+  max-width:30ch!important;
   text-wrap:wrap!important;
   word-break:keep-all!important;
   overflow-wrap:normal!important;
   hyphens:none!important;
+  font-kerning:normal!important;
 }
 .auth-hero .auth-hero-title br,
 [data-testid="stMarkdownContainer"] .auth-hero .auth-hero-title br{
@@ -1448,10 +1450,10 @@ _AUTH_NAV_CSS = """
 .auth-hero-title{
   display:block!important;
   margin:0!important;
-  max-width:21ch!important;
-  font-family:Georgia,'Times New Roman',serif!important;
-  font-size:clamp(50px,4.6vw,64px)!important;
-  line-height:1.03!important;
+  max-width:30ch!important;
+  font-family:var(--display,'Fraunces',Georgia,serif)!important;
+  font-size:clamp(48px,4vw,58px)!important;
+  line-height:1.04!important;
   font-weight:600!important;
   letter-spacing:0!important;
   color:var(--ink,#111827)!important;
@@ -1459,6 +1461,23 @@ _AUTH_NAV_CSS = """
   word-break:keep-all!important;
   overflow-wrap:normal!important;
   hyphens:none!important;
+  font-kerning:normal!important;
+}
+.stApp:has(.auth-shell-anchor) .brand-name,
+.stApp:has(.auth-shell-anchor) .auth-card-title h2,
+.stApp:has(.auth-shell-anchor) .auth-card-head h2{
+  font-family:var(--display,'Fraunces',Georgia,serif)!important;
+  font-weight:600!important;
+  letter-spacing:0!important;
+}
+.stApp:has(.auth-shell-anchor) .brand-sub,
+.stApp:has(.auth-shell-anchor) .auth-card-title p,
+.stApp:has(.auth-shell-anchor) .auth-hero p.lede,
+.stApp:has(.auth-shell-anchor) .eyebrow,
+.stApp:has(.auth-shell-anchor) label,
+.stApp:has(.auth-shell-anchor) input,
+.stApp:has(.auth-shell-anchor) button{
+  font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
 }
 .stApp:has(.auth-shell-anchor) .auth-hero-title em,
 .auth-hero-title em{
