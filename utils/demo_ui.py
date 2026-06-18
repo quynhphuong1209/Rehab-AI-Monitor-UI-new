@@ -1100,14 +1100,24 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="base-input"],
 .st-key-auth_card_streamlit .stSelectbox div[data-baseweb="select"]>div{
   min-height:46px!important;
-  background:var(--surface-2)!important;
+  background:var(--surface)!important;
   border:1px solid var(--line)!important;
-  border-radius:11px!important;
+  border-radius:10px!important;
+  box-shadow:inset 0 1px 0 rgba(15,26,38,.03)!important;
+}
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"]:focus-within,
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="base-input"]:focus-within{
+  background:var(--surface)!important;
+  border-color:#b7c9e3!important;
+  box-shadow:0 0 0 3px var(--teal-50)!important;
 }
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] *,
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="base-input"] *{
   color:var(--ink)!important;
   -webkit-text-fill-color:var(--ink)!important;
+}
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] > div:first-child:has(svg):not([data-baseweb="base-input"]){
+  display:none!important;
 }
 .st-key-auth_card_streamlit .stTextInput input,
 .st-key-auth_card_streamlit .stTextArea textarea,
@@ -1119,6 +1129,31 @@ _AUTH_NAV_CSS = """
   font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
   font-size:14px!important;
   font-weight:500!important;
+}
+.st-key-auth_card_streamlit .stTextInput input{
+  padding-left:14px!important;
+  padding-right:14px!important;
+  background:transparent!important;
+}
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] > div:last-child:has(button){
+  align-self:stretch!important;
+  width:52px!important;
+  min-width:52px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:var(--surface-2)!important;
+  border-left:1px solid var(--line)!important;
+  border-radius:0 10px 10px 0!important;
+}
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] > div:last-child:has(button) button{
+  width:100%!important;
+  height:100%!important;
+  min-height:44px!important;
+  border:0!important;
+  border-radius:0 10px 10px 0!important;
+  background:transparent!important;
+  box-shadow:none!important;
 }
 .st-key-auth_card_streamlit .stTextInput input::placeholder{
   color:var(--ink-3)!important;
@@ -1153,10 +1188,10 @@ _AUTH_NAV_CSS = """
   -webkit-text-fill-color:#fff!important;
 }
 .st-key-auth_forgot_link button{
-  min-height:28px!important;
-  height:28px!important;
+  min-height:24px!important;
+  height:24px!important;
   width:auto!important;
-  margin:8px auto 2px!important;
+  margin:8px auto 0!important;
   padding:0!important;
   display:flex!important;
   justify-content:center!important;
@@ -1165,7 +1200,7 @@ _AUTH_NAV_CSS = """
   box-shadow:none!important;
   color:var(--ink-3)!important;
   -webkit-text-fill-color:var(--ink-3)!important;
-  font-size:12.5px!important;
+  font-size:11px!important;
   font-weight:500!important;
 }
 .st-key-auth_forgot_link button p,
@@ -1182,10 +1217,10 @@ _AUTH_NAV_CSS = """
 .auth-demo-strip{
   margin-top:18px;
   border-top:1px dashed var(--line);
-  padding-top:14px;
+  padding-top:13px;
 }
 .auth-demo-strip .dt{
-  font-size:11px;
+  font-size:10.5px;
   font-weight:700;
   letter-spacing:.4px;
   text-transform:uppercase;
@@ -1231,14 +1266,14 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button{
-  min-height:32px!important;
-  height:30px!important;
+  min-height:28px!important;
+  height:28px!important;
   width:auto!important;
   min-width:0!important;
   border-radius:999px!important;
-  padding:0 12px!important;
+  padding:0 11px!important;
   font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
-  font-size:12px!important;
+  font-size:11px!important;
   font-weight:600!important;
   background:var(--surface-2)!important;
   border:1px solid var(--line)!important;
@@ -1271,9 +1306,9 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button [data-testid="stIconMaterial"]{
-  width:12px!important;
-  min-width:12px!important;
-  font-size:12px!important;
+  width:11px!important;
+  min-width:11px!important;
+  font-size:11px!important;
 }
 .st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button:hover,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button:hover,
