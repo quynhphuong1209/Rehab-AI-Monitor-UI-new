@@ -816,6 +816,9 @@ _AUTH_NAV_CSS = """
   grid-column:2!important;
   justify-self:stretch!important;
 }
+.mobile-auth-pose-only{
+  display:none!important;
+}
 .auth-shell-anchor + div{
   margin-top:0!important;
   padding-top:0!important;
@@ -1690,15 +1693,13 @@ _AUTH_NAV_CSS = """
   }
   .auth-hero{
     display:grid!important;
-    grid-template-columns:minmax(0,1fr) 118px!important;
+    grid-template-columns:1fr!important;
     grid-template-areas:
-      "badge badge"
-      "title pose"
-      "lede pose"
-      "stats stats"!important;
-    align-items:center!important;
-    column-gap:12px!important;
-    row-gap:10px!important;
+      "badge"
+      "title"!important;
+    align-items:start!important;
+    column-gap:0!important;
+    row-gap:12px!important;
     width:100%!important;
     max-width:430px!important;
     min-height:0!important;
@@ -1730,19 +1731,10 @@ _AUTH_NAV_CSS = """
     display:none!important;
   }
   .auth-hero p.lede{
-    grid-area:lede!important;
-    display:block!important;
-    max-width:100%!important;
-    font-size:12.5px!important;
-    line-height:1.45!important;
-    margin:0!important;
+    display:none!important;
   }
   .hero-stats{
-    grid-area:stats!important;
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:8px!important;
-    width:100%!important;
+    display:none!important;
   }
   .hstat{
     min-width:0!important;
@@ -1758,8 +1750,7 @@ _AUTH_NAV_CSS = """
     line-height:1.25!important;
   }
   .pose-card{
-    grid-area:pose!important;
-    display:block!important;
+    display:none!important;
     position:relative!important;
     right:auto!important;
     bottom:auto!important;
@@ -1769,6 +1760,34 @@ _AUTH_NAV_CSS = """
     min-height:0!important;
     margin:0!important;
     opacity:.94!important;
+  }
+  .mobile-auth-pose-only{
+    display:block!important;
+    width:100%!important;
+    max-width:430px!important;
+    margin:14px auto 0!important;
+  }
+  .mobile-auth-pose-only .auth-hero{
+    display:block!important;
+    width:100%!important;
+    max-width:430px!important;
+    min-height:0!important;
+    padding:0!important;
+  }
+  .mobile-auth-pose-only .auth-hero .eyebrow,
+  .mobile-auth-pose-only .auth-hero .auth-hero-title,
+  .mobile-auth-pose-only .auth-hero p.lede,
+  .mobile-auth-pose-only .auth-hero .hero-stats{
+    display:none!important;
+  }
+  .mobile-auth-pose-only .pose-card{
+    display:block!important;
+    position:relative!important;
+    right:auto!important;
+    bottom:auto!important;
+    width:148px!important;
+    margin:0 auto!important;
+    opacity:.96!important;
   }
   .auth-card-streamlit,
   .st-key-auth_card_streamlit{

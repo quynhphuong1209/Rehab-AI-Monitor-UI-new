@@ -18213,6 +18213,13 @@ def hien_thi_dang_nhap_dang_ky():
                     icon=":material/admin_panel_settings:",
                 ):
                     _dang_nhap_demo_theo_vai_tro("Quản trị viên")
+        if auth_screen_html:
+            st.markdown(
+                '<div class="mobile-auth-pose-only">'
+                f'{auth_screen_html()}'
+                '</div>',
+                unsafe_allow_html=True,
+            )
     close_auth_shell()
 
 # ============================================
