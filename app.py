@@ -18171,7 +18171,7 @@ def hien_thi_dang_nhap_dang_ky():
                 '</div>',
                 unsafe_allow_html=True,
             )
-            demo_cols = st.columns([1, 1, 1, 1], gap="small")
+            demo_cols = st.columns([1.62, 1.0, 0.82, 0.88], gap="small")
             demo_roles_top = [
                 ("Bệnh nhân", "Bệnh nhân", "favorite"),
                 ("Bác sĩ", "Bác sĩ / KTV PHCN", "medical_services"),

@@ -721,9 +721,21 @@ _AUTH_NAV_CSS = """
   color:var(--ink)!important;
 }
 .stApp:has(.auth-shell-anchor) [data-testid="stAppViewContainer"]>.main .block-container{
-  padding-top:0!important;
-  padding-bottom:0!important;
+  padding:0!important;
   max-width:100%!important;
+}
+.stApp:has(.auth-shell-anchor) div.block-container,
+.stApp:has(.auth-shell-anchor) [data-testid="stMainBlockContainer"],
+.stApp:has(.auth-shell-anchor) [data-testid="stAppViewBlockContainer"]{
+  padding-top:0!important;
+}
+.stApp:has(.auth-shell-anchor) .element-container:has(.topbar),
+.stApp:has(.auth-shell-anchor) [data-testid="stMarkdownContainer"]:has(.topbar){
+  margin:0!important;
+  padding:0!important;
+}
+.stApp:has(.auth-shell-anchor) [data-testid="stAppViewBlockContainer"]{
+  padding-top:0!important;
 }
 .stApp:has(.auth-shell-anchor) [data-testid="stMarkdownContainer"],
 .stApp:has(.auth-shell-anchor) [data-testid="stMarkdownContainer"] *,
@@ -750,7 +762,7 @@ _AUTH_NAV_CSS = """
   align-items:flex-start;
   gap:clamp(12px,2.2vw,40px)!important;
   width:100%;
-  padding:clamp(14px,2.4vh,30px) clamp(10px,2vw,28px) clamp(18px,3vh,34px);
+  padding:clamp(14px,2.4vh,30px) clamp(10px,2vw,28px) clamp(18px,3vh,34px)!important;
 }
 .auth-shell-anchor + div{
   margin-top:0!important;
@@ -764,7 +776,7 @@ _AUTH_NAV_CSS = """
 }
 .st-key-auth_theme_icon_button{
   position:fixed;
-  top:13px;
+  top:10px;
   right:28px;
   z-index:1000;
   width:38px!important;
@@ -865,20 +877,44 @@ _AUTH_NAV_CSS = """
   min-height:520px;
   color:var(--ink)!important;
 }
-.auth-hero .eyebrow{
+.auth-hero .eyebrow,
+[data-testid="stMarkdownContainer"] .auth-hero .eyebrow{
   display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
-  padding:6px 13px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.4px;
+  padding:8px 16px;border-radius:999px;
+  font-family:var(--ui)!important;
+  font-size:16px!important;
+  line-height:1.2!important;
+  font-weight:700;letter-spacing:0!important;
   background:var(--teal-50);color:var(--teal-strong);border:1px solid var(--teal-50);
 }
-.auth-hero h1{
+.auth-hero h1,
+[data-testid="stMarkdownContainer"] .auth-hero h1{
   display:block!important;
   visibility:visible!important;
-  font-family:var(--display);font-weight:600;font-size:clamp(38px,4.8vw,56px);
-  line-height:1.05;margin:0;letter-spacing:-.5px;
+  font-family:var(--ui)!important;
+  font-weight:700!important;
+  font-size:17px!important;
+  line-height:1.45!important;
+  margin:0!important;
+  letter-spacing:0!important;
   color:var(--ink)!important;
+  max-width:48ch!important;
 }
-.auth-hero h1 em{font-style:italic;color:var(--teal)}
-.auth-hero p.lede{font-size:16px;color:var(--ink-2)!important;max-width:46ch;margin:0}
+.auth-hero h1 em,
+[data-testid="stMarkdownContainer"] .auth-hero h1 em{
+  font-family:inherit!important;
+  font-style:italic;
+  color:var(--teal)!important;
+}
+.auth-hero p.lede,
+[data-testid="stMarkdownContainer"] .auth-hero p.lede{
+  font-family:var(--ui)!important;
+  font-size:17px!important;
+  line-height:1.55!important;
+  color:var(--ink-2)!important;
+  max-width:48ch;
+  margin:0!important;
+}
 .hero-stats{display:flex;gap:14px;flex-wrap:wrap}
 .hstat{
   background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
@@ -1061,19 +1097,23 @@ _AUTH_NAV_CSS = """
 .st-key-auth_demo_role_construction button,
 .st-key-auth_demo_role_science button,
 .st-key-auth_demo_role_admin_panel_settings button{
-  min-height:34px!important;
-  height:34px!important;
+  min-height:33px!important;
+  height:33px!important;
   border-radius:999px!important;
-  padding:0 9px!important;
-  font-size:11.5px!important;
+  padding:0 8px!important;
+  font-size:11px!important;
   background:var(--surface-2)!important;
   border:1px solid var(--line)!important;
   color:var(--ink-2)!important;
   -webkit-text-fill-color:var(--ink-2)!important;
   box-shadow:none!important;
   white-space:nowrap!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  gap:4px!important;
+}
+.st-key-auth_demo_role_favorite button{
+  min-width:100px!important;
 }
 .st-key-auth_demo_role_favorite button *,
 .st-key-auth_demo_role_medical_services button *,
@@ -1083,6 +1123,13 @@ _AUTH_NAV_CSS = """
   color:inherit!important;
   -webkit-text-fill-color:inherit!important;
   white-space:nowrap!important;
+}
+.st-key-auth_demo_role_favorite button [data-testid="stIconMaterial"],
+.st-key-auth_demo_role_medical_services button [data-testid="stIconMaterial"],
+.st-key-auth_demo_role_construction button [data-testid="stIconMaterial"],
+.st-key-auth_demo_role_science button [data-testid="stIconMaterial"],
+.st-key-auth_demo_role_admin_panel_settings button [data-testid="stIconMaterial"]{
+  font-size:14px!important;
 }
 .st-key-auth_demo_role_favorite button:hover,
 .st-key-auth_demo_role_medical_services button:hover,
@@ -1099,6 +1146,8 @@ _AUTH_NAV_CSS = """
   position:sticky;top:0;z-index:40;
   display:flex;align-items:center;gap:14px;
   padding:12px clamp(14px,3vw,28px);
+  margin:0!important;
+  width:100%!important;
   background:var(--glass);
   backdrop-filter:saturate(160%) blur(14px);
   -webkit-backdrop-filter:saturate(160%) blur(14px);
@@ -1255,7 +1304,7 @@ _AUTH_NAV_CSS = """
     padding:18px 14px 24px!important;
   }
   .auth-hero{min-height:auto;padding:8px 0 4px;gap:12px}
-  .auth-hero h1{font-size:clamp(30px,9vw,42px)}
+  .auth-hero h1{font-size:17px!important;line-height:1.45!important}
   .pose-card{position:relative;right:auto;bottom:auto;width:200px;align-self:center;margin-top:6px}
   .auth-panel{padding-top:0}
   .st-key-auth_card_streamlit{padding:24px 18px!important}
