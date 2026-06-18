@@ -18238,11 +18238,10 @@ def hien_thi_dang_nhap_dang_ky():
                 '</div>',
                 unsafe_allow_html=True,
             )
-            demo_cols = st.columns([1.62, 1.0, 0.82, 0.88], gap="small")
+            demo_cols = st.columns([1.12, 1.38, 0.82], gap="small")
             demo_roles_top = [
                 ("Bệnh nhân", "Bệnh nhân", "favorite"),
-                ("Bác sĩ", "Bác sĩ / KTV PHCN", "medical_services"),
-                ("KTV", "Bác sĩ / KTV PHCN", "construction"),
+                ("Bác sĩ / KTV", "Bác sĩ / KTV PHCN", "medical_services"),
                 ("NCV", "Nghiên cứu viên", "science"),
             ]
             for col, (button_label, role_label, icon_name) in zip(demo_cols, demo_roles_top):

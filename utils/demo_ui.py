@@ -2112,9 +2112,19 @@ _AUTH_NAV_CSS = """
   gap:9px!important;
   margin:0!important;
 }
+.st-key-auth_card_streamlit .st-key-reg_role_demo label[data-testid="stWidgetLabel"],
+.st-key-auth_card_streamlit .st-key-reg_role_demo [data-testid="stWidgetLabel"]{
+  display:none!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+}
 .st-key-reg_role_demo [role="radiogroup"] label{
   min-height:58px!important;
   align-items:center!important;
+  gap:10px!important;
   padding:11px!important;
   border:1.5px solid var(--line)!important;
   border-radius:13px!important;
@@ -2133,6 +2143,46 @@ _AUTH_NAV_CSS = """
   border-color:var(--teal)!important;
   background:var(--teal-12)!important;
   box-shadow:0 0 0 3px var(--teal-50)!important;
+}
+.st-key-reg_role_demo [role="radiogroup"] label > div:first-child{
+  display:none!important;
+}
+.st-key-reg_role_demo [role="radiogroup"] label::before{
+  content:"";
+  width:34px!important;
+  height:34px!important;
+  min-width:34px!important;
+  border-radius:10px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:var(--surface)!important;
+  border:1px solid var(--line)!important;
+  color:var(--ink)!important;
+  font-family:"Material Symbols Rounded","Material Icons",sans-serif!important;
+  font-size:18px!important;
+  font-weight:400!important;
+  line-height:1!important;
+}
+.st-key-reg_role_demo [role="radiogroup"] label:has(input:checked)::before,
+.st-key-reg_role_demo [role="radiogroup"] label:has([aria-checked="true"])::before{
+  background:var(--teal)!important;
+  border-color:var(--teal)!important;
+  color:#fff!important;
+}
+.st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(1)::before{
+  content:"stethoscope";
+}
+.st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(2)::before{
+  content:"construction";
+}
+.st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(3)::before{
+  content:"science";
+}
+.st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(4)::before{
+  content:"favorite";
+}
+.st-key-reg_role_demo [role="radiogroup"] label:nth-of-type(5)::before{
+  content:"settings";
 }
 .st-key-reg_role_demo [role="radiogroup"] label *{
   font-size:12.5px!important;
@@ -2153,7 +2203,7 @@ _AUTH_NAV_CSS = """
 }
 .auth-demo-strip .dt{
   margin-bottom:10px!important;
-  font-size:11px!important;
+  font-size:10.5px!important;
   font-weight:600!important;
   letter-spacing:.35px!important;
 }
@@ -2162,22 +2212,22 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button{
-  min-height:28px!important;
-  height:28px!important;
-  padding:0 11px!important;
+  min-height:26px!important;
+  height:26px!important;
+  padding:0 10px!important;
   border-radius:999px!important;
-  font-size:11.5px!important;
+  font-size:11px!important;
   font-weight:600!important;
-  gap:6px!important;
+  gap:5px!important;
 }
 .st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button [data-testid="stIconMaterial"]{
-  width:13px!important;
-  min-width:13px!important;
-  font-size:13px!important;
+  width:12px!important;
+  min-width:12px!important;
+  font-size:12px!important;
 }
 
 @media (max-width:760px){
