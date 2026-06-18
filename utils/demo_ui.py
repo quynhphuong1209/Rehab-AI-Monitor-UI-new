@@ -1665,10 +1665,10 @@ _AUTH_NAV_CSS = """
     display:grid!important;
     grid-template-columns:1fr!important;
     align-items:center!important;
-    gap:18px!important;
+    gap:12px!important;
     width:100%!important;
     min-height:calc(100svh - 58px)!important;
-    padding:22px 14px 24px!important;
+    padding:8px 14px 22px!important;
     overflow:visible!important;
   }
   .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"],
@@ -1694,12 +1694,10 @@ _AUTH_NAV_CSS = """
   .auth-hero{
     display:grid!important;
     grid-template-columns:1fr!important;
-    grid-template-areas:
-      "badge"
-      "title"!important;
+    grid-template-areas:"title"!important;
     align-items:start!important;
     column-gap:0!important;
-    row-gap:12px!important;
+    row-gap:0!important;
     width:100%!important;
     max-width:430px!important;
     min-height:0!important;
@@ -1708,7 +1706,7 @@ _AUTH_NAV_CSS = """
   }
   .auth-hero .eyebrow{
     grid-area:badge!important;
-    display:inline-flex!important;
+    display:none!important;
     justify-self:start!important;
     max-width:100%!important;
     padding:6px 11px!important;
@@ -1765,20 +1763,32 @@ _AUTH_NAV_CSS = """
     display:block!important;
     width:100%!important;
     max-width:430px!important;
-    margin:14px auto 0!important;
+    margin:12px auto 0!important;
   }
   .mobile-auth-pose-only .auth-hero{
-    display:block!important;
+    display:grid!important;
+    place-items:center!important;
     width:100%!important;
     max-width:430px!important;
     min-height:0!important;
     padding:0!important;
+    position:relative!important;
   }
   .mobile-auth-pose-only .auth-hero .eyebrow,
   .mobile-auth-pose-only .auth-hero .auth-hero-title,
   .mobile-auth-pose-only .auth-hero p.lede,
   .mobile-auth-pose-only .auth-hero .hero-stats{
-    display:none!important;
+    position:absolute!important;
+    width:1px!important;
+    height:1px!important;
+    min-width:0!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    font-size:0!important;
+    line-height:0!important;
   }
   .mobile-auth-pose-only .pose-card{
     display:block!important;
