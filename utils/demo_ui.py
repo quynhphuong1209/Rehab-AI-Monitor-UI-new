@@ -1272,6 +1272,7 @@ _AUTH_NAV_CSS = """
 }
 .st-key-auth_demo_role_favorite,
 .st-key-auth_demo_role_medical_services,
+.st-key-auth_demo_role_stethoscope,
 .st-key-auth_demo_role_construction,
 .st-key-auth_demo_role_science,
 .st-key-auth_demo_role_admin_panel_settings{
@@ -1279,6 +1280,7 @@ _AUTH_NAV_CSS = """
 }
 .st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_stethoscope .stButton,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton{
@@ -1288,6 +1290,7 @@ _AUTH_NAV_CSS = """
 }
 .st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_stethoscope .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button{
@@ -1319,6 +1322,7 @@ _AUTH_NAV_CSS = """
 }
 .st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button *,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_stethoscope .stButton>button *,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button *,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button *,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button *{
@@ -1328,6 +1332,7 @@ _AUTH_NAV_CSS = """
 }
 .st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button [data-testid="stIconMaterial"],
+.st-key-auth_card_streamlit .st-key-auth_demo_role_stethoscope .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button [data-testid="stIconMaterial"]{
@@ -1337,6 +1342,7 @@ _AUTH_NAV_CSS = """
 }
 .st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button:hover,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button:hover,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_stethoscope .stButton>button:hover,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button:hover,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button:hover,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button:hover{
@@ -2206,9 +2212,11 @@ _AUTH_NAV_CSS = """
   font-size:10.5px!important;
   font-weight:600!important;
   letter-spacing:.35px!important;
+  line-height:1.1!important;
 }
 .st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_stethoscope .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button{
@@ -2216,18 +2224,50 @@ _AUTH_NAV_CSS = """
   height:26px!important;
   padding:0 10px!important;
   border-radius:999px!important;
+  font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
   font-size:11px!important;
   font-weight:600!important;
   gap:5px!important;
+  line-height:1!important;
+  background:var(--surface-2)!important;
+  border:1px solid var(--line)!important;
+  color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
+  box-shadow:none!important;
+}
+.st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_stethoscope .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button *{
+  font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
+  font-size:11px!important;
+  font-weight:600!important;
+  line-height:1!important;
+  color:inherit!important;
+  -webkit-text-fill-color:inherit!important;
 }
 .st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button [data-testid="stIconMaterial"],
+.st-key-auth_card_streamlit .st-key-auth_demo_role_stethoscope .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button [data-testid="stIconMaterial"]{
   width:12px!important;
   min-width:12px!important;
   font-size:12px!important;
+  line-height:1!important;
+  font-family:"Material Symbols Rounded","Material Icons",sans-serif!important;
+  font-weight:400!important;
+  font-style:normal!important;
+  letter-spacing:normal!important;
+  text-transform:none!important;
+  white-space:nowrap!important;
+  word-wrap:normal!important;
+  direction:ltr!important;
+  -webkit-font-feature-settings:"liga"!important;
+  -webkit-font-smoothing:antialiased!important;
 }
 
 @media (max-width:760px){
