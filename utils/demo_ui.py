@@ -525,20 +525,8 @@ def kv(label, value, color="") -> str:
     return f'<div class="kv"><span>{label}</span><b{style}>{value}</b></div>'
 
 # ============================================================ AUTH SCREEN COMPONENTS
-def auth_screen_html() -> str:
-    """Màn hình đăng nhập/đăng ký giống demo HTML."""
+def _auth_pose_markup() -> str:
     return """
-<div class="auth-hero">
-  <span class="eyebrow"><svg class="icon sm"><use href="#i-shield-c"/></svg> Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>
-  <div class="auth-hero-title" role="heading" aria-level="1" style="display:block!important;margin:0!important;max-width:30ch!important;font-family:var(--display,'Fraunces',Georgia,serif)!important;font-size:clamp(48px,4vw,58px)!important;line-height:1.04!important;font-weight:600!important;letter-spacing:0!important;color:var(--ink,#111827)!important;text-wrap:wrap!important;word-break:keep-all!important;overflow-wrap:normal!important;hyphens:none!important;font-kerning:normal!important;">
-    <span class="auth-word">Giám</span> <span class="auth-word">sát</span> <span class="auth-word">tập</span> <em style="font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;font-weight:inherit!important;font-style:italic!important;color:var(--teal,#1d6fe8)!important;"><span class="auth-word">phục</span> <span class="auth-word">hồi</span> <span class="auth-word">chức</span> <span class="auth-word">năng</span></em> <span class="auth-word">bằng</span><br/><span class="auth-word">AI,</span> <span class="auth-word">ngay</span> <span class="auth-word">tại</span> <span class="auth-word">nhà.</span>
-  </div>
-  <p class="lede">Bệnh nhân khai báo triệu chứng (VAS) → AI phân tích khung xương & góc khớp theo thời gian thực → Chuyên gia đối chiếu và đưa ra phác đồ. Một luồng lâm sàng khép kín.</p>
-  <div class="hero-stats">
-    <div class="hstat"><div class="n">33</div><div class="l">điểm khung xương / khung hình</div></div>
-    <div class="hstat"><div class="n">±15°</div><div class="l">sai số mục tiêu giai đoạn 3</div></div>
-    <div class="hstat"><div class="n">5</div><div class="l">vai trò người dùng</div></div>
-  </div>
   <div class="pose-card" aria-hidden="true">
     <svg class="pose-svg" viewBox="0 0 240 260">
       <line x1="120" y1="92" x2="210" y2="92" stroke="var(--ink-3)" stroke-width="2" stroke-dasharray="5 6" opacity=".5"/>
@@ -577,6 +565,25 @@ def auth_screen_html() -> str:
       <circle cx="140" cy="214" r="5.5" class="pose-joint"/>
     </svg>
   </div>
+"""
+
+def auth_pose_html() -> str:
+    """Pose-only block for the mobile placement below the auth card."""
+    return f'<div class="auth-hero auth-pose-only">{_auth_pose_markup()}</div>'
+
+def auth_screen_html() -> str:
+    """Màn hình đăng nhập/đăng ký giống demo HTML."""
+    return f"""
+<div class="auth-hero">
+  <span class="eyebrow"><svg class="icon sm"><use href="#i-shield-c"/></svg> Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>
+  <h1 class="auth-hero-title">Giám sát tập <em>phục hồi chức năng</em> <span class="auth-no-break">bằng</span> AI, ngay tại nhà.</h1>
+  <p class="lede">Bệnh nhân khai báo triệu chứng (VAS) → AI phân tích khung xương & góc khớp theo thời gian thực → Chuyên gia đối chiếu và đưa ra phác đồ. Một luồng lâm sàng khép kín.</p>
+  <div class="hero-stats">
+    <div class="hstat"><div class="n">33</div><div class="l">điểm khung xương / khung hình</div></div>
+    <div class="hstat"><div class="n">±15°</div><div class="l">sai số mục tiêu giai đoạn 3</div></div>
+    <div class="hstat"><div class="n">5</div><div class="l">vai trò người dùng</div></div>
+  </div>
+  {_auth_pose_markup()}
 </div>
 """
 
@@ -1716,7 +1723,9 @@ _AUTH_NAV_CSS = """
     overflow:hidden!important;
     text-overflow:ellipsis!important;
   }
+  .stApp:has(.auth-shell-anchor) .auth-hero h1.auth-hero-title,
   .stApp:has(.auth-shell-anchor) .auth-hero .auth-hero-title,
+  .auth-hero h1.auth-hero-title,
   .auth-hero .auth-hero-title{
     grid-area:title!important;
     display:block!important;
@@ -1869,6 +1878,410 @@ _AUTH_NAV_CSS = """
     width:auto!important;
     flex:0 0 auto!important;
     min-width:max-content!important;
+  }
+}
+
+/* ============================================================ AUTH DEMO PARITY OVERRIDES */
+.stApp:has(.auth-shell-anchor) .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"],
+.stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit){
+  align-items:start!important;
+}
+.auth-card-streamlit,
+.st-key-auth_card_streamlit{
+  max-width:430px!important;
+}
+.st-key-auth_card_streamlit{
+  padding:34px!important;
+  border-radius:var(--r-lg)!important;
+}
+.auth-card-title h2{
+  font-size:25px!important;
+  line-height:1.12!important;
+  margin:0 0 4px!important;
+}
+.auth-card-title p{
+  font-size:13.5px!important;
+  line-height:1.45!important;
+  margin:0 0 22px!important;
+}
+.stApp:has(.auth-shell-anchor) .auth-hero h1.auth-hero-title,
+.auth-hero h1.auth-hero-title{
+  display:block!important;
+  max-width:900px!important;
+  width:min(900px,100%)!important;
+  font-family:var(--display,'Fraunces',Georgia,serif)!important;
+  font-size:clamp(48px,4.35vw,58px)!important;
+  line-height:1.05!important;
+  font-weight:600!important;
+  letter-spacing:-.5px!important;
+  text-wrap:wrap!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  hyphens:none!important;
+}
+.stApp:has(.auth-shell-anchor) .auth-hero h1.auth-hero-title em,
+.auth-hero h1.auth-hero-title em{
+  display:inline!important;
+  color:var(--teal)!important;
+  font-family:inherit!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+  font-weight:inherit!important;
+  font-style:italic!important;
+  white-space:normal!important;
+}
+.stApp:has(.auth-shell-anchor) .auth-hero h1.auth-hero-title .auth-no-break,
+.auth-hero h1.auth-hero-title .auth-no-break{
+  display:inline!important;
+  white-space:nowrap!important;
+  font-family:inherit!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+  font-weight:inherit!important;
+  letter-spacing:inherit!important;
+}
+.stApp:has(.auth-shell-anchor) .auth-hero h1.auth-hero-title a,
+.stApp:has(.auth-shell-anchor) .auth-hero h1.auth-hero-title [data-testid="stHeaderActionElements"],
+.auth-hero h1.auth-hero-title a,
+.auth-hero h1.auth-hero-title [data-testid="stHeaderActionElements"]{
+  display:none!important;
+  width:0!important;
+  height:0!important;
+  overflow:hidden!important;
+}
+.st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_seg_login):has(.st-key-auth_seg_register){
+  display:flex!important;
+  gap:0!important;
+  padding:4px!important;
+  margin:0 0 22px!important;
+  background:var(--surface-2)!important;
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+}
+.st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_seg_login):has(.st-key-auth_seg_register) > div[data-testid="stColumn"]{
+  flex:1 1 0!important;
+  width:auto!important;
+  min-width:0!important;
+}
+.st-key-auth_card_streamlit .st-key-auth_seg_login,
+.st-key-auth_card_streamlit .st-key-auth_seg_register{
+  width:100%!important;
+}
+.st-key-auth_card_streamlit .st-key-auth_seg_login .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_seg_register .stButton>button{
+  min-height:34px!important;
+  height:34px!important;
+  width:100%!important;
+  padding:0 9px!important;
+  border:0!important;
+  border-radius:9px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:var(--ink-3)!important;
+  -webkit-text-fill-color:var(--ink-3)!important;
+  font-size:13.5px!important;
+  font-weight:600!important;
+}
+.st-key-auth_card_streamlit .st-key-auth_seg_login button[data-testid="stBaseButton-primary"],
+.st-key-auth_card_streamlit .st-key-auth_seg_register button[data-testid="stBaseButton-primary"]{
+  background:var(--surface)!important;
+  color:var(--teal-strong)!important;
+  -webkit-text-fill-color:var(--teal-strong)!important;
+  box-shadow:var(--shadow-sm)!important;
+}
+.st-key-auth_card_streamlit .st-key-auth_seg_login .stButton>button *,
+.st-key-auth_card_streamlit .st-key-auth_seg_register .stButton>button *{
+  color:inherit!important;
+  -webkit-text-fill-color:inherit!important;
+  font-size:inherit!important;
+  font-weight:inherit!important;
+}
+.st-key-auth_card_streamlit .stTextInput{
+  margin-bottom:15px!important;
+}
+.st-key-auth_card_streamlit .stTextInput label,
+.st-key-auth_card_streamlit [data-testid="stWidgetLabel"],
+.st-key-auth_card_streamlit [data-testid="stWidgetLabel"] *{
+  font-size:12.5px!important;
+  font-weight:600!important;
+  color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
+}
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"],
+.st-key-auth_card_streamlit .stSelectbox div[data-baseweb="select"]>div{
+  height:46px!important;
+  min-height:46px!important;
+  background:var(--surface-2)!important;
+  border:1px solid var(--line)!important;
+  border-radius:11px!important;
+  box-shadow:none!important;
+}
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"]:focus-within{
+  background:var(--surface)!important;
+  border-color:var(--teal)!important;
+  box-shadow:0 0 0 3px var(--teal-50)!important;
+}
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] div[data-baseweb="base-input"]{
+  height:44px!important;
+  min-height:44px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.st-key-auth_card_streamlit .stTextInput input{
+  height:44px!important;
+  line-height:44px!important;
+  padding:0 4px!important;
+  font-size:14.5px!important;
+  font-weight:400!important;
+}
+.st-key-auth_card_streamlit .stTextInput [data-testid="stIconMaterial"]{
+  width:17px!important;
+  min-width:17px!important;
+  font-size:17px!important;
+  color:var(--ink-3)!important;
+  -webkit-text-fill-color:var(--ink-3)!important;
+}
+.st-key-auth_card_streamlit .stTextInput button{
+  width:34px!important;
+  min-width:34px!important;
+  height:34px!important;
+  min-height:34px!important;
+  margin-right:2px!important;
+  border-radius:9px!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.st-key-auth_submit_login .stButton>button,
+.st-key-auth_submit_register .stButton>button{
+  min-height:48px!important;
+  height:48px!important;
+  border:0!important;
+  border-radius:12px!important;
+  background:linear-gradient(145deg,var(--teal),var(--teal-strong))!important;
+  box-shadow:0 8px 20px var(--teal-50)!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  font-size:14.5px!important;
+  font-weight:600!important;
+}
+.st-key-auth_submit_login .stButton>button *,
+.st-key-auth_submit_register .stButton>button *{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  font-size:inherit!important;
+  font-weight:inherit!important;
+}
+.st-key-auth_forgot_link button{
+  min-height:auto!important;
+  height:auto!important;
+  margin:16px auto 0!important;
+  padding:0!important;
+  color:var(--ink-3)!important;
+  -webkit-text-fill-color:var(--ink-3)!important;
+  font-size:12.5px!important;
+  font-weight:400!important;
+  line-height:1.55!important;
+}
+.st-key-auth_forgot_link button p,
+.st-key-auth_forgot_link button span,
+.st-key-auth_forgot_link button *{
+  font-size:inherit!important;
+  font-weight:inherit!important;
+  line-height:inherit!important;
+}
+.st-key-auth_forgot_link button:hover{
+  color:var(--teal)!important;
+  -webkit-text-fill-color:var(--teal)!important;
+}
+.auth-role-label{
+  margin:4px 0 9px!important;
+  color:var(--ink-2)!important;
+  font-size:12.5px!important;
+  font-weight:600!important;
+}
+.st-key-reg_role_demo{
+  margin-bottom:18px!important;
+}
+.st-key-reg_role_demo [role="radiogroup"]{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;
+  margin:0!important;
+}
+.st-key-reg_role_demo [role="radiogroup"] label{
+  min-height:58px!important;
+  align-items:center!important;
+  padding:11px!important;
+  border:1.5px solid var(--line)!important;
+  border-radius:13px!important;
+  background:var(--surface-2)!important;
+  box-shadow:none!important;
+}
+.st-key-reg_role_demo [role="radiogroup"] label:last-child{
+  grid-column:1 / -1!important;
+}
+.st-key-reg_role_demo [role="radiogroup"] label:hover{
+  border-color:var(--teal)!important;
+  transform:translateY(-1px)!important;
+}
+.st-key-reg_role_demo [role="radiogroup"] label:has(input:checked),
+.st-key-reg_role_demo [role="radiogroup"] label:has([aria-checked="true"]){
+  border-color:var(--teal)!important;
+  background:var(--teal-12)!important;
+  box-shadow:0 0 0 3px var(--teal-50)!important;
+}
+.st-key-reg_role_demo [role="radiogroup"] label *{
+  font-size:12.5px!important;
+  font-weight:600!important;
+  line-height:1.15!important;
+}
+.st-key-reg_role_demo [role="radiogroup"] label small,
+.st-key-reg_role_demo [role="radiogroup"] label [data-testid="stCaptionContainer"],
+.st-key-reg_role_demo [role="radiogroup"] label [data-testid="stCaptionContainer"] *{
+  font-size:10.5px!important;
+  font-weight:400!important;
+  color:var(--ink-3)!important;
+  -webkit-text-fill-color:var(--ink-3)!important;
+}
+.auth-demo-strip{
+  margin-top:20px!important;
+  padding-top:16px!important;
+}
+.auth-demo-strip .dt{
+  margin-bottom:10px!important;
+  font-size:11px!important;
+  font-weight:600!important;
+  letter-spacing:.35px!important;
+}
+.st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button,
+.st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button{
+  min-height:28px!important;
+  height:28px!important;
+  padding:0 11px!important;
+  border-radius:999px!important;
+  font-size:11.5px!important;
+  font-weight:600!important;
+  gap:6px!important;
+}
+.st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button [data-testid="stIconMaterial"],
+.st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button [data-testid="stIconMaterial"],
+.st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button [data-testid="stIconMaterial"],
+.st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button [data-testid="stIconMaterial"],
+.st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button [data-testid="stIconMaterial"]{
+  width:13px!important;
+  min-width:13px!important;
+  font-size:13px!important;
+}
+
+@media (max-width:760px){
+  .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit),
+  .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"]{
+    align-items:start!important;
+    gap:12px!important;
+    min-height:auto!important;
+    padding:12px 14px 22px!important;
+  }
+  .auth-hero{
+    min-height:0!important;
+  }
+  .stApp:has(.auth-shell-anchor) .auth-hero .auth-hero-title,
+  .auth-hero .auth-hero-title{
+    width:100%!important;
+    max-width:330px!important;
+    font-size:clamp(29px,9.6vw,36px)!important;
+    line-height:1.02!important;
+    margin:0!important;
+    letter-spacing:-.35px!important;
+    white-space:normal!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+  .st-key-auth_card_streamlit{
+    max-width:430px!important;
+    padding:26px 18px 22px!important;
+    border-radius:18px!important;
+  }
+  .auth-card-title h2{
+    font-size:22px!important;
+    line-height:1.14!important;
+  }
+  .auth-card-title p{
+    font-size:13px!important;
+    margin-bottom:18px!important;
+  }
+  .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_seg_login):has(.st-key-auth_seg_register){
+    margin-bottom:18px!important;
+  }
+  .st-key-auth_card_streamlit .stTextInput{
+    margin-bottom:12px!important;
+  }
+  .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"],
+  .st-key-auth_card_streamlit .stSelectbox div[data-baseweb="select"]>div{
+    height:42px!important;
+    min-height:42px!important;
+  }
+  .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] div[data-baseweb="base-input"],
+  .st-key-auth_card_streamlit .stTextInput input{
+    height:40px!important;
+    min-height:40px!important;
+    line-height:40px!important;
+    font-size:13px!important;
+  }
+  .st-key-auth_submit_login .stButton>button,
+  .st-key-auth_submit_register .stButton>button{
+    min-height:44px!important;
+    height:44px!important;
+  }
+  .mobile-auth-pose-only{
+    margin:12px auto 0!important;
+  }
+  .st-key-reg_role_demo [role="radiogroup"] label{
+    min-height:62px!important;
+    padding:10px!important;
+  }
+  .st-key-reg_role_demo [role="radiogroup"] label *{
+    font-size:11.5px!important;
+    line-height:1.12!important;
+  }
+  .st-key-reg_role_demo [role="radiogroup"] label small,
+  .st-key-reg_role_demo [role="radiogroup"] label [data-testid="stCaptionContainer"],
+  .st-key-reg_role_demo [role="radiogroup"] label [data-testid="stCaptionContainer"] *{
+    font-size:9.5px!important;
+    line-height:1.1!important;
+  }
+}
+
+@media (max-width:760px){
+  .stApp:has(.auth-shell-anchor) [data-testid="stMarkdownContainer"] .auth-hero h1.auth-hero-title,
+  .stApp:has(.auth-shell-anchor) .auth-hero h1.auth-hero-title,
+  .auth-hero h1.auth-hero-title{
+    width:100%!important;
+    max-width:330px!important;
+    font-size:32px!important;
+    line-height:1.04!important;
+    letter-spacing:-.25px!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    word-break:normal!important;
+    overflow-wrap:normal!important;
+  }
+  .stApp:has(.auth-shell-anchor) .auth-hero h1.auth-hero-title > span:not(.auth-no-break),
+  .auth-hero h1.auth-hero-title > span:not(.auth-no-break){
+    display:inline!important;
+    white-space:normal!important;
+    word-break:normal!important;
+    overflow-wrap:normal!important;
+  }
+  .stApp:has(.auth-shell-anchor) .auth-hero h1.auth-hero-title [data-testid="stHeaderActionElements"],
+  .auth-hero h1.auth-hero-title [data-testid="stHeaderActionElements"]{
+    display:none!important;
   }
 }
 """

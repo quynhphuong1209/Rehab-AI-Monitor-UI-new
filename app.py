@@ -59,7 +59,12 @@ class _FilterFragmentStream:
                 return 0
         except Exception:
             pass
-        return self._wrapped.write(text)
+        try:
+            return self._wrapped.write(text)
+        except UnicodeEncodeError:
+            encoding = getattr(self._wrapped, "encoding", None) or "utf-8"
+            safe_text = str(text).encode(encoding, errors="replace").decode(encoding, errors="replace")
+            return self._wrapped.write(safe_text)
 
     def flush(self):
         return self._wrapped.flush()
@@ -142,6 +147,7 @@ from frontend.roles import researcher as researcher_frontend
 
 try:
     from demo_ui import (
+        auth_pose_html,
         auth_screen_html,
         inject_auth_nav_css,
         inject_design_system,
@@ -151,6 +157,7 @@ try:
         topbar_html,
     )
 except Exception:
+    auth_pose_html = None
     auth_screen_html = None
     inject_auth_nav_css = None
     inject_design_system = None
@@ -18058,7 +18065,6 @@ def hien_thi_dang_nhap_dang_ky():
         )
         # Dùng container với border=True để tạo ô vuông bao quanh chuẩn web
         with st.container(border=True, key="auth_card_streamlit"):
-            render_auth_card_title()
             # CHẾ ĐỘ QUÊN MẬT KHẨU
             if st.session_state.get('forgot_password_mode', False):
                 st.markdown("### 🔄 KHÔI PHỤC MẬT KHẨU")
@@ -18088,99 +18094,143 @@ def hien_thi_dang_nhap_dang_ky():
                 close_auth_shell()
                 return
 
-            # GIAO DIỆN CHÍNH (TABS) - giống auth card HTML demo
-            login_role = st.session_state.get("login_role_main", "Bác sĩ / KTV PHCN")
-            tab_list = ["Đăng nhập", "Đăng ký"]
-            all_login_tabs = st.tabs(tab_list)
-            t_map = {name: all_login_tabs[i] for i, name in enumerate(tab_list)}
-            
-            if "Đăng nhập" in t_map:
-                with t_map["Đăng nhập"]:
-                    # CHẾ ĐỘ ĐỔI MẬT KHẨU TRONG LOGIN
-                    if st.session_state.get('change_password_mode', False):
-                        st.markdown("### 🔑 THAY ĐỔI MẬT KHẨU")
-                        st.info("💡 Điền thông tin bên dưới để cập nhật mật khẩu mới.")
-                        with st.form("login_change_password_form_v2"):
-                            cp_u = st.text_input("👤 Tên đăng nhập", key="cp_u_v2")
-                            cp_old = st.text_input("🔒 Mật khẩu hiện tại", type="password", key="cp_old_v2")
-                            cp_new = st.text_input("🆕 Mật khẩu mới", type="password", key="cp_new_v2")
-                            cp_conf = st.text_input("✅ Xác nhận mật khẩu mới", type="password", key="cp_conf_v2")
-                            
-                            c1, c2 = st.columns(2)
-                            with c1:
-                                if st.form_submit_button("💾 CẬP NHẬT", width="stretch"):
-                                    users = load_users()
-                                    cp_key = _auth_lookup_key(users, cp_u)
-                                    if cp_key and _verify_auth_password(cp_key, cp_old, users[cp_key]):
-                                        if cp_new == cp_conf and len(cp_new) >= 6:
-                                            users[cp_key]['password'] = hash_password(cp_new)
-                                            save_users(users)
-                                            st.success("✅ Thành công! Hãy đăng nhập lại.")
-                                            st.session_state.change_password_mode = False
-                                            st.rerun()
-                                        else: st.error("❌ Mật khẩu không khớp hoặc quá ngắn.")
-                                    else: st.error("❌ Thông tin không chính xác.")
-                            with c2:
-                                if st.form_submit_button("Hủy bỏ", width="stretch"):
-                                    st.session_state.change_password_mode = False
-                                    st.rerun()
-                    else:
-                        u = st.text_input("Tài khoản", placeholder="bsi01", key="login_u")
-                        p = st.text_input("Mật khẩu", type="password", placeholder="••••••••", key="login_p")
+            # GIAO DIỆN CHÍNH - segmented auth giống HTML demo
+            auth_mode = st.session_state.get("auth_mode", "login")
+            if auth_mode not in ("login", "register"):
+                auth_mode = "login"
+                st.session_state.auth_mode = auth_mode
+
+            is_register = auth_mode == "register"
+            auth_title = "Tạo tài khoản mới" if is_register else "Đăng nhập hệ thống"
+            auth_sub = (
+                "Tài khoản KTV / Bác sĩ / NCV cần Quản trị viên phê duyệt trước khi kích hoạt."
+                if is_register else
+                "Truy cập bảng điều khiển theo vai trò của bạn."
+            )
+            st.markdown(
+                f'<div class="auth-card-title"><h2>{auth_title}</h2><p>{auth_sub}</p></div>',
+                unsafe_allow_html=True,
+            )
+
+            seg_login_col, seg_reg_col = st.columns(2, gap="small")
+            with seg_login_col:
+                if st.button(
+                    "Đăng nhập",
+                    key="auth_seg_login",
+                    width="stretch",
+                    type="primary" if auth_mode == "login" else "secondary",
+                ):
+                    st.session_state.auth_mode = "login"
+                    st.rerun()
+            with seg_reg_col:
+                if st.button(
+                    "Đăng ký",
+                    key="auth_seg_register",
+                    width="stretch",
+                    type="primary" if auth_mode == "register" else "secondary",
+                ):
+                    st.session_state.auth_mode = "register"
+                    st.rerun()
+
+            if auth_mode == "login":
+                # CHẾ ĐỘ ĐỔI MẬT KHẨU TRONG LOGIN
+                if st.session_state.get('change_password_mode', False):
+                    st.markdown("### 🔑 THAY ĐỔI MẬT KHẨU")
+                    st.info("💡 Điền thông tin bên dưới để cập nhật mật khẩu mới.")
+                    with st.form("login_change_password_form_v2"):
+                        cp_u = st.text_input("👤 Tên đăng nhập", key="cp_u_v2")
+                        cp_old = st.text_input("🔒 Mật khẩu hiện tại", type="password", key="cp_old_v2")
+                        cp_new = st.text_input("🆕 Mật khẩu mới", type="password", key="cp_new_v2")
+                        cp_conf = st.text_input("✅ Xác nhận mật khẩu mới", type="password", key="cp_conf_v2")
                         
-                        if st.button("Đăng nhập  →", width="stretch", type="primary"):
-                            users = load_users()
-                            u_key = _auth_lookup_key(users, u)
-                            if u_key and _verify_auth_password(u_key, p, users[u_key]):
-                                _upgrade_password_hash_if_needed(users, u_key, p)
-                                _hoan_tat_dang_nhap(u_key, users[u_key])
-                                _rerun_toan_bo_app()
-                            elif u_key and users[u_key].get('role') == "Bệnh nhân":
-                                st.error("❌ Mật khẩu bệnh nhân chưa đúng với dữ liệu trong database/users.json.")
-                            else:
-                                st.error("❌ Tài khoản hoặc mật khẩu không đúng")
-                        
-                        if st.button("Quên mật khẩu? Khôi phục tại đây", width="stretch", key="auth_forgot_link"):
-                            st.session_state.forgot_password_mode = True
-                            st.rerun()
-                            
-            if "Đăng ký" in t_map:
-                with t_map["Đăng ký"]:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    reg_role = st.radio(
-                        "Bạn đăng ký với tư cách",
-                        ["Bệnh nhân", "Bác sĩ / KTV PHCN", "Nghiên cứu viên"],
-                        horizontal=True,
-                        key="reg_role_main",
-                    )
-                    reg_name = st.text_input("📛 Họ và tên", placeholder="VD: Nguyễn Văn A", key="reg_n")
-                    reg_u = st.text_input("👤 Tên đăng nhập *", placeholder="Chọn tên tài khoản", key="reg_u")
-                    reg_e = st.text_input("📧 Email liên hệ *", placeholder="example@gmail.com", key="reg_e")
-                    reg_p = st.text_input("🔑 Mật khẩu *", type="password", placeholder="Tối thiểu 6 ký tự", key="reg_p")
-                    reg_cp = st.text_input("✅ Xác nhận mật khẩu *", type="password", placeholder="Nhập lại mật khẩu", key="reg_cp")
-                    if reg_role != "Bệnh nhân":
-                        st.info("💡 Tài khoản Bác sĩ/KTV và Nghiên cứu viên cần Quản trị viên phê duyệt trước khi kích hoạt.")
+                        c1, c2 = st.columns(2)
+                        with c1:
+                            if st.form_submit_button("💾 CẬP NHẬT", width="stretch"):
+                                users = load_users()
+                                cp_key = _auth_lookup_key(users, cp_u)
+                                if cp_key and _verify_auth_password(cp_key, cp_old, users[cp_key]):
+                                    if cp_new == cp_conf and len(cp_new) >= 6:
+                                        users[cp_key]['password'] = hash_password(cp_new)
+                                        save_users(users)
+                                        st.success("✅ Thành công! Hãy đăng nhập lại.")
+                                        st.session_state.change_password_mode = False
+                                        st.rerun()
+                                    else: st.error("❌ Mật khẩu không khớp hoặc quá ngắn.")
+                                else: st.error("❌ Thông tin không chính xác.")
+                        with c2:
+                            if st.form_submit_button("Hủy bỏ", width="stretch"):
+                                st.session_state.change_password_mode = False
+                                st.rerun()
+                else:
+                    u = st.text_input("Tài khoản", placeholder="bsi01", key="login_u", icon=":material/person:")
+                    p = st.text_input("Mật khẩu", type="password", placeholder="••••••••", key="login_p", icon=":material/lock:")
                     
-                    if st.button("🚀 ĐĂNG KÝ TRUY CẬP", width="stretch", type="primary"):
-                        reg_u_clean = _normalize_auth_text(reg_u)
-                        reg_e_clean = _normalize_auth_text(reg_e)
-                        if not reg_u or not reg_e or len(reg_p) < 6:
-                            st.warning("⚠️ Vui lòng điền đầy đủ các thông tin bắt buộc (*)")
-                        elif reg_p != reg_cp:
-                            st.error("❌ Mật khẩu xác nhận không khớp")
+                    if st.button("Đăng nhập  →", width="stretch", type="primary", key="auth_submit_login"):
+                        users = load_users()
+                        u_key = _auth_lookup_key(users, u)
+                        if u_key and _verify_auth_password(u_key, p, users[u_key]):
+                            _upgrade_password_hash_if_needed(users, u_key, p)
+                            _hoan_tat_dang_nhap(u_key, users[u_key])
+                            _rerun_toan_bo_app()
+                        elif u_key and users[u_key].get('role') == "Bệnh nhân":
+                            st.error("❌ Mật khẩu bệnh nhân chưa đúng với dữ liệu trong database/users.json.")
                         else:
-                            users = load_users()
-                            if _auth_lookup_key(users, reg_u_clean): st.error("❌ Tên đăng nhập này đã tồn tại")
-                            else:
-                                users[reg_u_clean] = {
-                                    "password": hash_password(reg_p),
-                                    "email": reg_e_clean,
-                                    "full_name": _normalize_auth_text(reg_name) or reg_u_clean,
-                                    "role": reg_role,
-                                    "created_at": get_vn_now().isoformat()
-                                }
-                                save_users(users)
-                                st.success("🎉 Đăng ký thành công! Bạn có thể đăng nhập ngay.")
+                            st.error("❌ Tài khoản hoặc mật khẩu không đúng")
+                    
+                    if st.button("Quên mật khẩu? Khôi phục tại đây", width="stretch", key="auth_forgot_link"):
+                        st.session_state.forgot_password_mode = True
+                        st.rerun()
+            else:
+                st.markdown('<div class="auth-role-label">Bạn đăng ký với tư cách</div>', unsafe_allow_html=True)
+                reg_role_choice = st.radio(
+                    "Bạn đăng ký với tư cách",
+                    ["Bác sĩ", "Kỹ thuật viên", "Nghiên cứu viên", "Bệnh nhân", "Quản trị viên"],
+                    captions=[
+                        "Đánh giá lâm sàng",
+                        "Soát kỹ thuật bài tập",
+                        "Phân tích & hiệu chỉnh AI",
+                        "Tập luyện & theo dõi",
+                        "Vận hành hệ thống",
+                    ],
+                    horizontal=True,
+                    key="reg_role_demo",
+                    label_visibility="collapsed",
+                    width="stretch",
+                )
+                role_value_map = {
+                    "Bác sĩ": "Bác sĩ / KTV PHCN",
+                    "Kỹ thuật viên": "Bác sĩ / KTV PHCN",
+                    "Nghiên cứu viên": "Nghiên cứu viên",
+                    "Bệnh nhân": "Bệnh nhân",
+                    "Quản trị viên": "Quản trị viên",
+                }
+                reg_role = role_value_map.get(reg_role_choice, "Bệnh nhân")
+                reg_name = st.text_input("Họ và tên", placeholder="VD: Nguyễn Văn A", key="reg_n", icon=":material/person:")
+                reg_u = st.text_input("Tên đăng nhập", placeholder="bsi01", key="reg_u", icon=":material/person:")
+                reg_e = st.text_input("Email / Số điện thoại", placeholder="email@huph.edu.vn", key="reg_e", icon=":material/mail:")
+                reg_p = st.text_input("Mật khẩu", type="password", placeholder="••••••••", key="reg_p", icon=":material/lock:")
+                reg_cp = st.text_input("Nhập lại mật khẩu", type="password", placeholder="••••••••", key="reg_cp", icon=":material/lock:")
+                
+                if st.button("Đăng ký tài khoản  →", width="stretch", type="primary", key="auth_submit_register"):
+                    reg_u_clean = _normalize_auth_text(reg_u)
+                    reg_e_clean = _normalize_auth_text(reg_e)
+                    if not reg_u or not reg_e or len(reg_p) < 6:
+                        st.warning("⚠️ Vui lòng điền đầy đủ các thông tin bắt buộc")
+                    elif reg_p != reg_cp:
+                        st.error("❌ Mật khẩu xác nhận không khớp")
+                    else:
+                        users = load_users()
+                        if _auth_lookup_key(users, reg_u_clean): st.error("❌ Tên đăng nhập này đã tồn tại")
+                        else:
+                            users[reg_u_clean] = {
+                                "password": hash_password(reg_p),
+                                "email": reg_e_clean,
+                                "full_name": _normalize_auth_text(reg_name) or reg_u_clean,
+                                "role": reg_role,
+                                "created_at": get_vn_now().isoformat()
+                            }
+                            save_users(users)
+                            st.success("🎉 Đăng ký thành công! Bạn có thể đăng nhập ngay.")
                                 
             st.markdown(
                 '<div class="auth-demo-strip">'
@@ -18213,10 +18263,10 @@ def hien_thi_dang_nhap_dang_ky():
                     icon=":material/admin_panel_settings:",
                 ):
                     _dang_nhap_demo_theo_vai_tro("Quản trị viên")
-        if auth_screen_html:
+        if auth_pose_html:
             st.markdown(
                 '<div class="mobile-auth-pose-only">'
-                f'{auth_screen_html()}'
+                f'{auth_pose_html()}'
                 '</div>',
                 unsafe_allow_html=True,
             )
