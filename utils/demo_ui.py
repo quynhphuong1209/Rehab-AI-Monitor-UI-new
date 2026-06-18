@@ -1659,40 +1659,116 @@ _AUTH_NAV_CSS = """
   }
   .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"],
   .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit){
-    display:flex!important;
-    flex-direction:column!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
     align-items:center!important;
-    gap:0!important;
+    gap:18px!important;
     width:100%!important;
     min-height:calc(100svh - 58px)!important;
-    padding:36px 14px 24px!important;
-    overflow:hidden!important;
+    padding:22px 14px 24px!important;
+    overflow:visible!important;
   }
   .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"],
   .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit) > div[data-testid="stColumn"]{
     width:100%!important;
     min-width:0!important;
     max-width:430px!important;
-    flex:0 0 auto!important;
+    flex:unset!important;
   }
   .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:first-child,
   .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit) > div[data-testid="stColumn"]:first-child{
-    display:none!important;
+    display:block!important;
+    grid-column:1!important;
+    margin:0 auto!important;
   }
   .auth-layout-row-anchor + div > [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:last-child,
   .stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero):has(.st-key-auth_card_streamlit) > div[data-testid="stColumn"]:last-child{
     display:block!important;
+    grid-column:1!important;
     max-width:430px!important;
     margin:0 auto!important;
   }
-  .auth-hero,
-  .auth-hero .eyebrow,
-  .auth-hero .auth-hero-title,
-  .auth-hero p.lede,
-  .hero-stats,
-  .pose-card{
-    display:none!important;
+  .auth-hero{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 118px!important;
+    grid-template-areas:
+      "badge badge"
+      "title pose"
+      "lede pose"
+      "stats stats"!important;
+    align-items:center!important;
+    column-gap:12px!important;
+    row-gap:10px!important;
+    width:100%!important;
+    max-width:430px!important;
     min-height:0!important;
+    padding:0!important;
+    overflow:visible!important;
+  }
+  .auth-hero .eyebrow{
+    grid-area:badge!important;
+    display:inline-flex!important;
+    justify-self:start!important;
+    max-width:100%!important;
+    padding:6px 11px!important;
+    font-size:12px!important;
+    line-height:1.15!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .stApp:has(.auth-shell-anchor) .auth-hero .auth-hero-title,
+  .auth-hero .auth-hero-title{
+    grid-area:title!important;
+    display:block!important;
+    max-width:100%!important;
+    font-size:clamp(27px,9.2vw,36px)!important;
+    line-height:1.02!important;
+    margin:0!important;
+  }
+  .auth-hero .auth-hero-title br{
+    display:none!important;
+  }
+  .auth-hero p.lede{
+    grid-area:lede!important;
+    display:block!important;
+    max-width:100%!important;
+    font-size:12.5px!important;
+    line-height:1.45!important;
+    margin:0!important;
+  }
+  .hero-stats{
+    grid-area:stats!important;
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:8px!important;
+    width:100%!important;
+  }
+  .hstat{
+    min-width:0!important;
+    padding:10px 9px!important;
+    border-radius:12px!important;
+  }
+  .hstat .n{
+    font-size:19px!important;
+    line-height:1!important;
+  }
+  .hstat .l{
+    font-size:10.5px!important;
+    line-height:1.25!important;
+  }
+  .pose-card{
+    grid-area:pose!important;
+    display:block!important;
+    position:relative!important;
+    right:auto!important;
+    bottom:auto!important;
+    align-self:center!important;
+    justify-self:end!important;
+    width:116px!important;
+    min-height:0!important;
+    margin:0!important;
+    opacity:.94!important;
   }
   .auth-card-streamlit,
   .st-key-auth_card_streamlit{
