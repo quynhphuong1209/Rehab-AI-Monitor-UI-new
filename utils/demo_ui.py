@@ -723,6 +723,8 @@ _AUTH_NAV_CSS = """
 .stApp:has(.auth-shell-anchor) [data-testid="stAppViewContainer"]>.main .block-container{
   padding:0!important;
   max-width:100%!important;
+  width:100%!important;
+  margin:0!important;
 }
 .stApp:has(.auth-shell-anchor) [data-testid="stMain"],
 .stApp:has(.auth-shell-anchor) section.main,
@@ -768,9 +770,14 @@ _AUTH_NAV_CSS = """
 .st-key-auth_theme_icon_button + div [data-testid="stHorizontalBlock"],
 .auth-shell-anchor + div [data-testid="stHorizontalBlock"]{
   align-items:flex-start;
-  gap:clamp(12px,2.2vw,40px)!important;
+  gap:clamp(28px,4vw,82px)!important;
   width:100%;
-  padding:clamp(14px,2.4vh,30px) clamp(10px,2vw,28px) clamp(18px,3vh,34px)!important;
+  padding:clamp(86px,16vh,190px) clamp(28px,3.5vw,66px) clamp(36px,6vh,72px)!important;
+}
+.stApp:has(.auth-shell-anchor) [data-testid="stHorizontalBlock"]:has(.auth-hero){
+  align-items:flex-start!important;
+  gap:clamp(28px,4vw,82px)!important;
+  padding:clamp(86px,16vh,190px) clamp(28px,3.5vw,66px) clamp(36px,6vh,72px)!important;
 }
 .auth-shell-anchor + div{
   margin-top:0!important;
@@ -880,9 +887,9 @@ _AUTH_NAV_CSS = """
 }
 .auth-hero{
   position:relative;overflow:hidden;
-  padding:clamp(28px,5vw,64px);
+  padding:clamp(28px,3.5vw,54px) clamp(18px,4vw,64px);
   display:flex;flex-direction:column;justify-content:center;gap:24px;
-  min-height:520px;
+  min-height:620px;
   color:var(--ink)!important;
 }
 .auth-hero .eyebrow,
@@ -893,20 +900,26 @@ _AUTH_NAV_CSS = """
   font-size:16px!important;
   line-height:1.2!important;
   font-weight:700;letter-spacing:0!important;
-  background:var(--teal-50);color:var(--teal-strong);border:1px solid var(--teal-50);
+  background:var(--teal-50);color:var(--teal-strong)!important;border:1px solid var(--teal-50);
+  -webkit-text-fill-color:var(--teal-strong)!important;
+}
+.stApp:has(.auth-shell-anchor) [data-testid="stMarkdownContainer"] .auth-hero .eyebrow,
+.stApp:has(.auth-shell-anchor) [data-testid="stMarkdownContainer"] .auth-hero .eyebrow *{
+  color:var(--teal-strong)!important;
+  -webkit-text-fill-color:var(--teal-strong)!important;
 }
 .auth-hero h1,
 [data-testid="stMarkdownContainer"] .auth-hero h1{
   display:block!important;
   visibility:visible!important;
-  font-family:var(--ui)!important;
-  font-weight:700!important;
-  font-size:17px!important;
-  line-height:1.45!important;
+  font-family:var(--display)!important;
+  font-weight:600!important;
+  font-size:clamp(38px,4.2vw,58px)!important;
+  line-height:1.06!important;
   margin:0!important;
   letter-spacing:0!important;
   color:var(--ink)!important;
-  max-width:48ch!important;
+  max-width:20ch!important;
 }
 .auth-hero h1 em,
 [data-testid="stMarkdownContainer"] .auth-hero h1 em{
@@ -917,8 +930,8 @@ _AUTH_NAV_CSS = """
 .auth-hero p.lede,
 [data-testid="stMarkdownContainer"] .auth-hero p.lede{
   font-family:var(--ui)!important;
-  font-size:17px!important;
-  line-height:1.55!important;
+  font-size:16px!important;
+  line-height:1.6!important;
   color:var(--ink-2)!important;
   max-width:48ch;
   margin:0!important;
@@ -931,7 +944,7 @@ _AUTH_NAV_CSS = """
 .hstat .n{font-family:var(--mono);font-size:23px;font-weight:600;color:var(--teal-strong)}
 .hstat .l{font-size:12px;color:var(--ink-3)!important;margin-top:3px}
 .pose-card{
-  position:absolute;right:-10px;bottom:-12px;width:min(42%,330px);opacity:.9;pointer-events:none;
+  position:absolute;right:-22px;bottom:-126px;width:min(44%,360px);opacity:.9;pointer-events:none;
 }
 .pose-svg{width:100%;height:auto;overflow:visible}
 .pose-bone{stroke:var(--teal);stroke-width:5;stroke-linecap:round;fill:none}
@@ -1169,9 +1182,10 @@ _AUTH_NAV_CSS = """
 .topbar{
   position:sticky;top:0;z-index:40;
   display:flex;align-items:center;gap:14px;
-  padding:12px clamp(14px,3vw,28px);
-  margin:0!important;
-  width:100%!important;
+  padding:10px clamp(24px,3vw,30px);
+  margin:0 calc(50% - 50vw)!important;
+  width:100vw!important;
+  max-width:100vw!important;
   background:var(--glass);
   backdrop-filter:saturate(160%) blur(14px);
   -webkit-backdrop-filter:saturate(160%) blur(14px);
@@ -1186,7 +1200,7 @@ _AUTH_NAV_CSS = """
 }
 .brand-mark .icon{width:23px!important;height:23px!important;stroke-width:2!important}
 .brand-txt{display:flex;flex-direction:column;line-height:1.1;min-width:0}
-.brand-name{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.1px;color:var(--ink)!important}
+.brand-name{font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:.1px;color:var(--ink)!important}
 .brand-name b{color:var(--teal)}
 .brand-sub{font-size:11px;color:var(--ink-3)!important;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .spacer{flex:1}
@@ -1325,10 +1339,10 @@ _AUTH_NAV_CSS = """
   .auth-wrap{grid-template-columns:1fr}
   .auth-shell-anchor + div [data-testid="stHorizontalBlock"]{
     gap:18px!important;
-    padding:18px 14px 24px!important;
+    padding:28px 14px 24px!important;
   }
   .auth-hero{min-height:auto;padding:8px 0 4px;gap:12px}
-  .auth-hero h1{font-size:17px!important;line-height:1.45!important}
+  .auth-hero h1{font-size:clamp(30px,8vw,42px)!important;line-height:1.08!important}
   .pose-card{position:relative;right:auto;bottom:auto;width:200px;align-self:center;margin-top:6px}
   .auth-panel{padding-top:0}
   .st-key-auth_card_streamlit{padding:24px 18px!important}
