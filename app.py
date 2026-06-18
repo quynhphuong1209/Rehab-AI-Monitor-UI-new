@@ -117,6 +117,7 @@ from frontend.auth.screens import (
     render_auth_screen,
     render_auth_theme_button,
     render_auth_topbar,
+    render_app_topbar_actions,
 )
 from frontend.roles import admin as admin_frontend
 from frontend.roles import doctor_ktv as doctor_ktv_frontend
@@ -18163,8 +18164,8 @@ def hien_thi_dang_nhap_dang_ky():
                     st.markdown("""
                     <div style="text-align: center; padding: 10px;">
                         <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" width="40" style="margin-bottom: 5px;">
-                        <h5 style="color: white;">Đăng nhập nhanh</h5>
-                        <p style="color: #888; font-size: 0.85rem;">Truy cập an toàn qua Google ID</p>
+                        <h5 style="color: var(--ink);">Đăng nhập nhanh</h5>
+                        <p style="color: var(--ink-3); font-size: 0.85rem;">Truy cập an toàn qua Google ID</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -20107,6 +20108,10 @@ def _render_demo_sidebar_nav(tab_titles, user_role):
 def _render_demo_topbar(user_role):
     if topbar_html:
         st.markdown(topbar_html(st.session_state.user_info, is_light=(st.session_state.get('theme') == 'light')), unsafe_allow_html=True)
+    render_app_topbar_actions(
+        is_light=(st.session_state.get('theme') == 'light'),
+        on_logout=_dang_xuat_ve_dang_nhap,
+    )
 
 
 def _get_main_tab_titles_for_role(user_role):

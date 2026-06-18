@@ -13,7 +13,6 @@ Cách dùng trong app.py:
     st.markdown(stat("i-users","Đang điều trị","18","+2","up","tuần này"), unsafe_allow_html=True)
 """
 import math
-from urllib.parse import quote
 import streamlit as st
 
 # ============================================================ ICON SPRITE
@@ -245,6 +244,11 @@ _STREAMLIT_SKIN_CSS = """
     radial-gradient(60vw 50vh at 8% -8%, var(--teal-12), transparent 60%),
     radial-gradient(55vw 50vh at 105% 0%, var(--ai-50), transparent 55%)!important;
   background-attachment:fixed!important;
+}
+[data-testid="stAppViewContainer"]>.main .block-container{
+  padding-top:0!important;
+  padding-bottom:1rem!important;
+  max-width:100%!important;
 }
 /* gọn "chrome": ẩn nút Deploy + toolbar thừa, header trong suốt */
 [data-testid="stToolbar"], [data-testid="stDecoration"], #MainMenu{display:none!important;}
@@ -560,16 +564,6 @@ def topbar_html(user_info=None, is_light=True) -> str:
     """Top bar với brand và user info giống demo."""
     user_html = ""
     if user_info:
-        def route_slug(role):
-            role_text = str(role or "").casefold()
-            if "quản" in role_text or "quan" in role_text:
-                return "admin"
-            if "nghiên" in role_text or "nghien" in role_text or "ncv" in role_text:
-                return "ncv"
-            if "bác" in role_text or "bac" in role_text or "ktv" in role_text:
-                return "bac-si-ktv"
-            return "benh-nhan"
-
         role_badges = {
             "Bệnh nhân": ("rb-patient", "i-heart", "BN"),
             "Bác sĩ / KTV PHCN": ("rb-doctor", "i-stetho", "BS"),
@@ -577,10 +571,6 @@ def topbar_html(user_info=None, is_light=True) -> str:
             "Quản trị viên": ("rb-qtv", "i-cog", "QT")
         }
         badge_cls, icon, av = role_badges.get(user_info.get("role", ""), ("rb-patient", "i-heart", "BN"))
-        next_theme = "dark" if is_light else "light"
-        theme_icon = "i-moon" if is_light else "i-sun"
-        username = user_info.get("username", "")
-        theme_href = f"?ui_theme={next_theme}&role={route_slug(user_info.get('role', ''))}&user={quote(str(username), safe='')}"
         user_html = f"""
 <div id="userArea" style="display:flex;align-items:center;gap:12px">
   <span class="rolebadge {badge_cls}"><svg class="icon"><use href="#{icon}"/></svg> {user_info.get('role', '')}</span>
@@ -588,8 +578,6 @@ def topbar_html(user_info=None, is_light=True) -> str:
     <div class="avatar">{av}</div>
     <div class="meta"><span class="nm">{user_info.get('full_name', '')}</span><span class="rl">{user_info.get('role', '')}</span></div>
   </div>
-  <a class="topbtn top-logout" href="?logout=1" title="Đăng xuất" aria-label="Đăng xuất"><svg class="icon"><use href="#i-logout"/></svg></a>
-  <a class="topbtn" href="{theme_href}" title="Đổi giao diện sáng/tối" aria-label="Đổi giao diện sáng/tối"><svg class="icon"><use href="#{theme_icon}"/></svg></a>
 </div>"""
 
     return f"""
@@ -704,12 +692,31 @@ def side_info_html(role: str, user_info=None, stats=None) -> str:
 # ============================================================ ADDITIONAL CSS FOR AUTH & NAV
 _AUTH_NAV_CSS = """
 /* ============================================================ AUTH SCREEN */
-.auth-shell{
-  min-height:calc(100vh - 78px);
-  display:flex;
-  align-items:center;
-  padding:clamp(10px,1.8vh,20px) 0 clamp(14px,3vh,34px);
+.auth-shell-anchor{
+  display:block!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
   color:var(--ink)!important;
+}
+.st-key-auth_theme_icon_button + div [data-testid="stHorizontalBlock"],
+.auth-shell-anchor + div [data-testid="stHorizontalBlock"]{
+  align-items:flex-start;
+  gap:clamp(12px,2.2vw,40px)!important;
+  width:100%;
+  padding:clamp(14px,2.4vh,30px) clamp(10px,2vw,28px) clamp(18px,3vh,34px);
+}
+.auth-shell-anchor + div{
+  margin-top:0!important;
+  padding-top:0!important;
+}
+.st-key-auth_card_streamlit{
+  margin-top:0!important;
+}
+.st-key-auth_card_streamlit [data-testid="stVerticalBlock"]{
+  margin-top:0!important;
 }
 .st-key-auth_theme_icon_button{
   position:fixed;
@@ -744,10 +751,53 @@ _AUTH_NAV_CSS = """
   color:var(--teal)!important;
   transform:translateY(-1px)!important;
 }
-.auth-shell [data-testid="stHorizontalBlock"]{
-  align-items:center;
-  gap:clamp(12px,2.2vw,40px)!important;
-  width:100%;
+.st-key-app_logout_icon_button,
+.st-key-app_theme_icon_button{
+  position:fixed;
+  top:12px;
+  z-index:1001;
+}
+.st-key-app_logout_icon_button{right:72px}
+.st-key-app_theme_icon_button{right:28px}
+.st-key-app_logout_icon_button .stButton>button,
+.st-key-app_theme_icon_button .stButton>button,
+.st-key-app_logout_icon_button button,
+.st-key-app_theme_icon_button button{
+  width:38px!important;
+  height:38px!important;
+  min-height:38px!important;
+  padding:0!important;
+  border-radius:11px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:var(--surface)!important;
+  border:1px solid var(--line)!important;
+  color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
+  box-shadow:none!important;
+  font-size:18px!important;
+  line-height:1!important;
+}
+.st-key-app_logout_icon_button .stButton>button *,
+.st-key-app_theme_icon_button .stButton>button *,
+.st-key-app_logout_icon_button button *,
+.st-key-app_theme_icon_button button *{
+  color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
+}
+.st-key-app_logout_icon_button .stButton>button:hover,
+.st-key-app_logout_icon_button button:hover{
+  border-color:var(--danger)!important;
+  color:var(--danger)!important;
+  -webkit-text-fill-color:var(--danger)!important;
+  transform:translateY(-1px)!important;
+}
+.st-key-app_theme_icon_button .stButton>button:hover,
+.st-key-app_theme_icon_button button:hover{
+  border-color:var(--teal)!important;
+  color:var(--teal)!important;
+  -webkit-text-fill-color:var(--teal)!important;
+  transform:translateY(-1px)!important;
 }
 .auth-wrap{
   min-height:calc(100vh - 63px);
@@ -758,7 +808,7 @@ _AUTH_NAV_CSS = """
   position:relative;overflow:hidden;
   padding:clamp(8px,2vw,22px) clamp(6px,1.4vw,14px);
   display:flex;flex-direction:column;justify-content:center;gap:24px;
-  min-height:440px;
+  min-height:520px;
   color:var(--ink)!important;
 }
 .auth-hero .eyebrow{
@@ -795,6 +845,7 @@ _AUTH_NAV_CSS = """
 .auth-card-streamlit,
 .st-key-auth_card_streamlit{
   width:100%;max-width:430px;margin:0 auto;
+  align-self:flex-start!important;
 }
 .auth-card-head{
   display:none;
@@ -859,11 +910,17 @@ _AUTH_NAV_CSS = """
   -webkit-text-fill-color:var(--ink-2)!important;
 }
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"],
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="base-input"],
 .st-key-auth_card_streamlit .stSelectbox div[data-baseweb="select"]>div{
   min-height:46px!important;
   background:var(--surface-2)!important;
   border:1px solid var(--line)!important;
   border-radius:11px!important;
+}
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] *,
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="base-input"] *{
+  color:var(--ink)!important;
+  -webkit-text-fill-color:var(--ink)!important;
 }
 .st-key-auth_card_streamlit .stTextInput input,
 .st-key-auth_card_streamlit .stTextArea textarea,
@@ -882,8 +939,23 @@ _AUTH_NAV_CSS = """
   min-height:48px!important;
   border-radius:11px!important;
 }
+.st-key-auth_card_streamlit .stButton>button:not([kind="primary"]),
+.st-key-auth_card_streamlit button[data-testid="stBaseButton-secondary"]{
+  color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
+}
+.st-key-auth_card_streamlit .stButton>button:not([kind="primary"]) *,
+.st-key-auth_card_streamlit [data-testid="stBaseButton-secondary"] p,
+.st-key-auth_card_streamlit [data-testid="stBaseButton-secondary"] span,
+.st-key-auth_card_streamlit button[data-testid="stBaseButton-secondary"] *{
+  color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
+}
 .st-key-auth_card_streamlit .stButton>button[kind="primary"],
-.st-key-auth_card_streamlit button[data-testid="stBaseButton-primary"]{
+.st-key-auth_card_streamlit button[data-testid="stBaseButton-primary"],
+.st-key-auth_card_streamlit [data-testid="stBaseButton-primary"] p,
+.st-key-auth_card_streamlit [data-testid="stBaseButton-primary"] span,
+.st-key-auth_card_streamlit button[data-testid="stBaseButton-primary"] *{
   color:#fff!important;
   -webkit-text-fill-color:#fff!important;
 }
@@ -1011,8 +1083,10 @@ _AUTH_NAV_CSS = """
 
 @media (max-width:980px){
   .auth-wrap{grid-template-columns:1fr}
-  .auth-shell{min-height:auto;padding-top:18px;align-items:flex-start}
-  .auth-shell [data-testid="stHorizontalBlock"]{gap:18px!important}
+  .auth-shell-anchor + div [data-testid="stHorizontalBlock"]{
+    gap:18px!important;
+    padding:18px 14px 24px!important;
+  }
   .auth-hero{min-height:auto;padding:8px 0 4px;gap:12px}
   .auth-hero h1{font-size:clamp(30px,9vw,42px)}
   .pose-card{position:relative;right:auto;bottom:auto;width:200px;align-self:center;margin-top:6px}
