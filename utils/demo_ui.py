@@ -1099,11 +1099,24 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"],
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="base-input"],
 .st-key-auth_card_streamlit .stSelectbox div[data-baseweb="select"]>div{
+  height:46px!important;
   min-height:46px!important;
+  display:flex!important;
+  align-items:center!important;
   background:var(--surface)!important;
   border:1px solid var(--line)!important;
   border-radius:10px!important;
   box-shadow:inset 0 1px 0 rgba(15,26,38,.03)!important;
+}
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] div[data-baseweb="base-input"]{
+  height:auto!important;
+  min-height:44px!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
 }
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"]:focus-within,
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="base-input"]:focus-within{
@@ -1111,13 +1124,15 @@ _AUTH_NAV_CSS = """
   border-color:#b7c9e3!important;
   box-shadow:0 0 0 3px var(--teal-50)!important;
 }
+.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] div[data-baseweb="base-input"]:focus-within{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] *,
 .st-key-auth_card_streamlit .stTextInput div[data-baseweb="base-input"] *{
   color:var(--ink)!important;
   -webkit-text-fill-color:var(--ink)!important;
-}
-.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] > div:first-child:has(svg):not([data-baseweb="base-input"]){
-  display:none!important;
 }
 .st-key-auth_card_streamlit .stTextInput input,
 .st-key-auth_card_streamlit .stTextArea textarea,
@@ -1131,29 +1146,29 @@ _AUTH_NAV_CSS = """
   font-weight:500!important;
 }
 .st-key-auth_card_streamlit .stTextInput input{
-  padding-left:14px!important;
-  padding-right:14px!important;
+  height:44px!important;
+  line-height:44px!important;
+  padding:0 14px!important;
   background:transparent!important;
 }
-.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] > div:last-child:has(button){
-  align-self:stretch!important;
-  width:52px!important;
-  min-width:52px!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  background:var(--surface-2)!important;
-  border-left:1px solid var(--line)!important;
-  border-radius:0 10px 10px 0!important;
-}
-.st-key-auth_card_streamlit .stTextInput div[data-baseweb="input"] > div:last-child:has(button) button{
-  width:100%!important;
-  height:100%!important;
-  min-height:44px!important;
+.st-key-auth_card_streamlit .stTextInput button{
+  width:36px!important;
+  min-width:36px!important;
+  height:36px!important;
+  min-height:36px!important;
+  margin-right:4px!important;
+  padding:0!important;
   border:0!important;
-  border-radius:0 10px 10px 0!important;
+  border-radius:9px!important;
   background:transparent!important;
   box-shadow:none!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.st-key-auth_card_streamlit .stTextInput button:hover{
+  background:var(--surface-2)!important;
+  transform:none!important;
 }
 .st-key-auth_card_streamlit .stTextInput input::placeholder{
   color:var(--ink-3)!important;
@@ -1188,10 +1203,10 @@ _AUTH_NAV_CSS = """
   -webkit-text-fill-color:#fff!important;
 }
 .st-key-auth_forgot_link button{
-  min-height:24px!important;
-  height:24px!important;
+  min-height:22px!important;
+  height:22px!important;
   width:auto!important;
-  margin:8px auto 0!important;
+  margin:7px auto 0!important;
   padding:0!important;
   display:flex!important;
   justify-content:center!important;
@@ -1200,7 +1215,7 @@ _AUTH_NAV_CSS = """
   box-shadow:none!important;
   color:var(--ink-3)!important;
   -webkit-text-fill-color:var(--ink-3)!important;
-  font-size:11px!important;
+  font-size:10.5px!important;
   font-weight:500!important;
 }
 .st-key-auth_forgot_link button p,
@@ -1215,12 +1230,12 @@ _AUTH_NAV_CSS = """
   -webkit-text-fill-color:var(--teal)!important;
 }
 .auth-demo-strip{
-  margin-top:18px;
+  margin-top:17px;
   border-top:1px dashed var(--line);
-  padding-top:13px;
+  padding-top:12px;
 }
 .auth-demo-strip .dt{
-  font-size:10.5px;
+  font-size:10px;
   font-weight:700;
   letter-spacing:.4px;
   text-transform:uppercase;
@@ -1230,14 +1245,14 @@ _AUTH_NAV_CSS = """
 }
 .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_favorite),
 .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_admin_panel_settings){
-  gap:8px!important;
+  gap:7px!important;
   justify-content:center!important;
 }
 .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_favorite){
-  margin-top:8px!important;
+  margin-top:7px!important;
 }
 .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_admin_panel_settings){
-  margin-top:6px!important;
+  margin-top:5px!important;
 }
 .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_favorite) > div[data-testid="stColumn"],
 .st-key-auth_card_streamlit [data-testid="stHorizontalBlock"]:has(.st-key-auth_demo_role_admin_panel_settings) > div[data-testid="stColumn"]{
@@ -1266,14 +1281,14 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button{
-  min-height:28px!important;
-  height:28px!important;
+  min-height:26px!important;
+  height:26px!important;
   width:auto!important;
   min-width:0!important;
   border-radius:999px!important;
-  padding:0 11px!important;
+  padding:0 10px!important;
   font-family:var(--ui,'Inter','Be Vietnam Pro',system-ui,sans-serif)!important;
-  font-size:11px!important;
+  font-size:10.5px!important;
   font-weight:600!important;
   background:var(--surface-2)!important;
   border:1px solid var(--line)!important;
@@ -1283,7 +1298,7 @@ _AUTH_NAV_CSS = """
   white-space:nowrap!important;
   overflow:visible!important;
   text-overflow:clip!important;
-  gap:6px!important;
+  gap:5px!important;
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
@@ -1306,9 +1321,9 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .st-key-auth_demo_role_construction .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_science .stButton>button [data-testid="stIconMaterial"],
 .st-key-auth_card_streamlit .st-key-auth_demo_role_admin_panel_settings .stButton>button [data-testid="stIconMaterial"]{
-  width:11px!important;
-  min-width:11px!important;
-  font-size:11px!important;
+  width:10px!important;
+  min-width:10px!important;
+  font-size:10px!important;
 }
 .st-key-auth_card_streamlit .st-key-auth_demo_role_favorite .stButton>button:hover,
 .st-key-auth_card_streamlit .st-key-auth_demo_role_medical_services .stButton>button:hover,
@@ -1458,21 +1473,47 @@ _AUTH_NAV_CSS = """
 .st-key-auth_card_streamlit .stRadio [role="radiogroup"]{
   display:grid!important;
   grid-template-columns:1fr 1fr;
-  gap:9px!important;
+  gap:10px!important;
+  margin-top:8px!important;
 }
-.st-key-auth_card_streamlit .stRadio label{
+.st-key-auth_card_streamlit .stRadio > label,
+.st-key-auth_card_streamlit .stRadio [data-testid="stWidgetLabel"]{
+  min-height:42px!important;
+  display:flex!important;
+  align-items:center!important;
+  margin:0 0 6px!important;
+  padding:0 12px!important;
+  background:var(--surface-2)!important;
+  border:1px solid var(--line)!important;
+  border-radius:10px!important;
+  color:var(--ink)!important;
+  -webkit-text-fill-color:var(--ink)!important;
+  font-size:13px!important;
+  font-weight:500!important;
+}
+.st-key-auth_card_streamlit .stRadio [role="radiogroup"] label{
+  min-height:54px!important;
+  display:flex!important;
+  align-items:center!important;
   background:var(--surface-2)!important;
   border:1px solid var(--line)!important;
   border-radius:11px!important;
-  padding:9px 10px!important;
+  padding:10px 12px!important;
   color:var(--ink-2)!important;
+  -webkit-text-fill-color:var(--ink-2)!important;
+  font-size:14px!important;
+  font-weight:600!important;
 }
-.st-key-auth_card_streamlit .stRadio label:has(input:checked){
+.st-key-auth_card_streamlit .stRadio [role="radiogroup"] label:has(input:checked),
+.st-key-auth_card_streamlit .stRadio [role="radiogroup"] label:has([aria-checked="true"]){
   border-color:var(--teal)!important;
   background:var(--teal-12)!important;
   color:var(--teal-strong)!important;
+  -webkit-text-fill-color:var(--teal-strong)!important;
+  box-shadow:0 0 0 1px var(--teal)!important;
 }
-.st-key-auth_card_streamlit .stRadio label:has(input:checked) *{
+.st-key-auth_card_streamlit .stRadio [role="radiogroup"] label:has(input:checked) *,
+.st-key-auth_card_streamlit .stRadio [role="radiogroup"] label:has([aria-checked="true"]) *{
   color:var(--teal-strong)!important;
   -webkit-text-fill-color:var(--teal-strong)!important;
 }
