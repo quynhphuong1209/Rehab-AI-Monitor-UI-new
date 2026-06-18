@@ -109,15 +109,31 @@ except Exception:
 
 import streamlit as st
 
-from frontend.auth.screens import (
-    close_auth_shell,
-    open_auth_shell,
-    render_auth_card_title,
-    render_auth_hero,
-    render_auth_screen,
-    render_auth_theme_button,
-    render_auth_topbar,
-    render_app_topbar_actions,
+from frontend.auth import screens as auth_screens
+
+close_auth_shell = auth_screens.close_auth_shell
+open_auth_shell = auth_screens.open_auth_shell
+render_auth_card_title = auth_screens.render_auth_card_title
+render_auth_hero = auth_screens.render_auth_hero
+render_auth_screen = auth_screens.render_auth_screen
+render_auth_theme_button = auth_screens.render_auth_theme_button
+render_auth_topbar = auth_screens.render_auth_topbar
+
+
+def _render_app_topbar_actions_fallback(*, is_light, on_logout):
+    if st.button("\u21aa", key="app_logout_icon_button", help="Dang xuat"):
+        on_logout()
+
+    theme_icon = "\u263e" if is_light else "\u2600"
+    if st.button(theme_icon, key="app_theme_icon_button", help="Doi che do sang/toi"):
+        st.session_state.theme = "dark" if is_light else "light"
+        st.rerun()
+
+
+render_app_topbar_actions = getattr(
+    auth_screens,
+    "render_app_topbar_actions",
+    _render_app_topbar_actions_fallback,
 )
 from frontend.roles import admin as admin_frontend
 from frontend.roles import doctor_ktv as doctor_ktv_frontend
