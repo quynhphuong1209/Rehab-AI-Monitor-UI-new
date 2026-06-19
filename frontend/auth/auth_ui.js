@@ -91,7 +91,11 @@
     background:transparent !important; color:var(--rehab-primary) !important;
     box-shadow:none !important; font:500 14.5px var(--rehab-ui);
   }
-  .rehab-input input::placeholder { color:var(--rehab-muted); }
+  .rehab-input input::placeholder {
+    color:var(--rehab-muted);
+    opacity:.58;
+    font-weight:500;
+  }
   .rehab-input input:-webkit-autofill,
   .rehab-input input:-webkit-autofill:hover,
   .rehab-input input:-webkit-autofill:focus {
