@@ -2586,17 +2586,6 @@ def _nap_bieu_do_nhanh_tu_cloud(v, giu_phan_tich_moi=False):
 
 def _fragment_tien_do_tai_media(v, key_suffix=""):
     """Fragment 1s — cập nhật tiến độ tải Cloud + tự hiện biểu đồ khi CSV sẵn sàng."""
-    vp = (v or {}).get("video_path")
-    prog = read_progress(vp) if vp else None
-    dang_phan_tich = bool(prog and prog.get("status") == "processing")
-    status = _trang_thai_tai_media(v) if v else {}
-    can_poll = (
-        st.session_state.get("_media_load_slot")
-        or status.get("running")
-        or not all((status.get("csv"), status.get("json"), status.get("video"), status.get("zip")))
-        or dang_phan_tich
-    )
-    interval = timedelta(seconds=1) if can_poll else None
 
     def _poll():
         if not v or not v.get("metrics"):
@@ -2735,8 +2724,6 @@ def render_video(video_path, check_h264=True, prefer_raw=False):
     if isinstance(video_path, str) and (video_path.startswith('http://') or video_path.startswith('https://')):
         try:
             import streamlit.components.v1 as _stcomp
-            import hashlib
-            url_hash = hashlib.md5(video_path.encode()).hexdigest()[:8]
             _stcomp.html(f"""
 <!DOCTYPE html><html><head>
 <style>
@@ -2930,7 +2917,6 @@ def render_video(video_path, check_h264=True, prefer_raw=False):
 import threading
 import queue
 import gc
-from concurrent.futures import ThreadPoolExecutor
 
 # MEDIAPIPE sẽ được load lazily khi cần xử lý video
 
@@ -3503,7 +3489,6 @@ def khoi_tao_dong_bo_hf():
         ]
         
         for f_name in files_to_download:
-            local_path = os.path.join(DATA_DIR, f_name)
             try:
                 hf_hub_download(
                     repo_id=HF_DATASET_ID, 
@@ -3513,7 +3498,7 @@ def khoi_tao_dong_bo_hf():
                     local_dir=DATA_DIR
                 )
                 print(f"[HF Sync] Đã tải về: {f_name}")
-            except Exception as e:
+            except Exception:
                 pass
                 
         # 3. Không tải hàng loạt patient_uploads/processed_results lúc khởi động.
@@ -5810,8 +5795,8 @@ if not st.session_state.get('logged_in'):
             _sync_route_query()
             
             st.rerun() 
-    except Exception as e:
-        # st.error(f"Lỗi nhận diện Google: {e}") # Debug nếu cần
+    except Exception:
+        # Có thể bật st.error tại đây nếu cần debug lỗi nhận diện Google.
         pass
 
 # ============================================
@@ -6604,7 +6589,7 @@ def get_pose_model(model_type="MediaPipe Heavy", min_confidence=0.5):
                     min_detection_confidence=min_confidence,
                     min_tracking_confidence=min_confidence
                 )
-            except Exception as e2:
+            except Exception:
                 st.warning("⚠️ Không thể tải mô hình MediaPipe Full. Đang chuyển sang mô hình MediaPipe Lite.")
                 return mp_pose.Pose(
                     static_image_mode=False,
@@ -9328,7 +9313,6 @@ def _noi_dung_khu_vuc_phan_tich(v, key_suffix, video_path):
 
     is_processing = False
     p_val = 0.0
-    elapsed = 0.0
     is_error = False
     err_msg = ""
     status_msg = ""
@@ -9348,7 +9332,6 @@ def _noi_dung_khu_vuc_phan_tich(v, key_suffix, video_path):
             # sẽ hiện cảnh báo và nút Khởi động lại nếu thread thực sự đã chết.
             is_processing = True
             p_val = prog_data.get("progress", 0.0)
-            elapsed = prog_data.get("elapsed", 0.0)
             status_msg = prog_data.get("status_msg", "")
             heartbeat = float(prog_data.get("heartbeat") or 0)
             # Dam bao progress khong di lui trong UI — so sanh start_time de detect restart
@@ -9375,7 +9358,6 @@ def _noi_dung_khu_vuc_phan_tich(v, key_suffix, video_path):
                 # Thread thất bại rất nhanh (race condition) — giữ loading UI 8s sau khi bấm Thử lại
                 is_processing = True
                 p_val = prog_data.get("progress", 0.02)
-                elapsed = time.time() - _retry_start_ts
                 status_msg = "🔄 Đang khởi động lại phân tích..."
             else:
                 is_error = True
@@ -9892,10 +9874,6 @@ def _checkpoint_qua_nang_cho_hf(video_path, ckpt):
         frames, duration = 0, 0
     if frames <= 6000 and duration <= 210:
         return False
-    try:
-        ckpt_skip = int(ckpt.get("skip_step") or 0)
-    except Exception:
-        ckpt_skip = 0
     try:
         ckpt_resize = int(ckpt.get("resize_width") or 720)
     except Exception:
@@ -11159,8 +11137,7 @@ def gui_bao_cao_tong_hop_3_giai_doan():
 def tinh_metrics_chi_tiet(df, bt):
     if df is None or len(df) == 0:
         return {}
-        
-    total_raw = len(df)
+
     df_valid = df[df['goc_vai'].notna()]
     total = len(df_valid)
     
@@ -12698,37 +12675,6 @@ def _hien_thi_tab_phan_tich_noi_dung(key_suffix="", stats_ext=None, df_ext=None,
             sai_so_selected = PHASE_ERROR["g2"]
             giai_doan_label = "Giai đoạn 2"
 
-    # Chuẩn bị dữ liệu thống kê tổng hợp (Mở rộng cho NCV)
-    fail_count_total = tk_selected['tong_frame_hop_le'] - tk_selected['frame_dung'] - tk_selected['frame_gan_dung']
-    stats_summary = pd.DataFrame({
-        "Hạng mục": [
-            "Tổng số khung hình", 
-            "Số lần tập đúng (Pass)", 
-            "Số lần tập gần đúng", 
-            "Số lần tập sai (Fail)", 
-            "Góc vai trung bình (ROM)", 
-            "Góc khuỷu trung bình (ROM)",
-            "Độ lệch chuẩn (STD) Vai",
-            "Độ lệch chuẩn (STD) Khuỷu",
-            "Sai số tuyệt đối (MAE)",
-            "ICC (Độ tin cậy)",
-            "F1-Score (Học máy)"
-        ],
-        "Giá trị": [
-            str(tk_selected['tong_frame']), 
-            str(tk_selected['frame_dung']), 
-            str(tk_selected['frame_gan_dung']), 
-            f"{max(0, fail_count_total)}", 
-            f"{tk_selected['tb_goc_vai']:.1f}°", 
-            f"{tk_selected['tb_goc_khuyu']:.1f}°",
-            f"{tk_selected.get('std_goc_vai', 0):.2f}",
-            f"{tk_selected.get('std_goc_khuyu', 0):.2f}",
-            f"{tk_selected.get('mae_tong', 0):.2f}°",
-            f"{tk_selected.get('icc', 0):.2f}",
-            f"{tk_selected.get('f1_score', 0):.2f}"
-        ]
-    })
-
     # Lấy thông tin mô hình hiện tại
     model_type = st.session_state.get('ncv_model_type', 'MediaPipe Heavy')
     
@@ -13725,8 +13671,6 @@ def hien_thi_ket_qua_cho_benh_nhan(target_username=None):
             is_fresh_session = False
             st.session_state.active_video_name = None
 
-    selected_v = None
-
     if not my_history_vids and not my_evals:
         st.info("🕒 Kết quả đánh giá chuyên môn đang được xử lý. Vui lòng quay lại sau khi Bác sĩ hoặc Nhóm Nghiên cứu hoàn tất đánh giá.")
         return
@@ -13976,6 +13920,7 @@ def hien_thi_tab_khai_bao_trieu_chung():
                     "full_name": full_name,
                     "age": age,
                     "gender": gender,
+                    "date": date.strftime("%Y-%m-%d") if hasattr(date, "strftime") else str(date),
                     "symptoms": symptoms,
                     "vas": muc_do_dau,
                     "time": get_vn_now().strftime("%H:%M - %d/%m/%Y")
@@ -13996,7 +13941,6 @@ def hien_thi_lich_nhac_nho():
     
     # LOAD DATA TỪ FILE
     schedules = load_data(REMINDERS_FILE)
-    users = load_users()
     if not isinstance(schedules, list): schedules = []
     
     # FILTER DATA
@@ -15296,7 +15240,6 @@ Dòng **Xác suất 3 lớp** (nếu có): tổng ~100%, cho biết mô hình ph
 
     # Hàm helper render grid HTML frames
     def _render_frame_grid(indices_list, frame_data_list, quality_mode_val, tab_threshold, tab_key, key_suffix_val):
-        import math
         page_key = f"fp_{tab_key}_{key_suffix_val}"
         if page_key not in st.session_state:
             st.session_state[page_key] = 1
@@ -16051,8 +15994,7 @@ def hien_thi_home_quan_tri_vien():
     total_users = len(users)
     patients = len([u for u in users.values() if u.get('role') == 'Bệnh nhân'])
     doctors = len([u for u in users.values() if u.get('role') == 'Bác sĩ / KTV PHCN'])
-    ncvs = len([u for u in users.values() if u.get('role') == 'Nghiên cứu viên'])
-    
+
     total_vids = len(v_list)
     total_evals = len(e_list)
     
@@ -16435,15 +16377,6 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                             break
                     else:
                         _consume_table_action()
-                # Row actions are handled by the real buttons rendered inside the HTML table.
-                for i, row in enumerate([]):
-                    with btn_cols[i % len(btn_cols)]:
-                        if st.button(
-                            "Xem kết quả",
-                            key=f"disabled_patient_result_{user_role}_{i}",
-                            use_container_width=True,
-                        ):
-                            _mo_ket_qua_benh_nhan(row, video_list, evals_db, user_role)
             else:
                 st.markdown("##### 👥 DANH SÁCH BỆNH NHÂN — THỜI GIAN PHÂN TÍCH GẦN NHẤT")
                 for row in patient_summary:
@@ -17082,15 +17015,6 @@ def _render_main_tab_content(tab_titles, user_role):
                                 if pending_symptom_action:
                                     st.session_state.selected_symptom_detail_key = pending_symptom_action.get("key")
                                     _consume_table_action()
-                                # Row actions are handled by the real buttons rendered inside the HTML table.
-                                for i, s in enumerate([]):
-                                    with detail_cols[i % len(detail_cols)]:
-                                        if st.button(
-                                            "Chi tiết khai báo",
-                                            key=f"disabled_symptom_detail_{user_role}_{i}",
-                                            use_container_width=True,
-                                        ):
-                                            st.session_state.selected_symptom_detail_key = _symptom_panel_key(s)
                                 selected_symptom = next(
                                     (
                                         s for s in display_list
