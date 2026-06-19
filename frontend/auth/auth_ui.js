@@ -7,6 +7,7 @@
       radial-gradient(48vw 44vh at 96% 0%, rgba(99,102,241,.10), transparent 58%),
       var(--rehab-bg);
   }
+  .rehab-auth-root, .rehab-auth-root * { box-sizing:border-box; }
   .rehab-auth-wrap {
     min-height:calc(100vh - var(--rehab-topbar-h));
     display:grid; grid-template-columns:minmax(420px, 1.08fr) minmax(360px, .92fr);
@@ -20,32 +21,34 @@
     color:var(--rehab-blue-strong); background:rgba(37,110,217,.13); border:1px solid rgba(37,110,217,.20);
   }
   .rehab-auth-hero h1 {
-    margin:0; max-width:880px; color:var(--rehab-primary);
+    position:relative; z-index:2; margin:0; max-width:880px; color:var(--rehab-primary);
     font-family:var(--rehab-display); font-weight:650; font-size:clamp(42px,5.2vw,66px);
     line-height:1.03; letter-spacing:0;
   }
   .rehab-auth-hero h1 em { color:var(--rehab-blue); font-style:italic; white-space:nowrap; }
   .rehab-auth-hero p {
-    margin:0; max-width:50ch; color:var(--rehab-secondary); font-size:17px; line-height:1.55;
+    position:relative; z-index:2; margin:0; max-width:50ch; color:var(--rehab-secondary); font-size:17px; line-height:1.55;
   }
-  .rehab-auth-stats { display:flex; flex-wrap:wrap; gap:14px; }
+  .rehab-auth-stats { position:relative; z-index:2; display:flex; flex-wrap:wrap; gap:14px; }
   .rehab-auth-stat {
     background:var(--rehab-card); border:1px solid var(--rehab-line); border-radius:8px;
     min-width:150px; padding:15px 17px; box-shadow:var(--rehab-shadow-sm);
   }
   .rehab-auth-stat b { display:block; color:var(--rehab-blue-strong); font:800 24px var(--rehab-mono); }
   .rehab-auth-stat span { display:block; color:var(--rehab-muted); font-size:12px; margin-top:4px; }
-  .rehab-pose { position:absolute; right:-12px; bottom:0; width:min(42%,360px); opacity:.94; pointer-events:none; }
+  .rehab-pose { position:absolute; right:clamp(0px,2vw,34px); bottom:-42px; width:min(24vw,230px); opacity:.94; pointer-events:none; z-index:1; }
+  .rehab-auth-mobile-pose { display:none; }
   .rehab-pose svg { width:100%; height:auto; overflow:visible; }
   .rehab-pose .bone { stroke:var(--rehab-blue); stroke-width:5; stroke-linecap:round; fill:none; }
   .rehab-pose .bone.dim { stroke:var(--rehab-muted); opacity:.35; }
   .rehab-pose .joint { fill:var(--rehab-card); stroke:var(--rehab-blue); stroke-width:3.4; }
   .rehab-pose .joint.dim { stroke:var(--rehab-muted); opacity:.45; }
   .rehab-pose .arc { stroke:#7773FF; stroke-width:4; fill:none; stroke-linecap:round; opacity:.85; }
-  .rehab-pose #rehabPoseArm { transform-box:fill-box; transform-origin:left top; }
-  @media (prefers-reduced-motion:no-preference){ .rehab-pose #rehabPoseArm { animation:rehab-arm 4.4s ease-in-out infinite; } }
+  .rehab-pose .rehabPoseArm { transform-box:fill-box; transform-origin:left top; }
+  @media (prefers-reduced-motion:no-preference){ .rehab-pose .rehabPoseArm { animation:rehab-arm 4.4s ease-in-out infinite; } }
   @keyframes rehab-arm { 0%,100%{transform:rotate(2deg)} 50%{transform:rotate(-44deg)} }
   .rehab-auth-panel { display:flex; justify-content:center; align-items:center; }
+  .rehab-auth-stack { width:100%; max-width:430px; }
   .rehab-auth-card {
     width:100%; max-width:430px; background:var(--rehab-card); border:1px solid var(--rehab-line);
     border-radius:20px; box-shadow:var(--rehab-shadow); padding:34px;
@@ -69,7 +72,6 @@
   }
   .rehab-role-opt:hover { border-color:var(--rehab-blue); transform:translateY(-1px); }
   .rehab-role-opt.on { border-color:var(--rehab-blue); background:rgba(37,110,217,.11); box-shadow:0 0 0 3px rgba(37,110,217,.12); }
-  .rehab-role-opt.full { grid-column:1 / -1; }
   .rehab-role-icon {
     width:34px; height:34px; border-radius:10px; display:grid; place-items:center;
     background:var(--rehab-card); border:1px solid var(--rehab-line); color:var(--rehab-secondary); flex:none;
@@ -84,8 +86,20 @@
   }
   .rehab-input:focus-within { background:var(--rehab-card); border-color:var(--rehab-blue); box-shadow:0 0 0 3px rgba(37,110,217,.13); }
   .rehab-input .rehab-icon { width:17px; height:17px; color:var(--rehab-muted); }
-  .rehab-input input { flex:1; width:100%; height:100%; border:0; outline:0; background:transparent; color:var(--rehab-primary); font:500 14.5px var(--rehab-ui); }
+  .rehab-input input {
+    flex:1; width:100%; height:100%; border:0 !important; outline:0 !important;
+    background:transparent !important; color:var(--rehab-primary) !important;
+    box-shadow:none !important; font:500 14.5px var(--rehab-ui);
+  }
   .rehab-input input::placeholder { color:var(--rehab-muted); }
+  .rehab-input input:-webkit-autofill,
+  .rehab-input input:-webkit-autofill:hover,
+  .rehab-input input:-webkit-autofill:focus {
+    -webkit-text-fill-color:var(--rehab-primary) !important;
+    caret-color:var(--rehab-primary);
+    box-shadow:0 0 0 1000px var(--rehab-bg-soft) inset !important;
+    transition:background-color 9999s ease-out 0s;
+  }
   .rehab-eye { border:0; background:transparent; color:var(--rehab-muted); cursor:pointer; display:grid; place-items:center; padding:4px; }
   .rehab-primary-btn {
     width:100%; height:48px; border:0; border-radius:12px; cursor:pointer;
@@ -96,6 +110,8 @@
   .rehab-primary-btn:hover { transform:translateY(-1px); box-shadow:0 12px 26px rgba(37,110,217,.30); }
   .rehab-auth-foot { margin-top:16px; text-align:center; color:var(--rehab-muted); font-size:12.5px; }
   .rehab-auth-foot button { border:0; background:transparent; color:var(--rehab-blue); font-weight:800; cursor:pointer; padding:0; }
+  .rehab-auth-alt { margin-top:12px; text-align:center; }
+  .rehab-auth-alt button { border:0; background:transparent; color:var(--rehab-blue); font:800 12.5px var(--rehab-ui); cursor:pointer; padding:0; }
   .rehab-demo-strip { margin-top:20px; border-top:1px dashed var(--rehab-line); padding-top:16px; }
   .rehab-demo-title { text-align:center; text-transform:uppercase; color:var(--rehab-muted); letter-spacing:.4px; font:800 11px var(--rehab-ui); margin-bottom:10px; }
   .rehab-demo-btns { display:flex; flex-wrap:wrap; gap:7px; justify-content:center; }
@@ -115,20 +131,33 @@
   html[data-rehab-theme="dark"] .rehab-auth-wrap { color-scheme:dark; }
   @media (max-width: 980px) {
     .rehab-auth-root { top:var(--rehab-topbar-h); }
-    .rehab-auth-wrap { grid-template-columns:1fr; padding:22px 20px 40px; gap:18px; }
-    .rehab-auth-hero { min-height:auto; gap:18px; }
-    .rehab-auth-eyebrow, .rehab-auth-hero p, .rehab-auth-stats { display:none; }
-    .rehab-auth-hero h1 { font-size:clamp(32px,12vw,48px); max-width:9.4em; }
-    .rehab-pose { position:relative; right:auto; bottom:auto; width:154px; align-self:center; margin:4px auto -2px; order:5; }
+    .rehab-auth-wrap { grid-template-columns:1fr; padding:22px 20px 40px; gap:18px; align-items:start; }
+    .rehab-auth-hero { min-height:auto; gap:14px; justify-content:flex-start; max-width:640px; width:100%; margin:0 auto; }
+    .rehab-auth-eyebrow { font-size:11px; max-width:100%; white-space:normal; }
+    .rehab-auth-hero h1 { font-size:clamp(34px,9vw,48px); max-width:11.2em; }
+    .rehab-auth-hero p { max-width:100%; font-size:14.5px; line-height:1.45; }
+    .rehab-auth-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; width:100%; }
+    .rehab-auth-stat { min-width:0; padding:11px 10px; }
+    .rehab-auth-stat b { font-size:20px; }
+    .rehab-auth-stat span { font-size:10.5px; line-height:1.25; }
+    .rehab-auth-hero > .rehab-pose { display:none; }
+    .rehab-auth-mobile-pose { display:flex; justify-content:center; margin:18px auto 0; }
+    .rehab-auth-mobile-pose .rehab-pose { display:block; position:relative; right:auto; bottom:auto; width:150px; align-self:center; margin:0 auto; }
     .rehab-auth-panel { align-items:flex-start; }
     .rehab-auth-card { max-width:430px; padding:28px 20px; }
   }
   @media (max-width: 520px) {
-    .rehab-auth-wrap { min-height:calc(100vh - var(--rehab-topbar-h)); padding:16px 20px 34px; align-items:start; }
-    .rehab-auth-hero { display:none; }
+    .rehab-auth-wrap { min-height:calc(100vh - var(--rehab-topbar-h)); padding:14px 20px 34px; align-items:start; gap:14px; }
+    .rehab-auth-hero { display:flex; }
+    .rehab-auth-hero h1 { font-size:clamp(30px,9.8vw,40px); max-width:9.5em; }
+    .rehab-auth-hero p { font-size:13.5px; }
     .rehab-auth-card { border-radius:16px; padding:24px 18px; margin-top:12px; }
+    .rehab-demo-btns { gap:6px; }
+    .rehab-demo-btns button { font-size:10.5px; padding:5px 9px; }
+    .rehab-auth-mobile-pose .rehab-pose { width:128px; }
+  }
+  @media (max-width: 430px) {
     .rehab-role-grid { grid-template-columns:1fr; }
-    .rehab-demo-btns button { font-size:11px; padding:6px 10px; }
   }
   `;
 
@@ -171,7 +200,7 @@
         <line x1="120" y1="92" x2="86" y2="138" class="bone dim"/>
         <line x1="86" y1="138" x2="74" y2="178" class="bone dim"/>
         <circle cx="86" cy="138" r="6" class="joint dim"/>
-        <g id="rehabPoseArm">
+        <g class="rehabPoseArm">
           <line x1="120" y1="92" x2="170" y2="118" class="bone"/>
           <line x1="170" y1="118" x2="206" y2="132" class="bone"/>
           <circle cx="170" cy="118" r="6" class="joint"/>
@@ -187,12 +216,12 @@
     </div>`;
   }
 
-  function field(name, label, type, placeholder, iconId, value) {
+  function field(name, label, type, placeholder, iconId, value, autocomplete) {
     return `<div class="rehab-field" data-field="${name}">
       <label for="rehab-${name}">${label}</label>
       <div class="rehab-input">
         ${icon(iconId)}
-        <input id="rehab-${name}" name="${name}" type="${type}" placeholder="${placeholder || ""}" value="${value || ""}" autocomplete="${type === "password" ? "current-password" : "off"}">
+        <input id="rehab-${name}" name="${name}" type="${type}" placeholder="${placeholder || ""}" value="${value || ""}" autocomplete="${autocomplete || (type === "password" ? "current-password" : "off")}">
         ${type === "password" ? `<button class="rehab-eye" type="button" data-eye="${name}">${icon("i-eye")}</button>` : ""}
       </div>
     </div>`;
@@ -204,12 +233,28 @@
       <div class="rehab-role-grid">
       ${order.map((key) => {
         const role = roles[key];
-        return `<button type="button" class="rehab-role-opt ${key === "admin" ? "full" : ""} ${key === pickedRole ? "on" : ""}" data-role="${key}">
+        return `<button type="button" class="rehab-role-opt ${key === pickedRole ? "on" : ""}" data-role="${key}">
           <span class="rehab-role-icon">${icon(role.icon)}</span>
           <span class="rehab-role-text"><b>${role.label}</b><span>${role.desc}</span></span>
         </button>`;
       }).join("")}
       </div>`;
+  }
+
+  function syncModeFromPayload(payload) {
+    if (payload && ["login", "register", "forgot"].includes(payload.authMode)) {
+      mode = payload.authMode;
+    }
+  }
+
+  function focusAuthCard(root) {
+    const card = root && root.querySelector(".rehab-auth-card");
+    if (!card || typeof card.scrollIntoView !== "function") return;
+    try {
+      card.scrollIntoView({ block: "start", inline: "nearest" });
+    } catch (_) {
+      card.scrollIntoView();
+    }
   }
 
   function mount(payload, sendEvent, helpers) {
@@ -226,8 +271,14 @@
       root.className = "rehab-auth-root";
       d.body.appendChild(root);
     }
+    syncModeFromPayload(payload);
     const notice = payload.notice || {};
     const isRegister = mode === "register";
+    const isForgot = mode === "forgot";
+    const cardTitle = isForgot ? "Khôi phục mật khẩu" : (isRegister ? "Tạo tài khoản mới" : "Đăng nhập hệ thống");
+    const cardSub = isForgot
+      ? "Nhập đúng tài khoản và email đã đăng ký để đặt lại mật khẩu."
+      : (isRegister ? "Tài khoản KTV / Bác sĩ / NCV cần Quản trị viên phê duyệt trước khi kích hoạt." : "Truy cập bảng điều khiển theo vai trò của bạn.");
     root.innerHTML = `<div class="rehab-auth-wrap">
       <div class="rehab-auth-hero">
         <span class="rehab-auth-eyebrow">${icon("i-shield")} Clinical-Grade · Giám sát từ xa bằng Thị giác máy tính</span>
@@ -241,22 +292,25 @@
         ${poseMarkup()}
       </div>
       <div class="rehab-auth-panel">
+        <div class="rehab-auth-stack">
         <form class="rehab-auth-card" id="rehab-auth-form">
-          <h2>${isRegister ? "Tạo tài khoản mới" : "Đăng nhập hệ thống"}</h2>
-          <p class="rehab-auth-sub">${isRegister ? "Tài khoản KTV / Bác sĩ / NCV cần Quản trị viên phê duyệt trước khi kích hoạt." : "Truy cập bảng điều khiển theo vai trò của bạn."}</p>
+          <h2>${cardTitle}</h2>
+          <p class="rehab-auth-sub">${cardSub}</p>
           <div class="rehab-seg">
-            <button type="button" class="${!isRegister ? "on" : ""}" data-mode="login">Đăng nhập</button>
+            <button type="button" class="${mode === "login" ? "on" : ""}" data-mode="login">Đăng nhập</button>
             <button type="button" class="${isRegister ? "on" : ""}" data-mode="register">Đăng ký</button>
           </div>
           ${notice.message ? `<div class="rehab-notice ${notice.kind || ""}">${helpers.esc(notice.message)}</div>` : ""}
           ${isRegister ? roleGrid() : ""}
           ${isRegister ? field("fullName", "Họ và tên", "text", "VD: Nguyễn Văn A", "i-users", "") : ""}
-          ${field("username", isRegister ? "Tên đăng nhập" : "Tài khoản", "text", isRegister ? "Chọn tên tài khoản" : "bsi01", "i-user", isRegister ? "" : "bsi01")}
-          ${isRegister ? field("email", "Email / Số điện thoại", "text", "email@huph.edu.vn", "i-mail", "") : ""}
-          ${field("password", "Mật khẩu", "password", "••••••••", "i-lock", "")}
+          ${field("username", isRegister ? "Tên đăng nhập" : "Tài khoản", "text", isRegister ? "Chọn tên tài khoản" : "bsi01", "i-user", isRegister || isForgot ? "" : "bsi01", "username")}
+          ${isRegister || isForgot ? field("email", "Email / Số điện thoại", "text", "email@huph.edu.vn", "i-mail", "", "email") : ""}
+          ${field("password", isForgot ? "Mật khẩu mới" : "Mật khẩu", "password", "••••••••", "i-lock", "", isForgot ? "new-password" : "current-password")}
           ${isRegister ? field("password2", "Nhập lại mật khẩu", "password", "••••••••", "i-lock", "") : ""}
-          <button class="rehab-primary-btn" type="submit">${isRegister ? "Đăng ký tài khoản" : "Đăng nhập"} ${icon("i-arrow")}</button>
-          ${!isRegister ? `<div class="rehab-auth-foot">Quên mật khẩu? <button type="button" data-forgot>Khôi phục tại đây</button></div>` : ""}
+          ${isForgot ? field("password2", "Nhập lại mật khẩu mới", "password", "••••••••", "i-lock", "", "new-password") : ""}
+          <button class="rehab-primary-btn" type="submit">${isForgot ? "Đặt lại mật khẩu" : (isRegister ? "Đăng ký tài khoản" : "Đăng nhập")} ${icon("i-arrow")}</button>
+          ${mode === "login" ? `<div class="rehab-auth-foot">Quên mật khẩu? <button type="button" data-forgot>Khôi phục tại đây</button></div>` : ""}
+          ${isForgot ? `<div class="rehab-auth-alt"><button type="button" data-mode="login">Quay lại đăng nhập</button></div>` : ""}
           <div class="rehab-demo-strip">
             <div class="rehab-demo-title">Xem nhanh demo theo vai trò</div>
             <div class="rehab-demo-btns">
@@ -264,19 +318,21 @@
             </div>
           </div>
         </form>
+        <div class="rehab-auth-mobile-pose">${poseMarkup()}</div>
+        </div>
       </div>
     </div>`;
 
     root.querySelectorAll("[data-mode]").forEach((btn) => {
       btn.addEventListener("click", () => {
         mode = btn.getAttribute("data-mode") || "login";
-        mount(payload, sendEvent, helpers);
+        mount(Object.assign({}, payload, { authMode: mode, notice: null }), sendEvent, helpers);
       });
     });
     root.querySelectorAll("[data-role]").forEach((btn) => {
       btn.addEventListener("click", () => {
         pickedRole = btn.getAttribute("data-role") || "doctor_ktv";
-        mount(payload, sendEvent, helpers);
+        mount(Object.assign({}, payload, { authMode: mode, notice: null }), sendEvent, helpers);
       });
     });
     root.querySelectorAll("[data-eye]").forEach((btn) => {
@@ -287,7 +343,11 @@
     });
     const forgot = root.querySelector("[data-forgot]");
     if (forgot) {
-      forgot.addEventListener("click", () => sendEvent({ type: "forgot_password" }));
+      forgot.addEventListener("click", () => {
+        mode = "forgot";
+        mount(Object.assign({}, payload, { authMode: "forgot", notice: null }), sendEvent, helpers);
+        focusAuthCard(root);
+      });
     }
     root.querySelectorAll("[data-demo]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -305,6 +365,14 @@
             type: "register",
             role: roles[pickedRole].value,
             full_name: data.get("fullName") || "",
+            username: data.get("username") || "",
+            email: data.get("email") || "",
+            password: data.get("password") || "",
+            password2: data.get("password2") || "",
+          });
+        } else if (mode === "forgot") {
+          sendEvent({
+            type: "reset_password",
             username: data.get("username") || "",
             email: data.get("email") || "",
             password: data.get("password") || "",

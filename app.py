@@ -5913,9 +5913,49 @@ def _consume_rehab_ui_event(event, tab_titles=None):
         return
 
     if event_type == "forgot_password":
+        st.session_state["_auth_mode"] = "forgot"
+        st.session_state.pop("_auth_notice", None)
+        _rerun_toan_bo_app()
+        return
+
+    if event_type == "reset_password":
+        username = _normalize_auth_text(event.get("username", ""))
+        email = _normalize_auth_text(event.get("email", ""))
+        password = event.get("password", "")
+        password2 = event.get("password2", "")
+        st.session_state["_auth_mode"] = "forgot"
+        if not username or not email or len(password) < 6:
+            st.session_state["_auth_notice"] = {
+                "kind": "error",
+                "message": "Vui lòng nhập tài khoản, email và mật khẩu mới tối thiểu 6 ký tự.",
+            }
+            _rerun_toan_bo_app()
+            return
+        if password != password2:
+            st.session_state["_auth_notice"] = {
+                "kind": "error",
+                "message": "Mật khẩu xác nhận không khớp.",
+            }
+            _rerun_toan_bo_app()
+            return
+        users = load_users()
+        u_key = _auth_lookup_key(users, username)
+        stored_email = _normalize_auth_text((users.get(u_key) or {}).get("email")) if u_key else ""
+        if not u_key or stored_email.casefold() != email.casefold():
+            st.session_state["_auth_notice"] = {
+                "kind": "error",
+                "message": "Thông tin tài khoản hoặc email không chính xác.",
+            }
+            _rerun_toan_bo_app()
+            return
+        users[u_key]["password"] = hash_password(password)
+        users[u_key]["hash_version"] = "pbkdf2_sha256"
+        users[u_key]["updated_at"] = get_vn_now().isoformat()
+        save_users(users)
+        st.session_state["_auth_mode"] = "login"
         st.session_state["_auth_notice"] = {
-            "kind": "error",
-            "message": "Vui lòng liên hệ Quản trị viên để khôi phục mật khẩu.",
+            "kind": "success",
+            "message": "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay.",
         }
         _rerun_toan_bo_app()
         return
@@ -5928,6 +5968,7 @@ def _consume_rehab_ui_event(event, tab_titles=None):
         if u_key and _verify_auth_password(u_key, password, users[u_key]):
             _upgrade_password_hash_if_needed(users, u_key, password)
             st.session_state.pop("_auth_notice", None)
+            st.session_state.pop("_auth_mode", None)
             _hoan_tat_dang_nhap(u_key, users[u_key])
             _rerun_toan_bo_app()
         else:
@@ -5935,10 +5976,12 @@ def _consume_rehab_ui_event(event, tab_titles=None):
                 "kind": "error",
                 "message": "Tài khoản hoặc mật khẩu không đúng.",
             }
+            st.session_state["_auth_mode"] = "login"
             _rerun_toan_bo_app()
         return
 
     if event_type == "register":
+        st.session_state["_auth_mode"] = "register"
         username = _normalize_auth_text(event.get("username", ""))
         email = _normalize_auth_text(event.get("email", ""))
         password = event.get("password", "")
@@ -5975,6 +6018,7 @@ def _consume_rehab_ui_event(event, tab_titles=None):
             "created_at": get_vn_now().isoformat(),
         }
         save_users(users)
+        st.session_state["_auth_mode"] = "login"
         st.session_state["_auth_notice"] = {
             "kind": "success",
             "message": "Đăng ký thành công. Bạn có thể đăng nhập ngay.",
@@ -20774,6 +20818,7 @@ def _build_rehab_ui_payload(mode="app", tab_titles=None):
         "tabs": tabs,
         "activeTab": _tab_slug(active) if active else "",
         "sideStats": _rehab_side_stats_for_role(role) if is_logged else {},
+        "authMode": st.session_state.get("_auth_mode", "login") if mode == "auth" else None,
         "notice": st.session_state.pop("_auth_notice", None) if mode == "auth" else None,
     }
 
