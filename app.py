@@ -135,7 +135,6 @@ from auth.passwords import (
 )
 from auth.sessions import get_global_session_version, session_is_current
 from video.validation import (
-    ALLOWED_UPLOAD_VIDEO_EXTENSIONS,
     MAX_UPLOAD_SIZE_MB,
     sanitize_filename,
     validate_upload_metadata,
@@ -221,7 +220,6 @@ try:
         format_ml_display,
         get_pose_classifier_status,
         merge_ml_metrics,
-        refresh_saved_frame_labels,
         reprocess_videos_with_classifier,
         train_pose_classifier,
     )
@@ -235,7 +233,6 @@ except Exception as _pose_classifier_import_error:
     format_ml_display = None
     get_pose_classifier_status = None
     merge_ml_metrics = None
-    refresh_saved_frame_labels = None
     reprocess_videos_with_classifier = None
     train_pose_classifier = None
     POSE_CLASSIFIER_IMPORT_ERROR = _pose_classifier_import_error
@@ -1402,10 +1399,6 @@ def read_display_csv_fast(path):
         except Exception:
             return None
 
-
-# --- THUMBNAIL GENERATOR ---
-
-
 @st.cache_data(max_entries=500, show_spinner=False)
 def _get_video_codec_cached(path, mtime, size):
     """Cache kết quả ffprobe theo (path, mtime, size) để tránh gọi lại subprocess."""
@@ -1693,14 +1686,6 @@ def ensure_playable_video(video_path):
 
     threading.Thread(target=_async_download_and_transcode, daemon=True).start()
     return video_path
-
-
-# ============================================================
-# VIDEO HTTP STREAMING SERVER
-# Phục vụ video qua HTTP Range Requests thực sự — browser chỉ tải
-# đúng đoạn đang cần, không cần đợi load toàn bộ file.
-# ============================================================
-
 
 @st.cache_data(ttl=300, show_spinner=False)
 def check_cloud_file_exists(rel_path):
@@ -3107,7 +3092,6 @@ if not os.path.exists(PROCESSED_DIR):
 
 
 EXTRACTED_FRAMES_DIR = "extracted_frames"
-OUTPUT_VIDEOS_DIR = "output_videos"
 
 def hien_thi_footer_chung():
     """Hiển thị chân trang (footer) chuyên nghiệp cho dự án Rehab-AI-Monitor"""
@@ -5830,11 +5814,6 @@ if not st.session_state.get('logged_in'):
         # st.error(f"Lỗi nhận diện Google: {e}") # Debug nếu cần
         pass
 
-
-# ============================================
-# HÀM HỖ TRỢ ĐIỀU HƯỚNG TAB BẰNG JS
-# ============================================
-
 # ============================================
 # CSS CUSTOM - GIAO DIỆN HIỆN ĐẠI
 # ============================================
@@ -5846,27 +5825,12 @@ inject_app_styles(
     inject_ncv_dashboard_css=inject_ncv_dashboard_css,
 )
 
-MAX_UPLOAD_SIZE_MB = int(os.environ.get("REHAB_MAX_UPLOAD_SIZE_MB", "300"))
-MAX_FILE_SIZE_MB = MAX_UPLOAD_SIZE_MB
-ALLOWED_VIDEO_EXTENSIONS = ALLOWED_UPLOAD_VIDEO_EXTENSIONS
-ALLOWED_VIDEO_MIME_PREFIXES = ("video/",)
-
 # ============================================
 # CẤU HÌNH XỬ LÝ - TỐI ƯU ĐỘ CHÍNH XÁC CAO
 # ============================================
 SKIP_FRAMES = 0    # Mặc định: Xử lý mọi khung hình
 RESIZE_WIDTH = 720 # Mặc định độ phân giải HD (720p) để trích xuất sắc nét và chuẩn xác nhất
-OUTPUT_QUALITY = 50 
 MAX_FRAMES = 100000  # Hỗ trợ tối đa 100000 frame (~55 phút @ 30fps)
-THUMBNAIL_QUALITY = 80
-THUMBNAIL_WIDTH = 320
-
-def validate_uploaded_video(file_upload):
-    return validate_upload_metadata(file_upload)
-
-# ============================================
-# HÀM CHUYỂN ĐỔI MOV SANG MP4
-# ============================================
 
 # ============================================
 # KHỞI TẠO SESSION STATE
@@ -17285,11 +17249,11 @@ def _render_main_tab_content(tab_titles, user_role):
 
                         if user_role == "Bệnh nhân":
                             st.markdown("### 📤 TẢI LÊN VIDEO TẬP LUYỆN")
-                            st.info(f"📁 Hỗ trợ upload file tối đa {MAX_FILE_SIZE_MB}MB (MP4, MOV, AVI, MKV)")
+                            st.info(f"📁 Hỗ trợ upload file tối đa {MAX_UPLOAD_SIZE_MB}MB (MP4, MOV, AVI, MKV)")
                             file_upload = st.file_uploader(
                                 "Tải lên video của bạn để gửi cho Bác sĩ/NCV", 
                                 type=["mp4", "mov", "avi", "mkv", "MP4", "MOV"],
-                                help=f"Dung lượng tối đa {MAX_FILE_SIZE_MB}MB",
+                                help=f"Dung lượng tối đa {MAX_UPLOAD_SIZE_MB}MB",
                                 key=f"video_uploader_v{st.session_state.uploader_id}"
                             )
                         else:
@@ -17299,7 +17263,7 @@ def _render_main_tab_content(tab_titles, user_role):
             
                     # XỬ LÝ VIDEO
                     if file_upload is not None and not st.session_state.processing:
-                        is_valid_upload, upload_error = validate_uploaded_video(file_upload)
+                        is_valid_upload, upload_error = validate_upload_metadata(file_upload)
                         if not is_valid_upload:
                             st.error(f"🚨 {upload_error}")
                             return
