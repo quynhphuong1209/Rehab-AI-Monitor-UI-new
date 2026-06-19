@@ -1037,7 +1037,7 @@ _AUTH_NAV_CSS = """
   box-shadow:none!important;
 }
 .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewContainer"]>.main .block-container{
-  padding-top:calc(var(--rehab-content-top,72px) + 4px)!important;
+  padding-top:calc(var(--rehab-topbar-h,72px) + 10px)!important;
   max-width:none!important;
   width:calc(100vw - 24px)!important;
   margin-left:12px!important;
@@ -1053,7 +1053,8 @@ _AUTH_NAV_CSS = """
 }
 html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewContainer"]>.main .block-container,
 html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stMainBlockContainer"],
-html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewBlockContainer"]{
+html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewBlockContainer"],
+html[data-rehab-shell][data-rehab-drawer-open="true"][data-rehab-role-ui] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewContainer"]>.main .block-container{
   max-width:none!important;
   width:calc(100vw - var(--rehab-drawer-w,336px) - 24px)!important;
   margin-left:calc(var(--rehab-drawer-w,336px) + 12px)!important;
@@ -1068,6 +1069,23 @@ html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shel
   font-family:var(--display,'Fraunces',Georgia,serif)!important;
   color:var(--ink)!important;
   letter-spacing:0!important;
+}
+.stApp:not(:has(.auth-shell-anchor)) .stButton>button[kind="primary"],
+.stApp:not(:has(.auth-shell-anchor)) button[data-testid="stBaseButton-primary"],
+.stApp:not(:has(.auth-shell-anchor)) .stFormSubmitButton>button[kind="primaryFormSubmit"],
+.stApp:not(:has(.auth-shell-anchor)) button[data-testid="stBaseButton-primaryFormSubmit"]{
+  background:var(--surface)!important;
+  border-color:var(--line)!important;
+  color:var(--ink)!important;
+  -webkit-text-fill-color:var(--ink)!important;
+  box-shadow:var(--shadow-sm)!important;
+}
+.stApp:not(:has(.auth-shell-anchor)) .stButton>button[kind="primary"] *,
+.stApp:not(:has(.auth-shell-anchor)) button[data-testid="stBaseButton-primary"] *,
+.stApp:not(:has(.auth-shell-anchor)) .stFormSubmitButton>button[kind="primaryFormSubmit"] *,
+.stApp:not(:has(.auth-shell-anchor)) button[data-testid="stBaseButton-primaryFormSubmit"] *{
+  color:var(--ink)!important;
+  -webkit-text-fill-color:var(--ink)!important;
 }
 .stApp:not(:has(.auth-shell-anchor)) [data-testid="stVerticalBlockBorderWrapper"]{
   background:var(--surface)!important;
@@ -1817,6 +1835,7 @@ html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shel
   font-weight:700;
 }
 .ncv-row-action{
+  appearance:none;
   min-height:30px;
   display:inline-flex;
   align-items:center;
@@ -1824,11 +1843,12 @@ html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shel
   padding:0 12px;
   border:1px solid var(--line);
   border-radius:999px;
-  color:var(--teal-strong);
+  color:var(--ink);
   background:var(--teal-12);
   font-size:12px;
   font-weight:800;
   white-space:nowrap;
+  cursor:pointer;
 }
 .ncv-table-empty{padding:18px;color:var(--ink-3);text-align:center}
 .st-key-inline_active_tab_widget{
@@ -2848,10 +2868,11 @@ _NCV_DASHBOARD_CSS = """
 .stApp:has(.ncv-workspace-anchor) [data-testid="stAppViewContainer"]>.main .block-container,
 .stApp:has(.ncv-workspace-anchor) [data-testid="stMainBlockContainer"],
 .stApp:has(.ncv-workspace-anchor) [data-testid="stAppViewBlockContainer"]{
-  max-width:1040px!important;
-  margin-left:auto!important;
-  margin-right:auto!important;
-  padding:82px 0 42px!important;
+  max-width:none!important;
+  width:calc(100vw - 24px)!important;
+  margin-left:12px!important;
+  margin-right:12px!important;
+  padding:calc(var(--rehab-topbar-h,72px) + 10px) 0 42px!important;
 }
 .stApp:has(.ncv-workspace-anchor) [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"],
 .stApp:has(.ncv-workspace-anchor) [data-testid="stMainBlockContainer"] .stVerticalBlock:first-child{
@@ -3030,8 +3051,9 @@ _NCV_DASHBOARD_CSS = """
   overflow:hidden!important;
 }
 .ncv-page{
-  width:min(100%,1040px);
-  margin:28px auto 0;
+  width:100%;
+  max-width:none;
+  margin:10px 0 0;
   color:var(--ink);
   font-family:var(--ui);
 }
@@ -3541,15 +3563,15 @@ _NCV_DASHBOARD_CSS = """
 }
 .stApp:has(.ncv-workspace-anchor) .stButton>button[kind="primary"],
 .stApp:has(.ncv-workspace-anchor) button[data-testid="stBaseButton-primary"]{
-  background:linear-gradient(145deg,var(--teal),var(--teal-strong))!important;
-  border-color:transparent!important;
-  color:#fff!important;
-  box-shadow:0 6px 16px var(--teal-50)!important;
+  background:var(--surface)!important;
+  border-color:var(--line)!important;
+  color:var(--ink)!important;
+  box-shadow:var(--shadow-sm)!important;
 }
 .stApp:has(.ncv-workspace-anchor) .stButton>button[kind="primary"] *,
 .stApp:has(.ncv-workspace-anchor) button[data-testid="stBaseButton-primary"] *{
-  color:#fff!important;
-  -webkit-text-fill-color:#fff!important;
+  color:var(--ink)!important;
+  -webkit-text-fill-color:var(--ink)!important;
 }
 .stApp:has(.ncv-workspace-anchor) div[data-testid="stMarkdownContainer"],
 .stApp:has(.ncv-workspace-anchor) p,

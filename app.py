@@ -1302,6 +1302,37 @@ def _ncv_short_text(value, limit=72):
     return text[: max(0, limit - 3)].rstrip() + "..."
 
 
+def _ncv_action_key(*parts):
+    return "|".join(str(part or "").strip() for part in parts)
+
+
+def _patient_result_action_key(row):
+    return _ncv_action_key(
+        row.get("username"),
+        row.get("full_name") or row.get("name"),
+        row.get("patient_id"),
+    )
+
+
+def _video_result_action_key(video):
+    return _ncv_action_key(*_normalize_video_key(
+        video.get("username") or video.get("patient_username"),
+        video.get("video_name"),
+        video.get("exercise"),
+    ))
+
+
+def _peek_table_action(action_type):
+    action = st.session_state.get("_rehab_pending_table_action")
+    if isinstance(action, dict) and action.get("action") == action_type:
+        return action
+    return None
+
+
+def _consume_table_action():
+    st.session_state.pop("_rehab_pending_table_action", None)
+
+
 def _ncv_patient_table(
     rows,
     title="Bệnh nhân",
@@ -1309,6 +1340,7 @@ def _ncv_patient_table(
     icon_id="i-users",
     headers=None,
     action_label="→",
+    action_type="row_action",
     show_action=True,
 ):
     headers = headers or [
@@ -1327,8 +1359,17 @@ def _ncv_patient_table(
         vas = row.get("vas", "N/A")
         rom = row.get("rom") or row.get("analysis") or row.get("last_analysis") or "Chưa có"
         status = row.get("status") or "Chờ đánh giá"
+        action_key = row.get("action_key") or _ncv_action_key(name, sub, diagnosis, rom)
+        action_title = row.get("action_title") or name
+        row_action_type = row.get("action_type") or action_type
         action_cell = (
-            f'<td><span class="ncv-row-action">{_esc_html(action_label)}</span></td>'
+            '<td>'
+            f'<button type="button" class="ncv-row-action" '
+            f'data-rehab-table-action="{_esc_html(row_action_type)}" '
+            f'data-rehab-row-key="{_esc_html(action_key)}" '
+            f'data-rehab-row-title="{_esc_html(action_title)}">'
+            f'{_esc_html(action_label)}</button>'
+            '</td>'
             if show_action and action_label
             else ""
         )
@@ -1386,6 +1427,9 @@ def _ncv_symptom_table(symptoms):
                 "diagnosis": detail,
                 "vas": s.get("vas", "N/A"),
                 "rom": _format_vn_time(s.get("time"), default="N/A"),
+                "action_key": _symptom_panel_key(s),
+                "action_title": name,
+                "action_type": "symptom_detail",
                 "status": "Chờ đánh giá",
             }
         )
@@ -1414,6 +1458,9 @@ def _ncv_summary_table(patient_summary):
                 "sub": f"{row.get('video_count', 0)} video",
                 "diagnosis": row.get("source") or "Dataset nghiên cứu",
                 "vas": row.get("vas", "N/A"),
+                "action_key": _patient_result_action_key(row),
+                "action_title": row.get("full_name") or row.get("username") or "Benh nhan",
+                "action_type": "patient_result",
                 "rom": row.get("last_analysis") or "Chưa phân tích",
                 "status": row.get("status") or "Đã đồng bộ",
             }
@@ -1462,6 +1509,9 @@ def _ncv_video_rows_table(
                 "sub": v.get("video_name") or v.get("username") or "",
                 "diagnosis": v.get("exercise") or "Bài tập",
                 "vas": v.get("vas") or symptom_meta.get("vas") or "N/A",
+                "action_key": _video_result_action_key(v),
+                "action_title": v.get("video_name") or v.get("full_name") or v.get("username") or "Video",
+                "action_type": "video_result",
                 "rom": _lay_thoi_gian_phan_tich_on_dinh(v, ai_eval) or "Chưa phân tích",
                 "status": _lay_trang_thai_video_danh_sach(v, ai_eval, doc_eval, user_role),
             }
@@ -1478,7 +1528,260 @@ def _ncv_video_rows_table(
             "Thời gian phân tích",
             "Trạng thái",
         ],
-        show_action=False,
+        action_label="Xem káº¿t quáº£",
+        show_action=True,
+    )
+
+
+# Re-declare the three dashboard table adapters with clean action metadata.
+# The original definitions above are kept for diff safety, but these names are
+# the ones used at runtime.
+def _ncv_symptom_table_legacy_unused(symptoms):
+    rows = []
+    for s in symptoms or []:
+        name = s.get("full_name") or s.get("username") or "Bệnh nhân"
+        exercises = ", ".join(s.get("exercises") or [])
+        symptom_line = _ncv_short_text(s.get("symptoms") or s.get("description") or "", 86)
+        detail = exercises or "Bài tập phục hồi chức năng"
+        if symptom_line:
+            detail = f"{detail} · {symptom_line}"
+        rows.append(
+            {
+                "name": name,
+                "sub": s.get("patient_id") or "Theo khai báo VAS",
+                "diagnosis": detail,
+                "vas": s.get("vas", "N/A"),
+                "rom": _format_vn_time(s.get("time"), default="N/A"),
+                "status": "Chờ đánh giá",
+                "action_key": _symptom_panel_key(s),
+                "action_title": name,
+                "action_type": "symptom_detail",
+            }
+        )
+    return _ncv_patient_table(
+        rows,
+        title="Danh sách triệu chứng BN mới nhất",
+        subtitle="Sắp xếp: mới nhất",
+        headers=[
+            "Bệnh nhân",
+            "Bài tập / triệu chứng",
+            "VAS",
+            "Thời gian khai báo",
+            "Trạng thái",
+            "Thao tác",
+        ],
+        action_label="Chi tiết khai báo",
+    )
+
+
+def _ncv_summary_table_legacy_unused(patient_summary):
+    rows = []
+    for row in patient_summary or []:
+        name = row.get("full_name") or row.get("username") or "Bệnh nhân"
+        rows.append(
+            {
+                "name": name,
+                "sub": f"{row.get('video_count', 0)} video",
+                "diagnosis": row.get("source") or "Dataset nghiên cứu",
+                "vas": row.get("vas", "N/A"),
+                "rom": row.get("last_analysis") or "Chưa phân tích",
+                "status": row.get("status") or "Đã đồng bộ",
+                "action_key": _patient_result_action_key(row),
+                "action_title": name,
+                "action_type": "patient_result",
+            }
+        )
+    return _ncv_patient_table(
+        rows,
+        title="Danh sách bệnh nhân",
+        subtitle="Phân tích gần nhất",
+        headers=[
+            "Bệnh nhân",
+            "Nguồn dữ liệu",
+            "VAS",
+            "Phân tích gần nhất",
+            "Trạng thái",
+            "Thao tác",
+        ],
+        action_label="Xem kết quả",
+    )
+
+
+def _ncv_video_rows_table_legacy_unused(
+    page_videos,
+    ai_eval_lookup,
+    ai_eval_by_exercise,
+    doc_eval_lookup,
+    doc_eval_by_exercise,
+    user_role,
+    symptom_lookup=None,
+):
+    rows = []
+    for idx, v in page_videos or []:
+        ev_key = _normalize_video_key(v.get("username"), v.get("video_name"), v.get("exercise"))
+        ai_eval = ai_eval_lookup.get(ev_key) or ai_eval_by_exercise.get((v.get("username"), v.get("exercise")))
+        doc_eval = doc_eval_lookup.get(ev_key) or doc_eval_by_exercise.get((v.get("username"), v.get("exercise")))
+        symptom_meta = {}
+        if symptom_lookup:
+            symptom_meta = (
+                symptom_lookup.get((v.get("username"), v.get("exercise")))
+                or symptom_lookup.get(v.get("username"))
+                or symptom_lookup.get(v.get("full_name"))
+                or {}
+            )
+        name = v.get("full_name") or v.get("username") or "Bệnh nhân"
+        rows.append(
+            {
+                "name": name,
+                "sub": v.get("video_name") or v.get("username") or "",
+                "diagnosis": v.get("exercise") or "Bài tập",
+                "vas": v.get("vas") or symptom_meta.get("vas") or "N/A",
+                "rom": _lay_thoi_gian_phan_tich_on_dinh(v, ai_eval) or "Chưa phân tích",
+                "status": _lay_trang_thai_video_danh_sach(v, ai_eval, doc_eval, user_role),
+                "action_key": _video_result_action_key(v),
+                "action_title": v.get("video_name") or name,
+                "action_type": "video_result",
+            }
+        )
+    return _ncv_patient_table(
+        rows,
+        title="Danh sách video bệnh nhân đã quay",
+        subtitle="Cập nhật theo dữ liệu mới nhất",
+        icon_id="i-video",
+        headers=[
+            "Bệnh nhân / file",
+            "Bài tập",
+            "VAS",
+            "Thời gian phân tích",
+            "Trạng thái",
+            "Thao tác",
+        ],
+        action_label="Xem kết quả",
+    )
+
+
+# Final active table adapters. These override older transitional helpers above.
+def _ncv_symptom_table(symptoms):
+    rows = []
+    for s in symptoms or []:
+        name = s.get("full_name") or s.get("username") or "B\u1ec7nh nh\u00e2n"
+        exercises = ", ".join(s.get("exercises") or [])
+        symptom_line = _ncv_short_text(s.get("symptoms") or s.get("description") or "", 86)
+        detail = exercises or "B\u00e0i t\u1eadp ph\u1ee5c h\u1ed3i ch\u1ee9c n\u0103ng"
+        if symptom_line:
+            detail = f"{detail} - {symptom_line}"
+        rows.append(
+            {
+                "name": name,
+                "sub": s.get("patient_id") or "Theo khai b\u00e1o VAS",
+                "diagnosis": detail,
+                "vas": s.get("vas", "N/A"),
+                "rom": _format_vn_time(s.get("time"), default="N/A"),
+                "status": "Ch\u1edd \u0111\u00e1nh gi\u00e1",
+                "action_key": _symptom_panel_key(s),
+                "action_title": name,
+                "action_type": "symptom_detail",
+            }
+        )
+    return _ncv_patient_table(
+        rows,
+        title="Danh s\u00e1ch tri\u1ec7u ch\u1ee9ng BN m\u1edbi nh\u1ea5t",
+        subtitle="S\u1eafp x\u1ebfp: m\u1edbi nh\u1ea5t",
+        headers=[
+            "B\u1ec7nh nh\u00e2n",
+            "B\u00e0i t\u1eadp / tri\u1ec7u ch\u1ee9ng",
+            "VAS",
+            "Th\u1eddi gian khai b\u00e1o",
+            "Tr\u1ea1ng th\u00e1i",
+            "Thao t\u00e1c",
+        ],
+        action_label="Chi ti\u1ebft khai b\u00e1o",
+    )
+
+
+def _ncv_summary_table(patient_summary):
+    rows = []
+    for row in patient_summary or []:
+        name = row.get("full_name") or row.get("username") or "B\u1ec7nh nh\u00e2n"
+        rows.append(
+            {
+                "name": name,
+                "sub": f"{row.get('video_count', 0)} video",
+                "diagnosis": row.get("source") or "Dataset nghi\u00ean c\u1ee9u",
+                "vas": row.get("vas", "N/A"),
+                "rom": row.get("last_analysis") or "Ch\u01b0a ph\u00e2n t\u00edch",
+                "status": row.get("status") or "\u0110\u00e3 \u0111\u1ed3ng b\u1ed9",
+                "action_key": _patient_result_action_key(row),
+                "action_title": name,
+                "action_type": "patient_result",
+            }
+        )
+    return _ncv_patient_table(
+        rows,
+        title="Danh s\u00e1ch b\u1ec7nh nh\u00e2n",
+        subtitle="Ph\u00e2n t\u00edch g\u1ea7n nh\u1ea5t",
+        headers=[
+            "B\u1ec7nh nh\u00e2n",
+            "Ngu\u1ed3n d\u1eef li\u1ec7u",
+            "VAS",
+            "Ph\u00e2n t\u00edch g\u1ea7n nh\u1ea5t",
+            "Tr\u1ea1ng th\u00e1i",
+            "Thao t\u00e1c",
+        ],
+        action_label="Xem k\u1ebft qu\u1ea3",
+    )
+
+
+def _ncv_video_rows_table(
+    page_videos,
+    ai_eval_lookup,
+    ai_eval_by_exercise,
+    doc_eval_lookup,
+    doc_eval_by_exercise,
+    user_role,
+    symptom_lookup=None,
+):
+    rows = []
+    for idx, v in page_videos or []:
+        ev_key = _normalize_video_key(v.get("username"), v.get("video_name"), v.get("exercise"))
+        ai_eval = ai_eval_lookup.get(ev_key) or ai_eval_by_exercise.get((v.get("username"), v.get("exercise")))
+        doc_eval = doc_eval_lookup.get(ev_key) or doc_eval_by_exercise.get((v.get("username"), v.get("exercise")))
+        symptom_meta = {}
+        if symptom_lookup:
+            symptom_meta = (
+                symptom_lookup.get((v.get("username"), v.get("exercise")))
+                or symptom_lookup.get(v.get("username"))
+                or symptom_lookup.get(v.get("full_name"))
+                or {}
+            )
+        name = v.get("full_name") or v.get("username") or "B\u1ec7nh nh\u00e2n"
+        rows.append(
+            {
+                "name": name,
+                "sub": v.get("video_name") or v.get("username") or "",
+                "diagnosis": v.get("exercise") or "B\u00e0i t\u1eadp",
+                "vas": v.get("vas") or symptom_meta.get("vas") or "N/A",
+                "rom": _lay_thoi_gian_phan_tich_on_dinh(v, ai_eval) or "Ch\u01b0a ph\u00e2n t\u00edch",
+                "status": _lay_trang_thai_video_danh_sach(v, ai_eval, doc_eval, user_role),
+                "action_key": _video_result_action_key(v),
+                "action_title": v.get("video_name") or name,
+                "action_type": "video_result",
+            }
+        )
+    return _ncv_patient_table(
+        rows,
+        title="Danh s\u00e1ch video b\u1ec7nh nh\u00e2n \u0111\u00e3 quay",
+        subtitle="C\u1eadp nh\u1eadt theo d\u1eef li\u1ec7u m\u1edbi nh\u1ea5t",
+        icon_id="i-video",
+        headers=[
+            "B\u1ec7nh nh\u00e2n / file",
+            "B\u00e0i t\u1eadp",
+            "VAS",
+            "Th\u1eddi gian ph\u00e2n t\u00edch",
+            "Tr\u1ea1ng th\u00e1i",
+            "Thao t\u00e1c",
+        ],
+        action_label="Xem k\u1ebft qu\u1ea3",
     )
 
 
@@ -4627,6 +4930,23 @@ def _mo_ket_qua_benh_nhan(row, video_list, evals, user_role):
         st.session_state.trigger_tab_switch = "📊 KẾT QUẢ ĐÁNH GIÁ"
     elif user_role == "Bác sĩ / KTV PHCN":
         st.session_state.trigger_tab_switch = "📊 QUẢN LÝ ĐÁNH GIÁ & NCKH"
+    _lam_moi_giao_dien_sau_nut()
+
+
+def _mo_ket_qua_video(selected_v, user_role):
+    if not selected_v:
+        st.warning("Chưa tìm thấy video/kết quả phù hợp.")
+        return
+    selected_v = _lam_moi_ban_ghi_video_tu_db(selected_v)
+    st.session_state.current_eval_video = selected_v
+    st.session_state.view_old_analysis = bool(selected_v.get("metrics"))
+    st.session_state.reanalyze_triggered = False
+    if selected_v.get("metrics"):
+        nap_phien_benh_nhan_vao_session(selected_v)
+    if user_role == "NghiÃªn cá»©u viÃªn":
+        st.session_state.trigger_tab_switch = "ðŸ“Š Káº¾T QUáº¢ ÄÃNH GIÃ"
+    elif user_role == "BÃ¡c sÄ© / KTV PHCN":
+        st.session_state.trigger_tab_switch = "ðŸ“Š QUáº¢N LÃ ÄÃNH GIÃ & NCKH"
     _lam_moi_giao_dien_sau_nut()
 
 
@@ -19649,12 +19969,22 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                     row["vas"] = s_meta.get("vas", row.get("vas", "N/A"))
             if user_role in ["Nghiên cứu viên", "Bác sĩ / KTV PHCN"]:
                 st.markdown(_ncv_summary_table(patient_summary), unsafe_allow_html=True)
-                btn_cols = st.columns(min(4, len(patient_summary)))
-                for i, row in enumerate(patient_summary[:4]):
+                pending_patient_action = _peek_table_action("patient_result")
+                if pending_patient_action:
+                    target_key = pending_patient_action.get("key")
+                    for row in patient_summary:
+                        if _patient_result_action_key(row) == target_key:
+                            _consume_table_action()
+                            _mo_ket_qua_benh_nhan(row, video_list, evals_db, user_role)
+                            break
+                    else:
+                        _consume_table_action()
+                # Row actions are handled by the real buttons rendered inside the HTML table.
+                for i, row in enumerate([]):
                     with btn_cols[i % len(btn_cols)]:
                         if st.button(
                             "Xem kết quả",
-                            key=f"btn_patient_result_{user_role}_{i}_{hashlib.md5(str(row).encode()).hexdigest()[:8]}",
+                            key=f"disabled_patient_result_{user_role}_{i}",
                             use_container_width=True,
                         ):
                             _mo_ket_qua_benh_nhan(row, video_list, evals_db, user_role)
@@ -19865,6 +20195,16 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                     ),
                     unsafe_allow_html=True,
                 )
+                pending_video_action = _peek_table_action("video_result")
+                if pending_video_action:
+                    target_key = pending_video_action.get("key")
+                    for _idx_action, _video_action in page_videos:
+                        if _video_result_action_key(_video_action) == target_key:
+                            _consume_table_action()
+                            _mo_ket_qua_video(_video_action, user_role)
+                            break
+                    else:
+                        _consume_table_action()
                 if page_videos:
                     _detail_options = {
                         f"{v.get('full_name', v.get('username', 'Bệnh nhân'))} — {v.get('exercise', 'Bài tập')} · {_lay_thoi_gian_upload_video(v)}": (idx, v)
@@ -20282,12 +20622,16 @@ def _render_main_tab_content(tab_titles, user_role):
                             display_list = _group_latest_symptoms(symptoms_data, limit=4)
                             if user_role in ["Nghiên cứu viên", "Bác sĩ / KTV PHCN"]:
                                 st.markdown(_ncv_symptom_table(display_list), unsafe_allow_html=True)
-                                detail_cols = st.columns(min(4, len(display_list)))
-                                for i, s in enumerate(display_list):
+                                pending_symptom_action = _peek_table_action("symptom_detail")
+                                if pending_symptom_action:
+                                    st.session_state.selected_symptom_detail_key = pending_symptom_action.get("key")
+                                    _consume_table_action()
+                                # Row actions are handled by the real buttons rendered inside the HTML table.
+                                for i, s in enumerate([]):
                                     with detail_cols[i % len(detail_cols)]:
                                         if st.button(
                                             "Chi tiết khai báo",
-                                            key=f"btn_symptom_detail_{user_role}_{i}_{hashlib.md5(_symptom_panel_key(s).encode()).hexdigest()[:8]}",
+                                            key=f"disabled_symptom_detail_{user_role}_{i}",
                                             use_container_width=True,
                                         ):
                                             st.session_state.selected_symptom_detail_key = _symptom_panel_key(s)
@@ -20296,9 +20640,10 @@ def _render_main_tab_content(tab_titles, user_role):
                                         s for s in display_list
                                         if _symptom_panel_key(s) == st.session_state.get("selected_symptom_detail_key")
                                     ),
-                                    display_list[0] if display_list else None,
+                                    None,
                                 )
-                                _render_symptom_detail_panel(selected_symptom)
+                                if selected_symptom:
+                                    _render_symptom_detail_panel(selected_symptom)
                             else:
                                 symp_cols = st.columns(3)
                                 for i, s in enumerate(display_list):

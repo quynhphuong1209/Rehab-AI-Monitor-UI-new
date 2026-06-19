@@ -2,6 +2,10 @@
   const css = `
   html[data-rehab-role-ui="doctor_ktv"] [data-testid="stAppViewContainer"] > .main .block-container {
     max-width: none !important;
+    width: calc(100vw - 24px) !important;
+    margin-left: 12px !important;
+    margin-right: 12px !important;
+    padding-top: calc(var(--rehab-topbar-h, 72px) + 10px) !important;
   }
   html[data-rehab-role-ui="doctor_ktv"] .rehab-role-eyebrow {
     color:var(--rehab-blue-strong); border-color:rgba(31,111,224,.24); background:rgba(31,111,224,.10);

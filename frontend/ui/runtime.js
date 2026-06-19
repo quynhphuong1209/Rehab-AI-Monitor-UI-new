@@ -116,7 +116,7 @@
   html[data-rehab-shell] .block-container,
   html[data-rehab-shell] [data-testid="stMainBlockContainer"],
   html[data-rehab-shell] [data-testid="stAppViewContainer"] > .main .block-container {
-    padding-top: calc(var(--rehab-content-top) + 4px) !important;
+    padding-top: calc(var(--rehab-topbar-h) + 10px) !important;
     max-width: none !important;
     width: calc(100vw - 24px) !important;
     margin-left: 12px !important;
@@ -135,7 +135,8 @@
   }
   html[data-rehab-shell][data-rehab-drawer-open="true"] .block-container,
   html[data-rehab-shell][data-rehab-drawer-open="true"] [data-testid="stMainBlockContainer"],
-  html[data-rehab-shell][data-rehab-drawer-open="true"] [data-testid="stAppViewContainer"] > .main .block-container {
+  html[data-rehab-shell][data-rehab-drawer-open="true"] [data-testid="stAppViewContainer"] > .main .block-container,
+  html[data-rehab-shell][data-rehab-drawer-open="true"][data-rehab-role-ui] [data-testid="stAppViewContainer"] > .main .block-container {
     max-width: none !important;
     width: calc(100vw - var(--rehab-drawer-w) - 24px) !important;
     margin-left: calc(var(--rehab-drawer-w) + 12px) !important;
@@ -562,6 +563,23 @@
     transform:translateY(-1px);
     box-shadow:var(--rehab-shadow-sm) !important;
   }
+  html[data-rehab-shell]:not([data-rehab-mode="auth"]) .stButton > button[kind="primary"],
+  html[data-rehab-shell]:not([data-rehab-mode="auth"]) button[data-testid="stBaseButton-primary"],
+  html[data-rehab-shell]:not([data-rehab-mode="auth"]) .stFormSubmitButton > button[kind="primaryFormSubmit"],
+  html[data-rehab-shell]:not([data-rehab-mode="auth"]) button[data-testid="stBaseButton-primaryFormSubmit"] {
+    background:var(--rehab-card) !important;
+    border-color:var(--rehab-line) !important;
+    color:var(--rehab-primary) !important;
+    -webkit-text-fill-color:var(--rehab-primary) !important;
+    box-shadow:var(--rehab-shadow-sm) !important;
+  }
+  html[data-rehab-shell]:not([data-rehab-mode="auth"]) .stButton > button[kind="primary"] *,
+  html[data-rehab-shell]:not([data-rehab-mode="auth"]) button[data-testid="stBaseButton-primary"] *,
+  html[data-rehab-shell]:not([data-rehab-mode="auth"]) .stFormSubmitButton > button[kind="primaryFormSubmit"] *,
+  html[data-rehab-shell]:not([data-rehab-mode="auth"]) button[data-testid="stBaseButton-primaryFormSubmit"] * {
+    color:var(--rehab-primary) !important;
+    -webkit-text-fill-color:var(--rehab-primary) !important;
+  }
   html[data-rehab-shell] input,
   html[data-rehab-shell] textarea,
   html[data-rehab-shell] [contenteditable="true"] {
@@ -706,9 +724,11 @@
   }
   html[data-rehab-shell] .ncv-row-action {
     min-height:30px; display:inline-flex; align-items:center; justify-content:center; padding:0 12px;
-    border-radius:999px; border:1px solid var(--rehab-line); color:var(--rehab-blue-strong);
+    border-radius:999px; border:1px solid var(--rehab-line); color:#0F172A;
     background:rgba(37,110,217,.11); font:800 12px var(--rehab-ui); white-space:nowrap;
+    cursor:pointer;
   }
+  html[data-rehab-theme="dark"] .ncv-row-action { color:var(--rehab-blue-strong); }
   html[data-rehab-shell] .ncv-filter-card,
   html[data-rehab-shell] .ncv-batch-card { padding:16px; margin:10px 0 18px; }
   html[data-rehab-shell] .ncv-filter-note {
@@ -899,6 +919,25 @@
     post(MSG_VALUE, { value: payload, dataType: "json" });
   }
 
+  function bindTableActions() {
+    const doc = parentDoc();
+    if (doc.documentElement.dataset.rehabTableActionsBound === "1") return;
+    doc.documentElement.dataset.rehabTableActionsBound = "1";
+    doc.addEventListener("click", (event) => {
+      const btn = event.target && event.target.closest
+        ? event.target.closest("[data-rehab-table-action]")
+        : null;
+      if (!btn) return;
+      event.preventDefault();
+      sendEvent({
+        type: "table_action",
+        action: btn.getAttribute("data-rehab-table-action") || "",
+        key: btn.getAttribute("data-rehab-row-key") || "",
+        title: btn.getAttribute("data-rehab-row-title") || ""
+      });
+    });
+  }
+
   function esc(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -923,6 +962,7 @@
     const doc = parentDoc();
     const root = doc.documentElement;
     root.dataset.rehabShell = "1";
+    bindTableActions();
 
     if (!doc.getElementById("rehab-ui-style")) {
       const style = doc.createElement("style");

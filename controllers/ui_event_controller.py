@@ -40,6 +40,18 @@ def consume_rehab_ui_event(ctx, event, tab_titles=None) -> None:
             ctx.rerun_toan_bo_app()
         return
 
+    if event_type == "table_action":
+        action = str(event.get("action") or "")
+        row_key = str(event.get("key") or "")
+        if action and row_key:
+            st.session_state["_rehab_pending_table_action"] = {
+                "action": action,
+                "key": row_key,
+                "title": event.get("title") or "",
+            }
+            ctx.rerun_toan_bo_app()
+        return
+
     if event_type == "side_control":
         key = str(event.get("key") or "")
         value = event.get("value")
