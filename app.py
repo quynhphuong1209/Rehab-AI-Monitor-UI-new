@@ -151,13 +151,7 @@ from video.validation import (
     validate_upload_metadata,
 )
 
-close_auth_shell = auth_screens.close_auth_shell
-open_auth_shell = auth_screens.open_auth_shell
-render_auth_card_title = auth_screens.render_auth_card_title
-render_auth_hero = auth_screens.render_auth_hero
 render_auth_screen = auth_screens.render_auth_screen
-render_auth_theme_button = auth_screens.render_auth_theme_button
-render_auth_topbar = auth_screens.render_auth_topbar
 
 
 def _render_app_topbar_actions_fallback(*, is_light, on_logout):
@@ -182,25 +176,19 @@ from frontend.roles import researcher as researcher_frontend
 
 try:
     from demo_ui import (
-        auth_pose_html,
-        auth_screen_html,
         inject_auth_nav_css,
         inject_design_system,
         inject_ncv_dashboard_css,
         inject_streamlit_skin,
         side_info_html,
-        sidebar_nav_html,
         topbar_html,
     )
 except Exception:
-    auth_pose_html = None
-    auth_screen_html = None
     inject_auth_nav_css = None
     inject_design_system = None
     inject_ncv_dashboard_css = None
     inject_streamlit_skin = None
     side_info_html = None
-    sidebar_nav_html = None
     topbar_html = None
 
 # Gọi sớm nhất có thể — trình duyệt nhận layout ngay, giảm màn hình trống trên HF Space
@@ -1438,256 +1426,6 @@ def _ncv_patient_table(
 def _ncv_symptom_table(symptoms):
     rows = []
     for s in symptoms or []:
-        name = s.get("full_name") or "Bệnh nhân"
-        exercises = ", ".join(s.get("exercises") or [])
-        symptom_line = _ncv_short_text(s.get("symptoms") or s.get("description") or "", 86)
-        detail = exercises or "Bài tập phục hồi chức năng"
-        if symptom_line:
-            detail = f"{detail} · {symptom_line}"
-        rows.append(
-            {
-                "name": name,
-                "sub": s.get("patient_id") or "Theo khai báo VAS",
-                "diagnosis": detail,
-                "vas": s.get("vas", "N/A"),
-                "rom": _format_vn_time(s.get("time"), default="N/A"),
-                "action_key": _symptom_panel_key(s),
-                "action_title": name,
-                "action_type": "symptom_detail",
-                "status": "Chờ đánh giá",
-            }
-        )
-    return _ncv_patient_table(
-        rows,
-        title="Danh sách triệu chứng BN mới nhất",
-        subtitle="Sắp xếp: mới nhất",
-        headers=[
-            "Bệnh nhân",
-            "Bài tập / triệu chứng",
-            "VAS",
-            "Thời gian khai báo",
-            "Trạng thái",
-            "Thao tác",
-        ],
-        action_label="Chi tiết khai báo",
-    )
-
-
-def _ncv_summary_table(patient_summary):
-    rows = []
-    for row in patient_summary or []:
-        rows.append(
-            {
-                "name": row.get("full_name") or row.get("username") or "Bệnh nhân",
-                "sub": f"{row.get('video_count', 0)} video",
-                "diagnosis": row.get("source") or "Dataset nghiên cứu",
-                "vas": row.get("vas", "N/A"),
-                "action_key": _patient_result_action_key(row),
-                "action_title": row.get("full_name") or row.get("username") or "Benh nhan",
-                "action_type": "patient_result",
-                "rom": row.get("last_analysis") or "Chưa phân tích",
-                "status": row.get("status") or "Đã đồng bộ",
-            }
-        )
-    return _ncv_patient_table(
-        rows,
-        title="Danh sách bệnh nhân",
-        subtitle="Phân tích gần nhất",
-        headers=[
-            "Bệnh nhân",
-            "Nguồn dữ liệu",
-            "VAS",
-            "Phân tích gần nhất",
-            "Trạng thái",
-            "Thao tác",
-        ],
-        action_label="Xem kết quả",
-    )
-
-
-def _ncv_video_rows_table(
-    page_videos,
-    ai_eval_lookup,
-    ai_eval_by_exercise,
-    doc_eval_lookup,
-    doc_eval_by_exercise,
-    user_role,
-    symptom_lookup=None,
-):
-    rows = []
-    for idx, v in page_videos or []:
-        ev_key = _normalize_video_key(v.get('username'), v.get('video_name'), v.get('exercise'))
-        ai_eval = ai_eval_lookup.get(ev_key) or ai_eval_by_exercise.get((v.get("username"), v.get("exercise")))
-        doc_eval = doc_eval_lookup.get(ev_key) or doc_eval_by_exercise.get((v.get("username"), v.get("exercise")))
-        symptom_meta = {}
-        if symptom_lookup:
-            symptom_meta = (
-                symptom_lookup.get((v.get("username"), v.get("exercise")))
-                or symptom_lookup.get(v.get("username"))
-                or symptom_lookup.get(v.get("full_name"))
-                or {}
-            )
-        rows.append(
-            {
-                "name": v.get("full_name") or v.get("username") or "Bệnh nhân",
-                "sub": v.get("video_name") or v.get("username") or "",
-                "diagnosis": v.get("exercise") or "Bài tập",
-                "vas": v.get("vas") or symptom_meta.get("vas") or "N/A",
-                "action_key": _video_result_action_key(v),
-                "action_title": v.get("video_name") or v.get("full_name") or v.get("username") or "Video",
-                "action_type": "video_result",
-                "rom": _lay_thoi_gian_phan_tich_on_dinh(v, ai_eval) or "Chưa phân tích",
-                "status": _lay_trang_thai_video_danh_sach(v, ai_eval, doc_eval, user_role),
-            }
-        )
-    return _ncv_patient_table(
-        rows,
-        title="Danh sách video bệnh nhân đã quay",
-        subtitle="Cập nhật theo dữ liệu mới nhất",
-        icon_id="i-video",
-        headers=[
-            "Bệnh nhân / file",
-            "Bài tập",
-            "VAS",
-            "Thời gian phân tích",
-            "Trạng thái",
-        ],
-        action_label="Xem káº¿t quáº£",
-        show_action=True,
-    )
-
-
-# Re-declare the three dashboard table adapters with clean action metadata.
-# The original definitions above are kept for diff safety, but these names are
-# the ones used at runtime.
-def _ncv_symptom_table_legacy_unused(symptoms):
-    rows = []
-    for s in symptoms or []:
-        name = s.get("full_name") or s.get("username") or "Bệnh nhân"
-        exercises = ", ".join(s.get("exercises") or [])
-        symptom_line = _ncv_short_text(s.get("symptoms") or s.get("description") or "", 86)
-        detail = exercises or "Bài tập phục hồi chức năng"
-        if symptom_line:
-            detail = f"{detail} · {symptom_line}"
-        rows.append(
-            {
-                "name": name,
-                "sub": s.get("patient_id") or "Theo khai báo VAS",
-                "diagnosis": detail,
-                "vas": s.get("vas", "N/A"),
-                "rom": _format_vn_time(s.get("time"), default="N/A"),
-                "status": "Chờ đánh giá",
-                "action_key": _symptom_panel_key(s),
-                "action_title": name,
-                "action_type": "symptom_detail",
-            }
-        )
-    return _ncv_patient_table(
-        rows,
-        title="Danh sách triệu chứng BN mới nhất",
-        subtitle="Sắp xếp: mới nhất",
-        headers=[
-            "Bệnh nhân",
-            "Bài tập / triệu chứng",
-            "VAS",
-            "Thời gian khai báo",
-            "Trạng thái",
-            "Thao tác",
-        ],
-        action_label="Chi tiết khai báo",
-    )
-
-
-def _ncv_summary_table_legacy_unused(patient_summary):
-    rows = []
-    for row in patient_summary or []:
-        name = row.get("full_name") or row.get("username") or "Bệnh nhân"
-        rows.append(
-            {
-                "name": name,
-                "sub": f"{row.get('video_count', 0)} video",
-                "diagnosis": row.get("source") or "Dataset nghiên cứu",
-                "vas": row.get("vas", "N/A"),
-                "rom": row.get("last_analysis") or "Chưa phân tích",
-                "status": row.get("status") or "Đã đồng bộ",
-                "action_key": _patient_result_action_key(row),
-                "action_title": name,
-                "action_type": "patient_result",
-            }
-        )
-    return _ncv_patient_table(
-        rows,
-        title="Danh sách bệnh nhân",
-        subtitle="Phân tích gần nhất",
-        headers=[
-            "Bệnh nhân",
-            "Nguồn dữ liệu",
-            "VAS",
-            "Phân tích gần nhất",
-            "Trạng thái",
-            "Thao tác",
-        ],
-        action_label="Xem kết quả",
-    )
-
-
-def _ncv_video_rows_table_legacy_unused(
-    page_videos,
-    ai_eval_lookup,
-    ai_eval_by_exercise,
-    doc_eval_lookup,
-    doc_eval_by_exercise,
-    user_role,
-    symptom_lookup=None,
-):
-    rows = []
-    for idx, v in page_videos or []:
-        ev_key = _normalize_video_key(v.get("username"), v.get("video_name"), v.get("exercise"))
-        ai_eval = ai_eval_lookup.get(ev_key) or ai_eval_by_exercise.get((v.get("username"), v.get("exercise")))
-        doc_eval = doc_eval_lookup.get(ev_key) or doc_eval_by_exercise.get((v.get("username"), v.get("exercise")))
-        symptom_meta = {}
-        if symptom_lookup:
-            symptom_meta = (
-                symptom_lookup.get((v.get("username"), v.get("exercise")))
-                or symptom_lookup.get(v.get("username"))
-                or symptom_lookup.get(v.get("full_name"))
-                or {}
-            )
-        name = v.get("full_name") or v.get("username") or "Bệnh nhân"
-        rows.append(
-            {
-                "name": name,
-                "sub": v.get("video_name") or v.get("username") or "",
-                "diagnosis": v.get("exercise") or "Bài tập",
-                "vas": v.get("vas") or symptom_meta.get("vas") or "N/A",
-                "rom": _lay_thoi_gian_phan_tich_on_dinh(v, ai_eval) or "Chưa phân tích",
-                "status": _lay_trang_thai_video_danh_sach(v, ai_eval, doc_eval, user_role),
-                "action_key": _video_result_action_key(v),
-                "action_title": v.get("video_name") or name,
-                "action_type": "video_result",
-            }
-        )
-    return _ncv_patient_table(
-        rows,
-        title="Danh sách video bệnh nhân đã quay",
-        subtitle="Cập nhật theo dữ liệu mới nhất",
-        icon_id="i-video",
-        headers=[
-            "Bệnh nhân / file",
-            "Bài tập",
-            "VAS",
-            "Thời gian phân tích",
-            "Trạng thái",
-            "Thao tác",
-        ],
-        action_label="Xem kết quả",
-    )
-
-
-# Final active table adapters. These override older transitional helpers above.
-def _ncv_symptom_table(symptoms):
-    rows = []
-    for s in symptoms or []:
         name = s.get("full_name") or s.get("username") or "B\u1ec7nh nh\u00e2n"
         exercises = ", ".join(s.get("exercises") or [])
         symptom_line = _ncv_short_text(s.get("symptoms") or s.get("description") or "", 86)
@@ -2410,17 +2148,6 @@ def _get_video_server_url(video_path):
             return None
         token = register_media_token(_video_media_tokens, video_path, roots, ttl_seconds=15 * 60)
         return build_video_media_url(port, token, video_path)
-        abs_video = os.path.abspath(video_path)
-        abs_root  = os.path.abspath(_video_http_server_root)
-        # Windows: kiểm tra cùng drive không (relpath giữa 2 drive khác nhau sẽ fail)
-        if os.name == 'nt':
-            if os.path.splitdrive(abs_video)[0].upper() != os.path.splitdrive(abs_root)[0].upper():
-                return None  # khác ổ đĩa → không thể dùng relative URL
-        rel = os.path.relpath(abs_video, abs_root)
-        if rel.startswith('..'):
-            return None
-        rel_url = rel.replace('\\', '/')
-        return f'http://127.0.0.1:{port}/{rel_url}'
     except Exception:
         return None
 
@@ -8547,22 +8274,6 @@ THUMBNAIL_WIDTH = 320
 
 def validate_uploaded_video(file_upload):
     return validate_upload_metadata(file_upload)
-    if file_upload is None:
-        return False, "Chưa chọn file video."
-    name = getattr(file_upload, "name", "") or ""
-    ext = os.path.splitext(name)[1].lower()
-    if ext not in ALLOWED_VIDEO_EXTENSIONS:
-        return False, "Định dạng video không được hỗ trợ. Chỉ nhận MP4, MOV, AVI, MKV."
-    size = int(getattr(file_upload, "size", 0) or 0)
-    max_bytes = MAX_UPLOAD_SIZE_MB * 1024 * 1024
-    if size <= 0:
-        return False, "File video trống hoặc không đọc được dung lượng."
-    if size > max_bytes:
-        return False, f"File vượt quá {MAX_UPLOAD_SIZE_MB}MB. Vui lòng nén hoặc cắt ngắn video trước khi tải lên."
-    mime = (getattr(file_upload, "type", "") or "").lower()
-    if mime and not mime.startswith(ALLOWED_VIDEO_MIME_PREFIXES):
-        return False, "MIME type của file không phải video."
-    return True, ""
 
 # ============================================
 # HÀM CHUYỂN ĐỔI MOV SANG MP4
@@ -10110,6 +9821,17 @@ def ensure_voice_files(force_voice=False):
         except Exception:
             pass
 
+    missing = [
+        f
+        for f in _VOICE_FILES
+        if not os.path.exists(os.path.join(sounds_dir, f))
+        or os.path.getsize(os.path.join(sounds_dir, f)) == 0
+    ]
+    if missing:
+        print(f"[Audio] Van thieu file am thanh: {missing}")
+
+    return sounds_dir
+
 
 def _list_patient_symptoms(username=None, limit=8):
     return symptom_backend.list_patient_symptoms(
@@ -10131,16 +9853,6 @@ def create_patient_symptom(payload, user_info):
         payload,
         user_info,
     )
-
-    missing = [
-        f for f in _VOICE_FILES
-        if not os.path.exists(os.path.join(sounds_dir, f))
-        or os.path.getsize(os.path.join(sounds_dir, f)) == 0
-    ]
-    if missing:
-        print(f"[Audio] Van thieu file am thanh: {missing}")
-
-    return sounds_dir
 
 
 # ============================================
@@ -19124,228 +18836,6 @@ def update_theme_callback():
 # ============================================
 def hien_thi_dang_nhap_dang_ky():
     return mvc_render_auth_view(_build_mvc_context())
-
-    is_light = st.session_state.get('theme') == 'light'
-    render_auth_topbar(topbar_html, is_light=is_light)
-    render_auth_theme_button(is_light=is_light)
-    open_auth_shell()
-    st.markdown('<div class="auth-layout-row-anchor"></div>', unsafe_allow_html=True)
-    hero_col, col_mid = st.columns([1.0, 0.78], gap="small")
-    with hero_col:
-        render_auth_hero(auth_screen_html)
-    with col_mid:
-        st.markdown(
-            '<div class="auth-card-head">'
-            '<h2>Truy cập hệ thống</h2>'
-            '<p class="sub">Chọn đúng vai trò để mở không gian làm việc tương ứng.</p>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-        # Dùng container với border=True để tạo ô vuông bao quanh chuẩn web
-        with st.container(border=True, key="auth_card_streamlit"):
-            # CHẾ ĐỘ QUÊN MẬT KHẨU
-            if st.session_state.get('forgot_password_mode', False):
-                st.markdown("### 🔄 KHÔI PHỤC MẬT KHẨU")
-                u_reset = st.text_input("👤 Tên đăng nhập", placeholder="Nhập tên tài khoản", key="f_u")
-                e_reset = st.text_input("📧 Email đã đăng ký", placeholder="example@gmail.com", key="f_e")
-                n_pass = st.text_input("🆕 Mật khẩu mới", type="password", placeholder="Tối thiểu 6 ký tự", key="f_p1")
-                c_pass = st.text_input("✅ Xác nhận mật khẩu mới", type="password", placeholder="Nhập lại mật khẩu", key="f_p2")
-                
-                c1, c2 = st.columns(2)
-                with c1:
-                    if st.button("Đặt lại mật khẩu", width="stretch", type="primary"):
-                        users = load_users()
-                        u_key = _auth_lookup_key(users, u_reset)
-                        if u_key and _normalize_auth_text(users[u_key].get('email')) == _normalize_auth_text(e_reset):
-                            if n_pass == c_pass and len(n_pass) >= 6:
-                                _set_user_password_fields(users[u_key], n_pass, must_change_password=False)
-                                save_users(users)
-                                st.success("✅ Thành công! Hãy đăng nhập lại.")
-                                st.session_state.forgot_password_mode = False
-                                st.rerun()
-                            else: st.error("❌ Mật khẩu không khớp hoặc quá ngắn")
-                        else: st.error("❌ Thông tin không chính xác")
-                with c2:
-                    if st.button("Hủy bỏ", width="stretch"):
-                        st.session_state.forgot_password_mode = False
-                        st.rerun()
-                close_auth_shell()
-                return
-
-            # GIAO DIỆN CHÍNH - segmented auth giống HTML demo
-            auth_mode = st.session_state.get("auth_mode", "login")
-            if auth_mode not in ("login", "register"):
-                auth_mode = "login"
-                st.session_state.auth_mode = auth_mode
-
-            is_register = auth_mode == "register"
-            auth_title = "Tạo tài khoản mới" if is_register else "Đăng nhập hệ thống"
-            auth_sub = (
-                "Tài khoản KTV / Bác sĩ / NCV cần Quản trị viên phê duyệt trước khi kích hoạt."
-                if is_register else
-                "Truy cập bảng điều khiển theo vai trò của bạn."
-            )
-            st.markdown(
-                f'<div class="auth-card-title"><h2>{auth_title}</h2><p>{auth_sub}</p></div>',
-                unsafe_allow_html=True,
-            )
-
-            seg_login_col, seg_reg_col = st.columns(2, gap="small")
-            with seg_login_col:
-                if st.button(
-                    "Đăng nhập",
-                    key="auth_seg_login",
-                    width="stretch",
-                    type="primary" if auth_mode == "login" else "secondary",
-                ):
-                    st.session_state.auth_mode = "login"
-                    st.rerun()
-            with seg_reg_col:
-                if st.button(
-                    "Đăng ký",
-                    key="auth_seg_register",
-                    width="stretch",
-                    type="primary" if auth_mode == "register" else "secondary",
-                ):
-                    st.session_state.auth_mode = "register"
-                    st.rerun()
-
-            if auth_mode == "login":
-                # CHẾ ĐỘ ĐỔI MẬT KHẨU TRONG LOGIN
-                if st.session_state.get('change_password_mode', False):
-                    st.markdown("### 🔑 THAY ĐỔI MẬT KHẨU")
-                    st.info("💡 Điền thông tin bên dưới để cập nhật mật khẩu mới.")
-                    with st.form("login_change_password_form_v2"):
-                        cp_u = st.text_input("👤 Tên đăng nhập", key="cp_u_v2")
-                        cp_old = st.text_input("🔒 Mật khẩu hiện tại", type="password", key="cp_old_v2")
-                        cp_new = st.text_input("🆕 Mật khẩu mới", type="password", key="cp_new_v2")
-                        cp_conf = st.text_input("✅ Xác nhận mật khẩu mới", type="password", key="cp_conf_v2")
-                        
-                        c1, c2 = st.columns(2)
-                        with c1:
-                            if st.form_submit_button("💾 CẬP NHẬT", width="stretch"):
-                                users = load_users()
-                                cp_key = _auth_lookup_key(users, cp_u)
-                                if cp_key and _verify_auth_password(cp_key, cp_old, users[cp_key]):
-                                    if cp_new == cp_conf and len(cp_new) >= 6:
-                                        _set_user_password_fields(users[cp_key], cp_new, must_change_password=False)
-                                        save_users(users)
-                                        st.success("✅ Thành công! Hãy đăng nhập lại.")
-                                        st.session_state.change_password_mode = False
-                                        st.rerun()
-                                    else: st.error("❌ Mật khẩu không khớp hoặc quá ngắn.")
-                                else: st.error("❌ Thông tin không chính xác.")
-                        with c2:
-                            if st.form_submit_button("Hủy bỏ", width="stretch"):
-                                st.session_state.change_password_mode = False
-                                st.rerun()
-                else:
-                    u = st.text_input("Tài khoản", placeholder="bsi01", key="login_u", icon=":material/person:")
-                    p = st.text_input("Mật khẩu", type="password", placeholder="••••••••", key="login_p", icon=":material/lock:")
-                    
-                    if st.button("Đăng nhập  →", width="stretch", type="primary", key="auth_submit_login"):
-                        users = load_users()
-                        u_key = _auth_lookup_key(users, u)
-                        if u_key and _verify_auth_password(u_key, p, users[u_key]):
-                            _upgrade_password_hash_if_needed(users, u_key, p)
-                            _hoan_tat_dang_nhap(u_key, users[u_key])
-                            _rerun_toan_bo_app()
-                        elif u_key and users[u_key].get('role') == "Bệnh nhân":
-                            st.error("❌ Mật khẩu bệnh nhân chưa đúng với dữ liệu trong database/users.json.")
-                        else:
-                            st.error("❌ Tài khoản hoặc mật khẩu không đúng")
-                    
-                    if st.button("Quên mật khẩu? Khôi phục tại đây", width="stretch", key="auth_forgot_link"):
-                        st.session_state.forgot_password_mode = True
-                        st.rerun()
-            else:
-                st.markdown('<div class="auth-role-label">Bạn đăng ký với tư cách</div>', unsafe_allow_html=True)
-                reg_role_choice = st.radio(
-                    "Bạn đăng ký với tư cách",
-                    ["Bác sĩ / KTV", "Nghiên cứu viên", "Bệnh nhân", "Quản trị viên"],
-                    captions=[
-                        "Đánh giá & soát kỹ thuật",
-                        "Phân tích & hiệu chỉnh AI",
-                        "Tập luyện & theo dõi",
-                        "Vận hành hệ thống",
-                    ],
-                    horizontal=True,
-                    key="reg_role_demo",
-                    label_visibility="collapsed",
-                    width="stretch",
-                )
-                role_value_map = {
-                    "Bác sĩ / KTV": "Bác sĩ / KTV PHCN",
-                    "Nghiên cứu viên": "Nghiên cứu viên",
-                    "Bệnh nhân": "Bệnh nhân",
-                    "Quản trị viên": "Quản trị viên",
-                }
-                reg_role = role_value_map.get(reg_role_choice, "Bệnh nhân")
-                reg_name = st.text_input("Họ và tên", placeholder="VD: Nguyễn Văn A", key="reg_n", icon=":material/person:")
-                reg_u = st.text_input("Tên đăng nhập", placeholder="bsi01", key="reg_u", icon=":material/person:")
-                reg_e = st.text_input("Email / Số điện thoại", placeholder="email@huph.edu.vn", key="reg_e", icon=":material/mail:")
-                reg_p = st.text_input("Mật khẩu", type="password", placeholder="••••••••", key="reg_p", icon=":material/lock:")
-                reg_cp = st.text_input("Nhập lại mật khẩu", type="password", placeholder="••••••••", key="reg_cp", icon=":material/lock:")
-                
-                if st.button("Đăng ký tài khoản  →", width="stretch", type="primary", key="auth_submit_register"):
-                    reg_u_clean = _normalize_auth_text(reg_u)
-                    reg_e_clean = _normalize_auth_text(reg_e)
-                    if not reg_u or not reg_e or len(reg_p) < 6:
-                        st.warning("⚠️ Vui lòng điền đầy đủ các thông tin bắt buộc")
-                    elif reg_p != reg_cp:
-                        st.error("❌ Mật khẩu xác nhận không khớp")
-                    else:
-                        users = load_users()
-                        if _auth_lookup_key(users, reg_u_clean): st.error("❌ Tên đăng nhập này đã tồn tại")
-                        else:
-                            users[reg_u_clean] = {
-                                "email": reg_e_clean,
-                                "full_name": _normalize_auth_text(reg_name) or reg_u_clean,
-                                "role": reg_role,
-                                "created_at": get_vn_now().isoformat()
-                            }
-                            _set_user_password_fields(users[reg_u_clean], reg_p, must_change_password=False)
-                            save_users(users)
-                            st.success("🎉 Đăng ký thành công! Bạn có thể đăng nhập ngay.")
-                                
-            st.markdown(
-                '<div class="auth-demo-strip">'
-                '<div class="dt">Xem nhanh demo theo vai trò</div>'
-                '</div>',
-                unsafe_allow_html=True,
-            )
-            demo_cols = st.columns([1.08, 1.34, 0.82], gap="small")
-            demo_roles_top = [
-                ("Bệnh nhân", "Bệnh nhân", "favorite"),
-                ("Bác sĩ / KTV", "Bác sĩ / KTV PHCN", "stethoscope"),
-                ("NCV", "Nghiên cứu viên", "science"),
-            ]
-            for col, (button_label, role_label, icon_name) in zip(demo_cols, demo_roles_top):
-                with col:
-                    if st.button(
-                        button_label,
-                        key=f"auth_demo_role_{icon_name}",
-                        width="stretch",
-                        icon=f":material/{icon_name}:",
-                    ):
-                        _dang_nhap_demo_theo_vai_tro(role_label)
-            _, demo_admin_col, _ = st.columns([1.1, 1, 1.1], gap="small")
-            with demo_admin_col:
-                if st.button(
-                    "Quản trị",
-                    key="auth_demo_role_admin_panel_settings",
-                    width="stretch",
-                    icon=":material/admin_panel_settings:",
-                ):
-                    _dang_nhap_demo_theo_vai_tro("Quản trị viên")
-        if auth_pose_html:
-            st.markdown(
-                '<div class="mobile-auth-pose-only">'
-                f'{auth_pose_html()}'
-                '</div>',
-                unsafe_allow_html=True,
-            )
-    close_auth_shell()
 
 # ============================================
 # HÀM HIỂN TRỊ TAB QUẢN TRỊ VIÊN
