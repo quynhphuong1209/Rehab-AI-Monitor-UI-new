@@ -116,6 +116,7 @@ except Exception:
 
 import streamlit as st
 
+from backend import symptoms as symptom_backend
 from frontend.auth import screens as auth_screens
 from frontend.ui import emit_shell_mount, ui_component
 
@@ -3505,32 +3506,33 @@ def hien_thi_footer_chung():
             st.markdown(cached_footer, unsafe_allow_html=True)
             return
 
-    footer_bg = "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)" if is_light else "linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%)"
-    footer_text = "#444" if is_light else "#ccc"
-    border_color = "#0072ff" if is_light else "#00c6ff"
-    title_color = "#0072ff" # Màu xanh đậm nổi bật cho cả 2 chế độ
-    school_name_color = "#1a1a2e" if is_light else "#fff"
-    col_border = "rgba(0,0,0,0.1)" if is_light else "rgba(255,255,255,0.1)"
+    footer_bg = "#F8FAFC" if is_light else "#101A27"
+    footer_text = "#475569" if is_light else "#A9B8CB"
+    border_color = "#1F6FE0" if is_light else "#5B9BFF"
+    title_color = "#1657BC" if is_light else "#8BB6FF"
+    school_name_color = "#0F172A" if is_light else "#E5EDF7"
+    col_border = "#DFE6F1" if is_light else "#1F2C3B"
     
     footer_html = f"""<style>
-.main-footer {{background:{footer_bg};padding:60px 20px 40px;color:{footer_text};font-family:'Outfit',sans-serif!important;border-top:3px solid {border_color};box-shadow:0 -15px 35px rgba(0, 114, 255, 0.1);margin-top:80px;position:relative;overflow:hidden}}
+.main-footer {{background:{footer_bg};padding:52px 24px 34px;color:{footer_text};font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important;border-top:3px solid {border_color};box-shadow:0 -16px 40px rgba(15,23,42,0.08);margin-top:56px;position:relative;overflow:hidden}}
+.main-footer, .main-footer * {{letter-spacing:0!important}}
 .footer-container {{display:flex;flex-wrap:wrap;justify-content:space-between;max-width:1550px;margin:0 auto;gap:20px}}
 .footer-col {{flex:1;min-width:280px;padding:20px 30px;border-right:1px solid {col_border}}}
 .footer-col:last-child {{border-right:none}}
 .footer-col.medium {{flex:1.2;min-width:280px}}
 .footer-col.wide {{flex:2.5;min-width:300px}}
-.footer-title {{color:{title_color} !important;font-weight:bold;margin-bottom:20px;font-size:1.1rem;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:10px;border-bottom:2px solid {col_border};padding-bottom:10px}}
+.footer-title {{color:{title_color} !important;font-family:Inter,system-ui,sans-serif!important;font-weight:800;margin-bottom:18px;font-size:1.05rem;text-transform:uppercase;display:flex;align-items:center;gap:10px;border-bottom:2px solid {col_border};padding-bottom:10px}}
 .info-row {{margin-bottom:10px;font-size:0.95rem;display:grid;grid-template-columns:85px 1fr;line-height:1.4}}
 .info-label {{font-weight:bold;opacity:0.9}}
 .execution-grid {{display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:25px;margin-top:15px}}
 .execution-item {{border-left:2px solid {col_border};padding-left:12px}}
-.execution-name {{font-size:1.05rem;font-weight:bold;color:{title_color};display:block;margin-bottom:3px}}
+.execution-name {{font-family:Inter,system-ui,sans-serif!important;font-size:1.05rem;font-weight:800;color:{title_color};display:block;margin-bottom:3px}}
 .execution-info {{font-size:0.85rem;opacity:0.8;margin-bottom:5px;display:block}}
 .execution-email {{font-size:0.8rem;text-decoration:none;color:{footer_text};opacity:0.7;display:flex;align-items:center;gap:5px}}
 .footer-bottom {{padding-top:30px;margin-top:50px;border-top:1px solid {col_border};font-size:0.9rem;color:{"#666" if is_light else "#888"};text-align:center}}
 .school-logo-section {{text-align:center;margin-bottom:15px}}
-.footer-logo-img {{width:95px;margin-bottom:10px;filter:{"none" if is_light else "drop-shadow(0 0 8px rgba(0, 198, 255, 0.4))"}}}
-.school-name-text {{font-weight:bold;color:{school_name_color};font-size:1.15rem;line-height:1.2}}
+.footer-logo-img {{width:95px;margin-bottom:10px;filter:{"none" if is_light else "drop-shadow(0 0 8px rgba(91, 155, 255, 0.35))"}}}
+.school-name-text {{font-family:Inter,system-ui,sans-serif!important;font-weight:900;color:{school_name_color};font-size:1.08rem;line-height:1.22}}
 a {{color:{title_color};text-decoration:none}}
 
 /* TỐI ƯU CHO DI ĐỘNG */
@@ -5907,6 +5909,87 @@ def _consume_rehab_ui_event(event, tab_titles=None):
             st.session_state["inline_active_tab_widget"] = target
             _sync_route_query(tab_titles=tab_titles)
             _rerun_toan_bo_app()
+        return
+
+    if event_type == "side_control":
+        key = str(event.get("key") or "")
+        value = event.get("value")
+        try:
+            if key in {"ncv_confidence", "ncv_sensitivity"}:
+                st.session_state[key] = max(0.0, min(1.0, float(value)))
+            elif key == "ncv_skip_frames":
+                parsed = int(value)
+                st.session_state[key] = parsed if parsed in {0, 1, 2, 4} else 0
+            elif key == "ncv_resize_width":
+                parsed = int(value)
+                st.session_state[key] = parsed if parsed in {480, 720, 1080} else 480
+            elif key == "ncv_giai_doan":
+                allowed = {PHASE_UI_LABELS["g1"], PHASE_UI_LABELS["g2"], PHASE_UI_LABELS["g3"]}
+                if value in allowed:
+                    st.session_state[key] = normalize_phase_selection(value)
+            elif key == "ncv_model_type":
+                if value in {"MediaPipe Heavy", "MediaPipe Full", "MediaPipe Lite"}:
+                    st.session_state[key] = value
+            else:
+                return
+            _rerun_toan_bo_app()
+        except Exception as exc:
+            st.session_state["_rehab_sidebar_notice"] = f"Không cập nhật được cấu hình: {exc}"
+            _rerun_toan_bo_app()
+        return
+
+    if event_type == "side_reset_progress":
+        n_removed = clear_all_progress_files()
+        for _k in ("reanalyze_triggered", "view_old_analysis", "has_data", "stats", "angle_df", "current_eval_video"):
+            st.session_state.pop(_k, None)
+        st.session_state["_rehab_sidebar_notice"] = f"Đã làm mới tiến trình — xóa {n_removed} tệp tiến trình."
+        _rerun_toan_bo_app()
+        return
+
+    if event_type == "admin_user_search":
+        query = _normalize_auth_text(event.get("username", ""))
+        st.session_state["_admin_sidebar_search_query"] = query
+        if not query:
+            st.session_state["_admin_sidebar_search_result"] = None
+            _rerun_toan_bo_app()
+            return
+        users = load_users()
+        u_key = _auth_lookup_key(users, query)
+        if u_key:
+            rec = users.get(u_key) or {}
+            st.session_state["_admin_sidebar_search_result"] = {
+                "found": True,
+                "username": u_key,
+                "full_name": rec.get("full_name") or u_key,
+                "role": rec.get("role") or "Chưa rõ",
+                "email": rec.get("email") or "",
+            }
+        else:
+            st.session_state["_admin_sidebar_search_result"] = {
+                "found": False,
+                "username": query,
+                "message": "Không tìm thấy người dùng.",
+            }
+        _rerun_toan_bo_app()
+        return
+
+    if event_type == "patient_create_symptom":
+        payload = event.get("payload") if isinstance(event.get("payload"), dict) else event
+        if not st.session_state.get("logged_in") or not st.session_state.get("user_info"):
+            st.session_state["_rehab_app_notice"] = {
+                "type": "error",
+                "message": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+            }
+            _rerun_toan_bo_app()
+            return
+        ok, message, record = create_patient_symptom(payload, st.session_state.get("user_info") or {})
+        st.session_state["_rehab_app_notice"] = {
+            "type": "success" if ok else "error",
+            "message": message,
+        }
+        if ok and record:
+            st.session_state["_rehab_last_symptom_record"] = record
+        _rerun_toan_bo_app()
         return
 
     if event_type == "demo_login":
@@ -9477,6 +9560,28 @@ def ensure_voice_files(force_voice=False):
                 os.remove(marker_path)
         except Exception:
             pass
+
+
+def _list_patient_symptoms(username=None, limit=8):
+    return symptom_backend.list_patient_symptoms(
+        SYMPTOMS_FILE,
+        load_data,
+        _normalize_auth_text,
+        username=username,
+        limit=limit,
+    )
+
+
+def create_patient_symptom(payload, user_info):
+    return symptom_backend.create_patient_symptom(
+        SYMPTOMS_FILE,
+        load_data,
+        save_data,
+        _normalize_auth_text,
+        get_vn_now,
+        payload,
+        user_info,
+    )
 
     missing = [
         f for f in _VOICE_FILES
@@ -20773,18 +20878,30 @@ def _material_icon_for_demo_icon(icon):
 def _rehab_side_stats_for_role(user_role):
     try:
         if user_role == "Nghiên cứu viên":
-            total_vids, pending_ai, _avg_acc = _thong_ke_video_nghien_cuu()
+            total_vids, pending_ai, avg_acc = _thong_ke_video_nghien_cuu()
             return {
                 "total_videos": total_vids,
                 "ai_done": max(total_vids - pending_ai, 0),
+                "pending_ai": pending_ai,
+                "avg_acc": round(float(avg_acc or 0), 1),
                 "model": st.session_state.get("ncv_model_type", "MP-Heavy"),
                 "keypoints": 33,
             }
         if user_role == "Bác sĩ / KTV PHCN":
             videos = load_danh_sach_video_nghien_cuu()
+            evals_db_cached = _evals_dedup_cached(_mtimes_video_eval()[1])
+            evaluated_keys = {
+                (e.get("patient_username"), e.get("video_name"), e.get("exercise"))
+                for e in evals_db_cached
+                if e.get("doctor_username") and e.get("doctor_username") != "AI_Researcher"
+            }
+            pending_eval = sum(
+                1 for v in videos
+                if (v.get("username"), v.get("video_name"), v.get("exercise")) not in evaluated_keys
+            )
             return {
                 "patients": len(set(v.get("username") for v in videos if v.get("username"))),
-                "pending": 3,
+                "pending": pending_eval,
                 "high_vas": 2,
                 "sessions": len(videos),
             }
@@ -20796,6 +20913,51 @@ def _rehab_side_stats_for_role(user_role):
     except Exception:
         pass
     return {}
+
+
+def _build_rehab_sidebar_payload(user_role, user_info):
+    """Build data for the JS drawer sidebar; controls are handled through UI events."""
+    stats = _rehab_side_stats_for_role(user_role)
+    profile = {
+        "username": (user_info or {}).get("username", ""),
+        "full_name": (user_info or {}).get("full_name") or (user_info or {}).get("username", ""),
+        "role": user_role,
+    }
+    sidebar = {
+        "role": user_role,
+        "profile": profile,
+        "stats": stats,
+        "notice": st.session_state.pop("_rehab_sidebar_notice", None),
+        "credits": {
+            "mentor_data": "TS. Trần Hồng Việt",
+            "mentor_clinical": "Nguyễn Thị Thùy Chi",
+            "school": "Trường Đại học Y tế Công cộng",
+            "owner": "Đinh Lê Quỳnh Phương",
+        },
+    }
+    if user_role == "Nghiên cứu viên":
+        if "ncv_giai_doan" in st.session_state:
+            st.session_state.ncv_giai_doan = normalize_phase_selection(st.session_state.ncv_giai_doan)
+        sidebar["controls"] = {
+            "ncv_confidence": float(st.session_state.get("ncv_confidence", 0.5)),
+            "ncv_skip_frames": int(st.session_state.get("ncv_skip_frames", 0) or 0),
+            "ncv_resize_width": int(st.session_state.get("ncv_resize_width", 480) or 480),
+            "ncv_sensitivity": float(st.session_state.get("ncv_sensitivity", 0.7)),
+            "ncv_giai_doan": st.session_state.get("ncv_giai_doan", PHASE_UI_LABELS["g2"]),
+            "ncv_model_type": st.session_state.get("ncv_model_type", "MediaPipe Heavy"),
+        }
+        sidebar["options"] = {
+            "skip_frames": [0, 1, 2, 4],
+            "resize_width": [480, 720, 1080],
+            "phase_labels": [PHASE_UI_LABELS["g1"], PHASE_UI_LABELS["g2"], PHASE_UI_LABELS["g3"]],
+            "models": ["MediaPipe Heavy", "MediaPipe Full", "MediaPipe Lite"],
+        }
+    if user_role == "Quản trị viên":
+        sidebar["adminSearch"] = {
+            "query": st.session_state.get("_admin_sidebar_search_query", ""),
+            "result": st.session_state.get("_admin_sidebar_search_result"),
+        }
+    return sidebar
 
 
 def _build_rehab_ui_payload(mode="app", tab_titles=None):
@@ -20820,6 +20982,13 @@ def _build_rehab_ui_payload(mode="app", tab_titles=None):
         "tabs": tabs,
         "activeTab": _tab_slug(active) if active else "",
         "sideStats": _rehab_side_stats_for_role(role) if is_logged else {},
+        "sidebar": _build_rehab_sidebar_payload(role, info) if is_logged else {},
+        "patient": {
+            "symptoms": _list_patient_symptoms(info.get("username"), limit=8) if is_logged else [],
+        },
+        "notices": {
+            "app": st.session_state.pop("_rehab_app_notice", None) if mode != "auth" else None,
+        },
         "authMode": st.session_state.get("_auth_mode", "login") if mode == "auth" else None,
         "notice": st.session_state.pop("_auth_notice", None) if mode == "auth" else None,
     }
@@ -21117,7 +21286,7 @@ def main():
 
     ui_event = ui_component(payload=_build_rehab_ui_payload(mode="app", tab_titles=tab_titles), key="rehab_app_shell")
     _consume_rehab_ui_event(ui_event, tab_titles=tab_titles)
-    emit_shell_mount(spacing_top=74)
+    emit_shell_mount(spacing_top=0)
     _sync_route_query(tab_titles=tab_titles)
     if user_role == "Nghiên cứu viên":
         st.markdown('<span class="ncv-workspace-anchor"></span>', unsafe_allow_html=True)

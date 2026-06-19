@@ -6,7 +6,19 @@
   "scripts": {
     "design:check": "npm run design:lint",
     "design:lint": "node ./node_modules/@google/design.md/dist/index.js lint DESIGN.md",
-    "design:tokens": "node ./node_modules/@google/design.md/dist/index.js export DESIGN.md --format css-tailwind"
+    "design:tokens": "node ./node_modules/@google/design.md/dist/index.js export DESIGN.md --format css-tailwind",
+    "build": "vite build --config frontend/react_app/vite.config.js",
+    "react:dev": "vite --config frontend/react_app/vite.config.js",
+    "api:dev": "node backend_node/server.js",
+    "api:start": "node backend_node/server.js"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "vite": "^6.0.11",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@google/design.md": "^0.3.0"

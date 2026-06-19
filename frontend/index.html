@@ -4,17 +4,321 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-      html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
-      #root { width: 0; height: 0; }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        overflow: hidden;
+      }
+
+      html[data-rehab-standalone-preview="1"],
+      html[data-rehab-standalone-preview="1"] body {
+        min-height: 100%;
+        overflow: auto;
+      }
+
+      #root {
+        width: 0;
+        height: 0;
+      }
+
+      .preview-switcher {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+        z-index: 2147483000;
+        display: none;
+        gap: 8px;
+        align-items: center;
+        padding: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+        backdrop-filter: blur(14px);
+        font-family: Inter, system-ui, sans-serif;
+      }
+
+      html[data-rehab-standalone-preview="1"] .preview-switcher {
+        display: flex;
+      }
+
+      .preview-switcher button {
+        height: 34px;
+        border: 0;
+        border-radius: 999px;
+        padding: 0 12px;
+        color: #475569;
+        background: transparent;
+        font: 800 12px Inter, system-ui, sans-serif;
+        cursor: pointer;
+      }
+
+      .preview-switcher button.is-active {
+        color: #1657bc;
+        background: rgba(31, 111, 224, 0.13);
+      }
+
+      .preview-switcher button:hover {
+        color: #1657bc;
+        background: rgba(31, 111, 224, 0.08);
+      }
+
+      html[data-rehab-theme="dark"] .preview-switcher {
+        background: rgba(16, 26, 39, 0.92);
+        border-color: rgba(148, 163, 184, 0.2);
+      }
+
+      html[data-rehab-theme="dark"] .preview-switcher button {
+        color: #a9b8cb;
+      }
+
+      html[data-rehab-theme="dark"] .preview-switcher button.is-active,
+      html[data-rehab-theme="dark"] .preview-switcher button:hover {
+        color: #8bb6ff;
+      }
     </style>
   </head>
   <body>
     <div id="root" aria-hidden="true"></div>
+    <nav class="preview-switcher" aria-label="Standalone preview switcher">
+      <button type="button" data-preview-target="auth">Login</button>
+      <button type="button" data-preview-target="patient">BN</button>
+      <button type="button" data-preview-target="doctor">BS/KTV</button>
+      <button type="button" data-preview-target="researcher">NCV</button>
+      <button type="button" data-preview-target="admin">QTV</button>
+      <button type="button" data-preview-target="theme">Sáng/Tối</button>
+    </nav>
     <script src="./auth/auth_ui.js"></script>
     <script src="./roles/admin/admin_ui.js"></script>
     <script src="./roles/doctor_ktv/doctor_ktv_ui.js"></script>
     <script src="./roles/patient/patient_ui.js"></script>
     <script src="./roles/researcher/researcher_ui.js"></script>
+    <script src="./react_app/dist/rehab-react-app.umd.js"></script>
     <script src="./ui/runtime.js"></script>
+    <script>
+      (function () {
+        if (window.parent !== window) return;
+
+        var tries = 0;
+
+        function baseCredits() {
+          return {
+            mentor_data: "TS. Tran Hong Viet",
+            mentor_clinical: "Nguyen Thi Thuy Chi",
+            school: "Truong Dai hoc Y te Cong cong",
+            owner: "Dinh Le Quynh Phuong"
+          };
+        }
+
+        function rolePayload(preview, theme) {
+          if (preview === "doctor") {
+            return {
+              mode: "app",
+              theme: theme,
+              loggedIn: true,
+              role: "Bac si / KTV PHCN",
+              user: { username: "doctor01", full_name: "Doctor 1", role: "Bac si / KTV PHCN" },
+              tabs: [
+                { id: "patients", label: "Danh sach", icon: "i-users" },
+                { id: "evaluation", label: "Danh gia", icon: "i-stetho" },
+                { id: "feedback", label: "Phan hoi", icon: "i-doc" }
+              ],
+              activeTab: "patients",
+              sideStats: { patients: 4, pending: 5, sessions: 8 },
+              sidebar: {
+                role: "Bac si / KTV PHCN",
+                profile: { username: "doctor01", full_name: "Doctor 1", role: "Bac si / KTV PHCN" },
+                stats: { patients: 4, pending: 5 },
+                credits: baseCredits()
+              }
+            };
+          }
+          if (preview === "researcher") {
+            return {
+              mode: "app",
+              theme: theme,
+              loggedIn: true,
+              role: "Nghien cuu vien",
+              user: { username: "ncv01", full_name: "Dinh Le Quynh Phuong", role: "Nghien cuu vien" },
+              tabs: [
+                { id: "dataset", label: "Dataset", icon: "i-db" },
+                { id: "analysis", label: "Phan tich", icon: "i-flask" },
+                { id: "model", label: "Mo hinh", icon: "i-cog" }
+              ],
+              activeTab: "dataset",
+              sideStats: { total_videos: 8, ai_done: 8, keypoints: 33, pending_ai: 0, avg_acc: "68.9%" },
+              sidebar: {
+                role: "Nghien cuu vien",
+                profile: { username: "ncv01", full_name: "Dinh Le Quynh Phuong", role: "Nghien cuu vien" },
+                stats: { total_videos: 8, ai_done: 8, keypoints: 33, pending_ai: 0, avg_acc: "68.9%" },
+                controls: {
+                  ncv_confidence: 0.5,
+                  ncv_skip_frames: 0,
+                  ncv_resize_width: 480,
+                  ncv_sensitivity: 0.7,
+                  ncv_giai_doan: "Giai doan 2",
+                  ncv_model_type: "MediaPipe Heavy"
+                },
+                options: {
+                  skip_frames: [0, 1, 2, 4],
+                  resize_width: [480, 720, 1080],
+                  phase_labels: ["Giai doan 1", "Giai doan 2", "Giai doan 3"],
+                  models: ["MediaPipe Heavy", "MediaPipe Full", "MediaPipe Lite"]
+                },
+                credits: baseCredits()
+              }
+            };
+          }
+          if (preview === "admin") {
+            return {
+              mode: "app",
+              theme: theme,
+              loggedIn: true,
+              role: "Quan tri vien",
+              user: { username: "admin01", full_name: "Dinh Le Quynh Phuong", role: "Quan tri vien" },
+              tabs: [
+                { id: "home", label: "Trang chu", icon: "i-shield" },
+                { id: "admin", label: "Quan tri", icon: "i-cog" },
+                { id: "logs", label: "Nhat ky", icon: "i-log" },
+                { id: "info", label: "Thong tin", icon: "i-doc" }
+              ],
+              activeTab: "admin",
+              sideStats: { accounts: 25, videos: 14, evals: 63 },
+              sidebar: {
+                role: "Quan tri vien",
+                profile: { username: "admin01", full_name: "Dinh Le Quynh Phuong", role: "Quan tri vien" },
+                stats: { accounts: 25, videos: 14, evals: 63 },
+                adminSearch: { query: "patient01", result: { found: true, username: "patient01", full_name: "Hoang Hanh Nguyen", role: "Benh nhan", email: "patient@example.com" } },
+                credits: baseCredits()
+              }
+            };
+          }
+          return patientPayload(theme);
+        }
+
+        function patientPayload(theme) {
+          return {
+            mode: "app",
+            theme: theme,
+            loggedIn: true,
+            role: "Benh nhan",
+            user: {
+              username: "patient01",
+              full_name: "Hoang Hanh Nguyen",
+              role: "Benh nhan"
+            },
+            tabs: [
+              { id: "home", label: "Trang chu", icon: "i-shield" },
+              { id: "results", label: "Ket qua", icon: "i-bars" },
+              { id: "schedule", label: "Lich nhac", icon: "i-bell" },
+              { id: "info", label: "Thong tin", icon: "i-doc" }
+            ],
+            activeTab: "home",
+            sideStats: { sessions: 8, latest_vas: 6 },
+            sidebar: {
+              role: "Benh nhan",
+              profile: {
+                username: "patient01",
+                full_name: "Hoang Hanh Nguyen",
+                role: "Benh nhan"
+              },
+              stats: {},
+              credits: baseCredits()
+            },
+            patient: {
+              symptoms: [
+                {
+                  date: "2026-06-19",
+                  vas: 6,
+                  pain_location: "Vai phai",
+                  symptoms: "Dau khi gio tay qua dau",
+                  exercise: "Bai tap con lac Codman"
+                }
+              ]
+            },
+            notices: {
+              app: {
+                type: "success",
+                message: "Preview standalone: du lieu demo, khong ghi backend."
+              }
+            }
+          };
+        }
+
+        function authPayload(theme, authMode) {
+          return {
+            mode: "auth",
+            theme: theme,
+            loggedIn: false,
+            authMode: authMode,
+            notice: {
+              kind: "success",
+              message: "Preview standalone: day la man login demo, khong ghi backend."
+            }
+          };
+        }
+
+        function updateSwitcher(active, theme) {
+          document.querySelectorAll("[data-preview-target]").forEach(function (button) {
+            var target = button.getAttribute("data-preview-target");
+            button.classList.toggle("is-active", target === active || (target === "theme" && theme === "dark"));
+          });
+        }
+
+        function mountPayload(preview, theme, authMode) {
+          document.documentElement.dataset.rehabStandalonePreview = "1";
+          if (preview === "auth") {
+            window.RehabRuntime.mount(authPayload(theme, authMode));
+          } else {
+            window.RehabRuntime.mount(rolePayload(preview, theme));
+          }
+          updateSwitcher(preview, theme);
+        }
+
+        function mountPreview() {
+          tries += 1;
+          var params = new URLSearchParams(window.location.search);
+          var preview = params.get("preview") || "auth";
+          var theme = params.get("theme") === "dark" ? "dark" : "light";
+          var authMode = params.get("auth") === "register" ? "register" : "login";
+          var needsReact = preview !== "auth";
+          var ready =
+            window.RehabRuntime &&
+            window.RehabAuthUI &&
+            (!needsReact || window.RehabReactApp);
+
+          if (!ready && tries < 80) {
+            window.setTimeout(mountPreview, tries < 12 ? 80 : 180);
+            return;
+          }
+
+          if (!window.RehabRuntime || document.documentElement.dataset.rehabStandaloneMounted === "1") return;
+
+          document.documentElement.dataset.rehabStandalonePreview = "1";
+          document.documentElement.dataset.rehabStandaloneMounted = "1";
+          mountPayload(preview, theme, authMode);
+        }
+
+        mountPreview();
+
+        document.querySelectorAll("[data-preview-target]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            if (!window.RehabRuntime) return;
+            var target = button.getAttribute("data-preview-target");
+            var params = new URLSearchParams(window.location.search);
+            var currentTheme = document.documentElement.dataset.rehabTheme === "dark" ? "dark" : "light";
+            var currentPreview = params.get("preview") || "auth";
+            if (target === "theme") {
+              mountPayload(currentPreview, currentTheme === "dark" ? "light" : "dark", params.get("auth") === "register" ? "register" : "login");
+            } else {
+              mountPayload(target, currentTheme, params.get("auth") === "register" ? "register" : "login");
+            }
+          });
+        });
+      })();
+    </script>
   </body>
 </html>
