@@ -9,6 +9,10 @@
   html[data-rehab-role-ui="doctor_ktv"] [data-testid="stDataFrame"],
   html[data-rehab-role-ui="doctor_ktv"] .ncv-table-card,
   html[data-rehab-role-ui="doctor_ktv"] .ncv-patient-card,
+  html[data-rehab-role-ui="doctor_ktv"] .ncv-filter-card,
+  html[data-rehab-role-ui="doctor_ktv"] .ncv-select-panel,
+  html[data-rehab-role-ui="doctor_ktv"] .ncv-selected-video-card,
+  html[data-rehab-role-ui="doctor_ktv"] .ncv-detail-panel,
   html[data-rehab-role-ui="doctor_ktv"] .card,
   html[data-rehab-role-ui="doctor_ktv"] [data-testid="stVerticalBlockBorderWrapper"] {
     border-radius: 8px !important;

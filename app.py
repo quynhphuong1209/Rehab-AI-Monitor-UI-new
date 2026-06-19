@@ -11,6 +11,7 @@ import json
 import base64
 import html as _html
 import re
+from types import SimpleNamespace
 
 # FIX LỖI LIBGL CHO OPENCV TRÊN HEADLESS ENVIRONMENT
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '1'
@@ -117,8 +118,14 @@ except Exception:
 import streamlit as st
 
 from backend import symptoms as symptom_backend
+from controllers import run_app
+from controllers.auth_controller import render_auth_view as mvc_render_auth_view
+from controllers.context import AppContext
+from controllers.ui_event_controller import consume_rehab_ui_event as mvc_consume_rehab_ui_event
 from frontend.auth import screens as auth_screens
 from frontend.ui import emit_shell_mount, ui_component
+from models.auth import AuthenticatedUser
+from models.navigation import ROLE_DOCTOR_KTV, main_tab_titles_for_role
 
 close_auth_shell = auth_screens.close_auth_shell
 open_auth_shell = auth_screens.open_auth_shell
@@ -1161,6 +1168,15 @@ def load_danh_sach_video_nghien_cuu():
     return _video_nghien_cuu_cached(v_mtime, e_mtime) or []
 
 
+def load_danh_sach_video_nghien_cuu_fresh():
+    """8 video nghiên cứu đọc tươi từ video_list/evaluations root + database mỗi rerun."""
+    evals = load_evaluations_fresh()
+    vlist = load_video_list_fresh()
+    if not vlist:
+        vlist = load_data(VIDEOS_FILE)
+    return _lay_video_nghien_cuu_chinh_thuc(vlist, evals) or []
+
+
 def _tim_video_cho_progress(video_path):
     """Tìm video theo path — chỉ quét 8 video nghiên cứu, không load toàn bộ video_list."""
     if not video_path:
@@ -1279,7 +1295,30 @@ def _ncv_vas_class(vas):
     return "low"
 
 
-def _ncv_patient_table(rows, title="Bệnh nhân", subtitle="Sắp xếp: ưu tiên", icon_id="i-users"):
+def _ncv_short_text(value, limit=72):
+    text = " ".join(str(value or "").split())
+    if len(text) <= limit:
+        return text
+    return text[: max(0, limit - 3)].rstrip() + "..."
+
+
+def _ncv_patient_table(
+    rows,
+    title="Bệnh nhân",
+    subtitle="Sắp xếp: ưu tiên",
+    icon_id="i-users",
+    headers=None,
+    action_label="→",
+    show_action=True,
+):
+    headers = headers or [
+        "Bệnh nhân",
+        "Chẩn đoán",
+        "VAS",
+        "ROM (AI)",
+        "Trạng thái",
+        "Thao tác",
+    ]
     body = []
     for row in rows or []:
         name = row.get("name") or row.get("full_name") or row.get("patient") or "Bệnh nhân"
@@ -1288,6 +1327,11 @@ def _ncv_patient_table(rows, title="Bệnh nhân", subtitle="Sắp xếp: ưu ti
         vas = row.get("vas", "N/A")
         rom = row.get("rom") or row.get("analysis") or row.get("last_analysis") or "Chưa có"
         status = row.get("status") or "Chờ đánh giá"
+        action_cell = (
+            f'<td><span class="ncv-row-action">{_esc_html(action_label)}</span></td>'
+            if show_action and action_label
+            else ""
+        )
         body.append(
             f"""
 <tr>
@@ -1301,12 +1345,14 @@ def _ncv_patient_table(rows, title="Bệnh nhân", subtitle="Sắp xếp: ưu ti
   <td><span class="ncv-vas {_ncv_vas_class(vas)}">{_esc_html(vas)}</span></td>
   <td>{_esc_html(rom)}</td>
   <td><span class="ncv-status {_ncv_status_class(status)}">{_esc_html(status)}</span></td>
-  <td><span class="ncv-row-arrow">→</span></td>
+  {action_cell}
 </tr>
 """
         )
+    col_count = len(headers)
+    head_html = "".join(f"<th>{_esc_html(h)}</th>" for h in headers)
     empty = """
-<tr><td colspan="6"><div class="ncv-table-empty">Chưa có dữ liệu phù hợp.</div></td></tr>
+<tr><td colspan="{col_count}"><div class="ncv-table-empty">Chưa có dữ liệu phù hợp.</div></td></tr>
 """
     return f"""
 <div class="ncv-table-card">
@@ -1316,8 +1362,8 @@ def _ncv_patient_table(rows, title="Bệnh nhân", subtitle="Sắp xếp: ưu ti
   </div>
   <div class="ncv-table-scroll">
     <table class="ncv-table">
-      <thead><tr><th>Bệnh nhân</th><th>Chẩn đoán</th><th>VAS</th><th>ROM (AI)</th><th>Trạng thái</th><th></th></tr></thead>
-      <tbody>{''.join(body) if body else empty}</tbody>
+      <thead><tr>{head_html}</tr></thead>
+      <tbody>{''.join(body) if body else empty.format(col_count=col_count)}</tbody>
     </table>
   </div>
 </div>
@@ -1329,17 +1375,34 @@ def _ncv_symptom_table(symptoms):
     for s in symptoms or []:
         name = s.get("full_name") or "Bệnh nhân"
         exercises = ", ".join(s.get("exercises") or [])
+        symptom_line = _ncv_short_text(s.get("symptoms") or s.get("description") or "", 86)
+        detail = exercises or "Bài tập phục hồi chức năng"
+        if symptom_line:
+            detail = f"{detail} · {symptom_line}"
         rows.append(
             {
                 "name": name,
                 "sub": s.get("patient_id") or "Theo khai báo VAS",
-                "diagnosis": exercises or "Bài tập phục hồi chức năng",
+                "diagnosis": detail,
                 "vas": s.get("vas", "N/A"),
                 "rom": _format_vn_time(s.get("time"), default="N/A"),
                 "status": "Chờ đánh giá",
             }
         )
-    return _ncv_patient_table(rows, title="Danh sách triệu chứng BN mới nhất", subtitle="Sắp xếp: mới nhất")
+    return _ncv_patient_table(
+        rows,
+        title="Danh sách triệu chứng BN mới nhất",
+        subtitle="Sắp xếp: mới nhất",
+        headers=[
+            "Bệnh nhân",
+            "Bài tập / triệu chứng",
+            "VAS",
+            "Thời gian khai báo",
+            "Trạng thái",
+            "Thao tác",
+        ],
+        action_label="Chi tiết khai báo",
+    )
 
 
 def _ncv_summary_table(patient_summary):
@@ -1349,32 +1412,74 @@ def _ncv_summary_table(patient_summary):
             {
                 "name": row.get("full_name") or row.get("username") or "Bệnh nhân",
                 "sub": f"{row.get('video_count', 0)} video",
-                "diagnosis": "Dataset nghiên cứu",
+                "diagnosis": row.get("source") or "Dataset nghiên cứu",
                 "vas": row.get("vas", "N/A"),
                 "rom": row.get("last_analysis") or "Chưa phân tích",
-                "status": "Đã đồng bộ",
+                "status": row.get("status") or "Đã đồng bộ",
             }
         )
-    return _ncv_patient_table(rows, title="Danh sách bệnh nhân", subtitle="Phân tích gần nhất")
+    return _ncv_patient_table(
+        rows,
+        title="Danh sách bệnh nhân",
+        subtitle="Phân tích gần nhất",
+        headers=[
+            "Bệnh nhân",
+            "Nguồn dữ liệu",
+            "VAS",
+            "Phân tích gần nhất",
+            "Trạng thái",
+            "Thao tác",
+        ],
+        action_label="Xem kết quả",
+    )
 
 
-def _ncv_video_rows_table(page_videos, ai_eval_lookup, ai_eval_by_exercise, doc_eval_lookup, doc_eval_by_exercise, user_role):
+def _ncv_video_rows_table(
+    page_videos,
+    ai_eval_lookup,
+    ai_eval_by_exercise,
+    doc_eval_lookup,
+    doc_eval_by_exercise,
+    user_role,
+    symptom_lookup=None,
+):
     rows = []
     for idx, v in page_videos or []:
         ev_key = _normalize_video_key(v.get('username'), v.get('video_name'), v.get('exercise'))
         ai_eval = ai_eval_lookup.get(ev_key) or ai_eval_by_exercise.get((v.get("username"), v.get("exercise")))
         doc_eval = doc_eval_lookup.get(ev_key) or doc_eval_by_exercise.get((v.get("username"), v.get("exercise")))
+        symptom_meta = {}
+        if symptom_lookup:
+            symptom_meta = (
+                symptom_lookup.get((v.get("username"), v.get("exercise")))
+                or symptom_lookup.get(v.get("username"))
+                or symptom_lookup.get(v.get("full_name"))
+                or {}
+            )
         rows.append(
             {
                 "name": v.get("full_name") or v.get("username") or "Bệnh nhân",
                 "sub": v.get("video_name") or v.get("username") or "",
                 "diagnosis": v.get("exercise") or "Bài tập",
-                "vas": v.get("vas") or "N/A",
+                "vas": v.get("vas") or symptom_meta.get("vas") or "N/A",
                 "rom": _lay_thoi_gian_phan_tich_on_dinh(v, ai_eval) or "Chưa phân tích",
                 "status": _lay_trang_thai_video_danh_sach(v, ai_eval, doc_eval, user_role),
             }
         )
-    return _ncv_patient_table(rows, title="Danh sách video bệnh nhân đã quay", subtitle="Mở từng hàng bên dưới để thao tác", icon_id="i-video")
+    return _ncv_patient_table(
+        rows,
+        title="Danh sách video bệnh nhân đã quay",
+        subtitle="Cập nhật theo dữ liệu mới nhất",
+        icon_id="i-video",
+        headers=[
+            "Bệnh nhân / file",
+            "Bài tập",
+            "VAS",
+            "Thời gian phân tích",
+            "Trạng thái",
+        ],
+        show_action=False,
+    )
 
 
 # --- OPTIMIZED CACHING FOR FASTER PAGE LOADS ---
@@ -3654,7 +3759,8 @@ def _get_secret(key, default=""):
 
 HF_TOKEN = _get_secret("HF_TOKEN") or None
 HF_SPACE_ID = (_get_secret("HF_SPACE_ID") or _get_secret("SPACE_ID")).strip() or None
-HF_DATASET_ID = _get_secret("HF_DATASET_ID") or (f"{HF_SPACE_ID}-data" if HF_SPACE_ID else None)
+HF_DATASET_ID_DEFAULT = "quynhphuong1209/Rehab-AI-Monitor-2026-data"
+HF_DATASET_ID = _get_secret("HF_DATASET_ID") or HF_DATASET_ID_DEFAULT
 
 _hf_dataset_access_cache = {"ok": None, "msg": None, "fp": None}
 _hf_last_download_error = None
@@ -3849,10 +3955,16 @@ def thong_bao_loi_tai_hf():
     """Thông báo lỗi thân thiện khi không tải được file từ Hugging Face Dataset."""
     ok, msg = kiem_tra_quyen_hf_dataset()
     if not ok and msg:
-        st.error(f"🔐 **Lỗi đồng bộ Cloud:** {msg}")
+        st.warning(
+            f"☁️ **Chưa dùng được dữ liệu Cloud:** {msg} "
+            "Ứng dụng sẽ tiếp tục dùng dữ liệu local hiện có."
+        )
         return
     if _hf_last_download_error:
-        st.warning(f"☁️ **Không tải được file phân tích từ Cloud:** {_hf_last_download_error}")
+        st.warning(
+            f"☁️ **Không tải được file phân tích từ Cloud:** {_hf_last_download_error} "
+            "Đang dùng dữ liệu local hiện có."
+        )
     elif ok:
         st.info(
             "☁️ Cloud Sync đã kết nối nhưng file CSV/JSON của **video đang chọn** chưa tải được từ Dataset. "
@@ -3882,14 +3994,10 @@ def khoi_tao_dong_bo_hf():
     try:
         from huggingface_hub import HfApi, hf_hub_download
         api = HfApi(token=HF_TOKEN)
+        api.repo_info(repo_id=HF_DATASET_ID, repo_type="dataset")
         
-        # 1. Tạo repo dataset riêng tư nếu chưa tồn tại (Bọc trong try-except để không block luồng nếu Token bị thiếu quyền create_repo)
-        try:
-            api.create_repo(repo_id=HF_DATASET_ID, repo_type="dataset", private=True, exist_ok=True)
-        except Exception as e:
-            print(f"[HF Sync] Bỏ qua lỗi tạo repo (có thể do Token thiếu quyền create, nhưng repo đã tồn tại): {e}")
-        
-        # 2. Tải các file cấu hình về máy
+        # Tải các file cấu hình chính về máy. Nếu cần tạo repo dataset mới, dùng
+        # huggingface_hub.create_repo(..., repo_type="dataset") ở script quản trị riêng.
         files_to_download = [
             "patient_symptoms.json",
             "doctor_evaluations.json",
@@ -4248,6 +4356,278 @@ HF_JSON_CONFIG_FILES = [
     "schedules.json", "video_list.json", "research_data.json",
     "lich_su_tap_luyen.json", "phan_hoi.json",
 ]
+
+HF_PRIMARY_DATA_FILES = [
+    "video_list.json",
+    "patient_symptoms.json",
+    "doctor_evaluations.json",
+]
+HF_METADATA_DATA_FILES = [
+    "research_data.json",
+    "schedules.json",
+    "lich_su_tap_luyen.json",
+    "phan_hoi.json",
+]
+
+
+def _data_file_candidates(file_name):
+    """Nguồn JSON ưu tiên cho dashboard: local DB, root repo, rồi /data nếu có."""
+    candidates = []
+    for base in (DB_DIR, "database", DATA_DIR, "."):
+        if not base:
+            continue
+        candidates.append(os.path.normpath(os.path.join(base, file_name)))
+    seen = []
+    for path in candidates:
+        if path not in seen:
+            seen.append(path)
+    return seen
+
+
+def load_json_fresh_sources(file_name, default=None, merge_lists=False):
+    """Đọc tươi dữ liệu JSON từ các nguồn local hiện có, không phụ thuộc cache Streamlit."""
+    if default is None:
+        default = []
+    loaded = []
+    for path in _data_file_candidates(file_name):
+        if not os.path.exists(path) or os.path.getsize(path) <= 2:
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if merge_lists and isinstance(data, list):
+                loaded.extend(data)
+            else:
+                return data
+        except Exception as err:
+            print(f"[Data] Khong doc duoc {path}: {err}")
+    if merge_lists and loaded:
+        return loaded
+    return default
+
+
+def _symptom_identity_key(item):
+    return (
+        str(item.get("username") or item.get("full_name") or "").strip(),
+        str(item.get("patient_id") or "").strip(),
+        str(item.get("exercise") or "").strip(),
+        str(item.get("time") or "").strip(),
+    )
+
+
+def _symptom_panel_key(item):
+    return "|".join(_symptom_identity_key(item))
+
+
+def load_symptoms_fresh():
+    """Đọc lại patient_symptoms.json mỗi rerun từ database/root và gộp tránh trùng."""
+    records = load_json_fresh_sources("patient_symptoms.json", default=[], merge_lists=True)
+    dedup = {}
+    for item in records or []:
+        if isinstance(item, dict):
+            dedup[_symptom_identity_key(item)] = item
+    result = list(dedup.values())
+    result.sort(key=lambda x: _parse_vn_datetime(x.get("time")) or datetime.min, reverse=True)
+    return result
+
+
+def load_evaluations_fresh():
+    records = load_json_fresh_sources("doctor_evaluations.json", default=[], merge_lists=True)
+    return _dedup_evaluations([r for r in records or [] if isinstance(r, dict)])
+
+
+def load_video_list_fresh():
+    records = load_json_fresh_sources("video_list.json", default=[], merge_lists=True)
+    dedup = {}
+    for item in records or []:
+        if not isinstance(item, dict):
+            continue
+        key = (item.get("username"), item.get("video_name"), item.get("exercise"))
+        if not item.get("video_name"):
+            continue
+        if key not in dedup:
+            dedup[key] = item
+            continue
+        dedup[key] = _merge_video_lists_union([dedup[key]], [item])[0]
+    return list(dedup.values())
+
+
+def _xay_dung_symptom_lookup(symptoms):
+    lookup = {}
+    by_patient = {}
+    for s in symptoms or []:
+        patient_keys = {
+            s.get("username"),
+            s.get("full_name"),
+            s.get("patient_id"),
+        }
+        exercise = s.get("exercise")
+        t = _parse_vn_datetime(s.get("time")) or datetime.min
+        for key in [k for k in patient_keys if k]:
+            current = by_patient.get(key)
+            cur_t = _parse_vn_datetime((current or {}).get("time")) or datetime.min
+            if not current or t >= cur_t:
+                by_patient[key] = s
+            if exercise:
+                current_ex = lookup.get((key, exercise))
+                cur_ex_t = _parse_vn_datetime((current_ex or {}).get("time")) or datetime.min
+                if not current_ex or t >= cur_ex_t:
+                    lookup[(key, exercise)] = s
+    lookup.update(by_patient)
+    return lookup
+
+
+def _group_latest_symptoms(symptoms, limit=4):
+    grouped_symptoms = {}
+    for item in symptoms or []:
+        key = item.get("patient_id") or item.get("username") or item.get("full_name")
+        if not key:
+            continue
+        current = grouped_symptoms.get(key)
+        if not current:
+            grouped_symptoms[key] = {
+                "username": item.get("username") or item.get("full_name"),
+                "full_name": item.get("full_name") or item.get("username") or "Bệnh nhân",
+                "patient_id": item.get("patient_id", "N/A"),
+                "age": item.get("age", "N/A"),
+                "gender": item.get("gender", "N/A"),
+                "pain_location": item.get("pain_location") or item.get("pain_position") or item.get("location") or "Chưa ghi",
+                "symptoms": item.get("symptoms", ""),
+                "vas": item.get("vas", "N/A"),
+                "time": item.get("time", ""),
+                "exercises": [item.get("exercise", "N/A")],
+                "records": [item],
+            }
+            continue
+        ex = item.get("exercise", "N/A")
+        if ex not in current["exercises"]:
+            current["exercises"].append(ex)
+        current["records"].append(item)
+        if (_parse_vn_datetime(item.get("time")) or datetime.min) >= (
+            _parse_vn_datetime(current.get("time")) or datetime.min
+        ):
+            current.update({
+                "symptoms": item.get("symptoms", current.get("symptoms", "")),
+                "vas": item.get("vas", current.get("vas", "N/A")),
+                "time": item.get("time", current.get("time", "")),
+                "pain_location": item.get("pain_location") or item.get("pain_position") or item.get("location") or current.get("pain_location"),
+            })
+    display_list = list(grouped_symptoms.values())
+    display_list.sort(key=lambda x: _parse_vn_datetime(x.get("time")) or datetime.min, reverse=True)
+    return display_list[:limit]
+
+
+def _render_symptom_detail_panel(symptom):
+    if not symptom:
+        return
+    exercises = ", ".join(symptom.get("exercises") or [symptom.get("exercise", "N/A")])
+    records = symptom.get("records") or [symptom]
+    st.markdown(
+        f"""
+<div class="ncv-detail-panel">
+  <div class="ncv-detail-head">
+    <b>Chi tiết khai báo</b>
+    <span>{_esc_html(_format_vn_time(symptom.get("time"), default="N/A"))}</span>
+  </div>
+  <div class="ncv-detail-grid">
+    <div><span>Bệnh nhân</span><b>{_esc_html(symptom.get("full_name") or symptom.get("username") or "Bệnh nhân")}</b></div>
+    <div><span>Mã định danh</span><b>{_esc_html(symptom.get("patient_id") or "N/A")}</b></div>
+    <div><span>VAS</span><b>{_esc_html(symptom.get("vas", "N/A"))}/10</b></div>
+    <div><span>Vị trí đau</span><b>{_esc_html(symptom.get("pain_location") or "Chưa ghi")}</b></div>
+    <div><span>Bài tập</span><b>{_esc_html(exercises)}</b></div>
+    <div><span>Thời gian khai báo</span><b>{_esc_html(_format_vn_time(symptom.get("time"), default="N/A"))}</b></div>
+  </div>
+  <div class="ncv-detail-desc"><span>Mô tả</span><p>{_esc_html(symptom.get("symptoms") or "Chưa ghi mô tả.")}</p></div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    if len(records) > 1:
+        with st.expander("Các khai báo cùng bệnh nhân", expanded=False):
+            for rec in records:
+                st.write(
+                    f"**{rec.get('exercise', 'N/A')}** · VAS {rec.get('vas', 'N/A')}/10 · "
+                    f"{_format_vn_time(rec.get('time'), default='N/A')}"
+                )
+                if rec.get("symptoms"):
+                    st.caption(rec.get("symptoms"))
+
+
+def _render_selected_video_summary(v, ai_eval=None, doc_eval=None, symptom_lookup=None):
+    if not v:
+        return
+    symptom_meta = {}
+    if symptom_lookup:
+        symptom_meta = (
+            symptom_lookup.get((v.get("username"), v.get("exercise")))
+            or symptom_lookup.get(v.get("username"))
+            or symptom_lookup.get(v.get("full_name"))
+            or {}
+        )
+    vas = v.get("vas") or symptom_meta.get("vas") or "N/A"
+    status = _lay_trang_thai_video_danh_sach(
+        v,
+        ai_eval,
+        doc_eval,
+        st.session_state.user_info.get("role") if st.session_state.get("user_info") else None,
+    )
+    st.markdown(
+        f"""
+<div class="ncv-selected-video-card">
+  <div class="ncv-selected-video-avatar">{_esc_html(_initials(v.get("full_name") or v.get("username"), "BN"))}</div>
+  <div class="ncv-selected-video-main">
+    <b>{_esc_html(v.get("full_name") or v.get("username") or "Bệnh nhân")}</b>
+    <span>{_esc_html(v.get("video_name") or "Chưa có tên file")}</span>
+  </div>
+  <div><span>Bài tập</span><b>{_esc_html(v.get("exercise") or "N/A")}</b></div>
+  <div><span>VAS</span><b>{_esc_html(vas)}</b></div>
+  <div><span>Phân tích</span><b>{_esc_html(_lay_thoi_gian_phan_tich_on_dinh(v, ai_eval) or "Chưa phân tích")}</b></div>
+  <div><span>Trạng thái</span><b>{_esc_html(status)}</b></div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def _chon_video_moi_nhat_cua_benh_nhan(row, video_list, evals):
+    username = row.get("username")
+    name = row.get("full_name") or row.get("name")
+    candidates = [
+        v for v in video_list or []
+        if v.get("username") == username or v.get("full_name") == name
+    ]
+    if not candidates:
+        return None
+
+    def _score(v):
+        ai_eval, doc_eval = _lay_danh_gia_cho_video(v, evals)
+        analysis = _lay_thoi_gian_phan_tich_on_dinh(v, ai_eval)
+        return (
+            _parse_vn_datetime(analysis)
+            or _parse_vn_datetime(_lay_thoi_gian_upload_video(v))
+            or datetime.min
+        )
+
+    candidates.sort(key=_score, reverse=True)
+    return candidates[0]
+
+
+def _mo_ket_qua_benh_nhan(row, video_list, evals, user_role):
+    selected_v = _chon_video_moi_nhat_cua_benh_nhan(row, video_list, evals)
+    if not selected_v:
+        st.warning("Chưa tìm thấy video/kết quả phù hợp cho bệnh nhân này.")
+        return
+    selected_v = _lam_moi_ban_ghi_video_tu_db(selected_v)
+    st.session_state.current_eval_video = selected_v
+    st.session_state.view_old_analysis = bool(selected_v.get("metrics"))
+    st.session_state.reanalyze_triggered = False
+    if selected_v.get("metrics"):
+        nap_phien_benh_nhan_vao_session(selected_v)
+    if user_role == "Nghiên cứu viên":
+        st.session_state.trigger_tab_switch = "📊 KẾT QUẢ ĐÁNH GIÁ"
+    elif user_role == "Bác sĩ / KTV PHCN":
+        st.session_state.trigger_tab_switch = "📊 QUẢN LÝ ĐÁNH GIÁ & NCKH"
+    _lam_moi_giao_dien_sau_nut()
 
 
 def _json_dst_mtime(f_name):
@@ -5852,20 +6232,15 @@ def _xu_ly_route_query_actions():
 
 def _hoan_tat_dang_nhap(username, user_record):
     """Gom xử lý sau đăng nhập để tránh sidebar đã login nhưng body còn form cũ."""
-    role = user_record.get('role', 'Bệnh nhân')
+    user = AuthenticatedUser.from_record(username, user_record)
     st.session_state.logged_in = True
-    st.session_state.user_info = {
-        "username": username,
-        "full_name": user_record.get('full_name', username),
-        "email": user_record.get('email'),
-        "role": role,
-    }
+    st.session_state.user_info = user.to_session_dict()
     st.session_state.show_login_dialog = False
     st.session_state.active_tab = "🏠 TRANG CHỦ"
     st.session_state.pop("active_tab_widget", None)
     st.session_state._need_home_sync = True
     st.session_state._clear_login_widgets_next_run = True
-    _sync_route_query(username=username, role=role)
+    _sync_route_query(username=user.username, role=user.role)
 
 
 def _dang_nhap_demo_theo_vai_tro(role_label):
@@ -5879,236 +6254,58 @@ def _dang_nhap_demo_theo_vai_tro(role_label):
     st.error(f"Không tìm thấy tài khoản demo cho vai trò {role_label}.")
 
 
+def _build_mvc_context():
+    return AppContext(SimpleNamespace(
+        PHASE_UI_LABELS=PHASE_UI_LABELS,
+        HF_DATASET_ID=HF_DATASET_ID,
+        HF_SPACE_ID=HF_SPACE_ID,
+        HF_TOKEN=HF_TOKEN,
+        admin_frontend=admin_frontend,
+        auth_lookup_key=_auth_lookup_key,
+        build_rehab_ui_payload=_build_rehab_ui_payload,
+        clear_all_progress_files=clear_all_progress_files,
+        create_patient_symptom=create_patient_symptom,
+        dang_nhap_demo_theo_vai_tro=_dang_nhap_demo_theo_vai_tro,
+        dang_xuat_ve_dang_nhap=_dang_xuat_ve_dang_nhap,
+        doctor_ktv_frontend=doctor_ktv_frontend,
+        dong_bo_video_list_nen=_dong_bo_video_list_nen,
+        emit_shell_mount=emit_shell_mount,
+        evals_dedup_cached=_evals_dedup_cached,
+        get_main_tab_titles_for_role=_get_main_tab_titles_for_role,
+        get_vn_now=get_vn_now,
+        hash_password=hash_password,
+        hf_la_loi_thu_vien=_hf_la_loi_thu_vien,
+        hien_thi_footer_chung=hien_thi_footer_chung,
+        hoan_tat_dang_nhap=_hoan_tat_dang_nhap,
+        kiem_tra_quyen_hf_dataset=kiem_tra_quyen_hf_dataset,
+        load_danh_sach_video_nghien_cuu=load_danh_sach_video_nghien_cuu,
+        load_users=load_users,
+        mtimes_video_eval=_mtimes_video_eval,
+        normalize_auth_text=_normalize_auth_text,
+        normalize_phase_selection=normalize_phase_selection,
+        patient_frontend=patient_frontend,
+        poll_background_analysis_complete=poll_background_analysis_complete,
+        query_value=_query_value,
+        render_auth_screen=render_auth_screen,
+        legacy_render_main_tab_content=_render_main_tab_content,
+        researcher_frontend=researcher_frontend,
+        rerun_toan_bo_app=_rerun_toan_bo_app,
+        restore_login_from_route=_restore_login_from_route,
+        save_users=save_users,
+        sync_route_query=_sync_route_query,
+        tab_from_slug=_tab_from_slug,
+        thong_ke_video_nghien_cuu=_thong_ke_video_nghien_cuu,
+        thuc_hien_khoi_tao_he_thong_mot_lan=thuc_hien_khoi_tao_he_thong_mot_lan,
+        ui_component=ui_component,
+        upgrade_password_hash_if_needed=_upgrade_password_hash_if_needed,
+        verify_auth_password=_verify_auth_password,
+        xu_ly_route_query_actions=_xu_ly_route_query_actions,
+    ))
+
+
 def _consume_rehab_ui_event(event, tab_titles=None):
     """Handle events sent by the JavaScript UI bridge."""
-    if not event or not isinstance(event, dict):
-        return
-    event_id = event.get("id")
-    if event_id and st.session_state.get("_rehab_ui_last_event_id") == event_id:
-        return
-    if event_id:
-        st.session_state["_rehab_ui_last_event_id"] = event_id
-
-    event_type = event.get("type")
-    if event_type == "theme":
-        next_theme = event.get("theme")
-        if next_theme in ("light", "dark"):
-            st.session_state.theme = next_theme
-            _rerun_toan_bo_app()
-        return
-
-    if event_type == "logout":
-        _dang_xuat_ve_dang_nhap()
-        return
-
-    if event_type == "tab" and tab_titles:
-        target = _tab_from_slug(tab_titles, event.get("tab"))
-        if target:
-            st.session_state.active_tab = target
-            st.session_state.active_tab_widget = target
-            st.session_state["inline_active_tab_widget"] = target
-            _sync_route_query(tab_titles=tab_titles)
-            _rerun_toan_bo_app()
-        return
-
-    if event_type == "side_control":
-        key = str(event.get("key") or "")
-        value = event.get("value")
-        try:
-            if key in {"ncv_confidence", "ncv_sensitivity"}:
-                st.session_state[key] = max(0.0, min(1.0, float(value)))
-            elif key == "ncv_skip_frames":
-                parsed = int(value)
-                st.session_state[key] = parsed if parsed in {0, 1, 2, 4} else 0
-            elif key == "ncv_resize_width":
-                parsed = int(value)
-                st.session_state[key] = parsed if parsed in {480, 720, 1080} else 480
-            elif key == "ncv_giai_doan":
-                allowed = {PHASE_UI_LABELS["g1"], PHASE_UI_LABELS["g2"], PHASE_UI_LABELS["g3"]}
-                if value in allowed:
-                    st.session_state[key] = normalize_phase_selection(value)
-            elif key == "ncv_model_type":
-                if value in {"MediaPipe Heavy", "MediaPipe Full", "MediaPipe Lite"}:
-                    st.session_state[key] = value
-            else:
-                return
-            _rerun_toan_bo_app()
-        except Exception as exc:
-            st.session_state["_rehab_sidebar_notice"] = f"Không cập nhật được cấu hình: {exc}"
-            _rerun_toan_bo_app()
-        return
-
-    if event_type == "side_reset_progress":
-        n_removed = clear_all_progress_files()
-        for _k in ("reanalyze_triggered", "view_old_analysis", "has_data", "stats", "angle_df", "current_eval_video"):
-            st.session_state.pop(_k, None)
-        st.session_state["_rehab_sidebar_notice"] = f"Đã làm mới tiến trình — xóa {n_removed} tệp tiến trình."
-        _rerun_toan_bo_app()
-        return
-
-    if event_type == "admin_user_search":
-        query = _normalize_auth_text(event.get("username", ""))
-        st.session_state["_admin_sidebar_search_query"] = query
-        if not query:
-            st.session_state["_admin_sidebar_search_result"] = None
-            _rerun_toan_bo_app()
-            return
-        users = load_users()
-        u_key = _auth_lookup_key(users, query)
-        if u_key:
-            rec = users.get(u_key) or {}
-            st.session_state["_admin_sidebar_search_result"] = {
-                "found": True,
-                "username": u_key,
-                "full_name": rec.get("full_name") or u_key,
-                "role": rec.get("role") or "Chưa rõ",
-                "email": rec.get("email") or "",
-            }
-        else:
-            st.session_state["_admin_sidebar_search_result"] = {
-                "found": False,
-                "username": query,
-                "message": "Không tìm thấy người dùng.",
-            }
-        _rerun_toan_bo_app()
-        return
-
-    if event_type == "patient_create_symptom":
-        payload = event.get("payload") if isinstance(event.get("payload"), dict) else event
-        if not st.session_state.get("logged_in") or not st.session_state.get("user_info"):
-            st.session_state["_rehab_app_notice"] = {
-                "type": "error",
-                "message": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
-            }
-            _rerun_toan_bo_app()
-            return
-        ok, message, record = create_patient_symptom(payload, st.session_state.get("user_info") or {})
-        st.session_state["_rehab_app_notice"] = {
-            "type": "success" if ok else "error",
-            "message": message,
-        }
-        if ok and record:
-            st.session_state["_rehab_last_symptom_record"] = record
-        _rerun_toan_bo_app()
-        return
-
-    if event_type == "demo_login":
-        role = event.get("role") or "Bệnh nhân"
-        _dang_nhap_demo_theo_vai_tro(role)
-        return
-
-    if event_type == "forgot_password":
-        st.session_state["_auth_mode"] = "forgot"
-        st.session_state.pop("_auth_notice", None)
-        _rerun_toan_bo_app()
-        return
-
-    if event_type == "reset_password":
-        username = _normalize_auth_text(event.get("username", ""))
-        email = _normalize_auth_text(event.get("email", ""))
-        password = event.get("password", "")
-        password2 = event.get("password2", "")
-        st.session_state["_auth_mode"] = "forgot"
-        if not username or not email or len(password) < 6:
-            st.session_state["_auth_notice"] = {
-                "kind": "error",
-                "message": "Vui lòng nhập tài khoản, email và mật khẩu mới tối thiểu 6 ký tự.",
-            }
-            _rerun_toan_bo_app()
-            return
-        if password != password2:
-            st.session_state["_auth_notice"] = {
-                "kind": "error",
-                "message": "Mật khẩu xác nhận không khớp.",
-            }
-            _rerun_toan_bo_app()
-            return
-        users = load_users()
-        u_key = _auth_lookup_key(users, username)
-        stored_email = _normalize_auth_text((users.get(u_key) or {}).get("email")) if u_key else ""
-        if not u_key or stored_email.casefold() != email.casefold():
-            st.session_state["_auth_notice"] = {
-                "kind": "error",
-                "message": "Thông tin tài khoản hoặc email không chính xác.",
-            }
-            _rerun_toan_bo_app()
-            return
-        users[u_key]["password"] = hash_password(password)
-        users[u_key]["hash_version"] = "pbkdf2_sha256"
-        users[u_key]["updated_at"] = get_vn_now().isoformat()
-        save_users(users)
-        st.session_state["_auth_mode"] = "login"
-        st.session_state["_auth_notice"] = {
-            "kind": "success",
-            "message": "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay.",
-        }
-        _rerun_toan_bo_app()
-        return
-
-    if event_type == "login":
-        username = event.get("username", "")
-        password = event.get("password", "")
-        users = load_users()
-        u_key = _auth_lookup_key(users, username)
-        if u_key and _verify_auth_password(u_key, password, users[u_key]):
-            _upgrade_password_hash_if_needed(users, u_key, password)
-            st.session_state.pop("_auth_notice", None)
-            st.session_state.pop("_auth_mode", None)
-            _hoan_tat_dang_nhap(u_key, users[u_key])
-            _rerun_toan_bo_app()
-        else:
-            st.session_state["_auth_notice"] = {
-                "kind": "error",
-                "message": "Tài khoản hoặc mật khẩu không đúng.",
-            }
-            st.session_state["_auth_mode"] = "login"
-            _rerun_toan_bo_app()
-        return
-
-    if event_type == "register":
-        st.session_state["_auth_mode"] = "register"
-        username = _normalize_auth_text(event.get("username", ""))
-        email = _normalize_auth_text(event.get("email", ""))
-        password = event.get("password", "")
-        password2 = event.get("password2", "")
-        role = event.get("role") or "Bệnh nhân"
-        full_name = _normalize_auth_text(event.get("full_name", "")) or username
-        if not username or not email or len(password) < 6:
-            st.session_state["_auth_notice"] = {
-                "kind": "error",
-                "message": "Vui lòng điền đủ thông tin và mật khẩu tối thiểu 6 ký tự.",
-            }
-            _rerun_toan_bo_app()
-            return
-        if password != password2:
-            st.session_state["_auth_notice"] = {
-                "kind": "error",
-                "message": "Mật khẩu xác nhận không khớp.",
-            }
-            _rerun_toan_bo_app()
-            return
-        users = load_users()
-        if _auth_lookup_key(users, username):
-            st.session_state["_auth_notice"] = {
-                "kind": "error",
-                "message": "Tên đăng nhập này đã tồn tại.",
-            }
-            _rerun_toan_bo_app()
-            return
-        users[username] = {
-            "password": hash_password(password),
-            "email": email,
-            "full_name": full_name,
-            "role": role,
-            "created_at": get_vn_now().isoformat(),
-        }
-        save_users(users)
-        st.session_state["_auth_mode"] = "login"
-        st.session_state["_auth_notice"] = {
-            "kind": "success",
-            "message": "Đăng ký thành công. Bạn có thể đăng nhập ngay.",
-        }
-        _rerun_toan_bo_app()
+    return mvc_consume_rehab_ui_event(_build_mvc_context(), event, tab_titles=tab_titles)
 
 _xoa_widget_dang_nhap_sau_rerun()
 
@@ -6332,7 +6529,7 @@ def _inject_base_css_once():
 
     /* ĐẨY GIAO DIỆN XUỐNG ĐỂ KHÔNG BỊ HEADER ĐÈ LÊN NẾU CẦN */
     [data-testid="stAppViewBlockContainer"] {
-        padding-top: 4rem !important;
+        padding-top: 0 !important;
     }
 
     /* Tối ưu hóa giao diện st.segmented_control thành tab bar */
@@ -6683,7 +6880,7 @@ def _inject_base_css_once():
 
     /* ĐẨY GIAO DIỆN LÊN CAO TỐI ĐA */
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0 !important;
         padding-bottom: 10rem !important; /* Thêm khoảng trống cuối trang để kéo xuống hết cỡ */
     }
     
@@ -18574,10 +18771,7 @@ def update_theme_callback():
 # GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ
 # ============================================
 def hien_thi_dang_nhap_dang_ky():
-    payload = _build_rehab_ui_payload(mode="auth")
-    event = ui_component(payload=payload, key="rehab_auth_shell")
-    _consume_rehab_ui_event(event)
-    return
+    return mvc_render_auth_view(_build_mvc_context())
 
     is_light = st.session_state.get('theme') == 'light'
     render_auth_topbar(topbar_html, is_light=is_light)
@@ -19335,6 +19529,32 @@ def _dong_bo_video_list_nen(force=False):
     threading.Thread(target=_job, daemon=True).start()
 
 
+def _dong_bo_json_dashboard_nen(force=False):
+    """Đồng bộ nhẹ các JSON chính cho dashboard BS/KTV và NCV."""
+    if not (HF_TOKEN and HF_DATASET_ID):
+        return
+    now = time.time()
+    if not force and now - float(st.session_state.get("_dashboard_json_sync_at", 0) or 0) < 30:
+        return
+    st.session_state["_dashboard_json_sync_at"] = now
+
+    import threading
+
+    def _job():
+        try:
+            files = frozenset(HF_PRIMARY_DATA_FILES + HF_METADATA_DATA_FILES)
+            before = {f: _json_dst_mtime(f) for f in files}
+            dong_bo_json_cau_hinh_tu_hf(force_files=files)
+            after = {f: _json_dst_mtime(f) for f in files}
+            changed = [f for f in files if before.get(f) != after.get(f)]
+            if changed:
+                _xoa_cache_sau_dong_bo_json(changed)
+        except Exception as err:
+            print(f"[HF Sync] Dashboard JSON sync fallback local: {err}")
+
+    threading.Thread(target=_job, daemon=True).start()
+
+
 def reset_vid_list_page():
     st.session_state.vid_list_page = 0
 
@@ -19348,25 +19568,31 @@ def _chuan_hoa_widget_loc_video(key, options, default):
 
 
 def hien_thi_danh_sach_video_fragment(user_role):
-    """Danh sách video/BN — tự refresh khi đang đồng bộ Cloud sau F5."""
-    # Pre-check để set interval=5s ngay từ đầu nếu list trống — tránh tạo fragment với interval=None
-    # rồi không tự refresh khi _bg_video_list_sync được set bên trong fragment body.
-    _pre = load_danh_sach_video_nghien_cuu()
-    _syncing = st.session_state.get("_bg_video_list_sync") or (not _pre and bool(HF_TOKEN and HF_DATASET_ID))
-    interval = timedelta(seconds=5) if _syncing else None
+    """Danh sách video/BN — refresh nhẹ 30s để bắt dữ liệu JSON mới."""
+    _pre = load_danh_sach_video_nghien_cuu_fresh()
+    interval = timedelta(seconds=30) if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"] else None
 
     def _body():
         _noi_dung_danh_sach_video_fragment(
             user_role,
-            video_list_preloaded=None if st.session_state.get("_bg_video_list_sync") else _pre,
+            video_list_preloaded=None if interval or st.session_state.get("_bg_video_list_sync") else _pre,
         )
 
+    if interval and hasattr(st, "fragment"):
+        try:
+            st.fragment(run_every=interval)(_body)()
+            return
+        except Exception as frag_err:
+            print(f"[Fragment] Dashboard refresh fallback: {frag_err}")
     _body()
 
 
 def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
-    evals_db = _evals_dedup_cached(_mtimes_video_eval()[1])
-    video_list = video_list_preloaded if video_list_preloaded is not None else load_danh_sach_video_nghien_cuu()
+    _dong_bo_json_dashboard_nen(force=False)
+    evals_db = load_evaluations_fresh()
+    symptoms_fresh = load_symptoms_fresh()
+    symptom_lookup = _xay_dung_symptom_lookup(symptoms_fresh)
+    video_list = video_list_preloaded if video_list_preloaded is not None else load_danh_sach_video_nghien_cuu_fresh()
 
     # Mở link bookmark / F5: đồng bộ Cloud nền nếu danh sách trống (không chặn UI)
     if not video_list and (HF_TOKEN and HF_DATASET_ID):
@@ -19417,8 +19643,21 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
 
         patient_summary = _tom_tat_benh_nhan_tu_video(video_list, ai_eval_lookup, ai_eval_by_exercise)
         if patient_summary:
+            for row in patient_summary:
+                s_meta = symptom_lookup.get(row.get("username")) or symptom_lookup.get(row.get("full_name")) or {}
+                if s_meta:
+                    row["vas"] = s_meta.get("vas", row.get("vas", "N/A"))
             if user_role in ["Nghiên cứu viên", "Bác sĩ / KTV PHCN"]:
                 st.markdown(_ncv_summary_table(patient_summary), unsafe_allow_html=True)
+                btn_cols = st.columns(min(4, len(patient_summary)))
+                for i, row in enumerate(patient_summary[:4]):
+                    with btn_cols[i % len(btn_cols)]:
+                        if st.button(
+                            "Xem kết quả",
+                            key=f"btn_patient_result_{user_role}_{i}_{hashlib.md5(str(row).encode()).hexdigest()[:8]}",
+                            use_container_width=True,
+                        ):
+                            _mo_ket_qua_benh_nhan(row, video_list, evals_db, user_role)
             else:
                 st.markdown("##### 👥 DANH SÁCH BỆNH NHÂN — THỜI GIAN PHÂN TÍCH GẦN NHẤT")
                 for row in patient_summary:
@@ -19434,9 +19673,13 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                     )
 
         # --- BỘ LỌC DANH SÁCH VIDEO ---
-        if user_role == "Nghiên cứu viên":
+        if user_role in ["Nghiên cứu viên", "Bác sĩ / KTV PHCN"]:
             st.markdown(_ncv_section_label("Bộ lọc danh sách", "i-search"), unsafe_allow_html=True)
             st.markdown('<div class="ncv-filter-card">', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="ncv-filter-note">Cập nhật theo dữ liệu mới nhất</div>',
+                unsafe_allow_html=True,
+            )
         else:
             st.markdown("##### 🔍 BỘ LỌC DANH SÁCH")
         
@@ -19475,7 +19718,7 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                 on_change=reset_vid_list_page,
                 label_visibility="collapsed"
             )
-        if user_role == "Nghiên cứu viên":
+        if user_role in ["Nghiên cứu viên", "Bác sĩ / KTV PHCN"]:
             st.markdown('</div>', unsafe_allow_html=True)
 
         def _video_co_danh_gia_bac_si(v):
@@ -19618,6 +19861,7 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                         doc_eval_lookup,
                         doc_eval_by_exercise,
                         user_role,
+                        symptom_lookup,
                     ),
                     unsafe_allow_html=True,
                 )
@@ -19626,11 +19870,13 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                         f"{v.get('full_name', v.get('username', 'Bệnh nhân'))} — {v.get('exercise', 'Bài tập')} · {_lay_thoi_gian_upload_video(v)}": (idx, v)
                         for idx, v in page_videos
                     }
+                    st.markdown('<div class="ncv-select-panel">', unsafe_allow_html=True)
                     _selected_detail = st.selectbox(
-                        "Chọn video để xem chi tiết / phân tích" if user_role == "Nghiên cứu viên" else "Chọn video để đánh giá",
+                        "Chọn video để xem kết quả / phân tích" if user_role == "Nghiên cứu viên" else "Chọn video để đánh giá lâm sàng",
                         list(_detail_options.keys()),
                         key="ncv_selected_video_detail" if user_role == "Nghiên cứu viên" else "doctor_selected_video_detail",
                     )
+                    st.markdown('</div>', unsafe_allow_html=True)
                     page_videos = [_detail_options[_selected_detail]]
             else:
                 st.caption(f"📌 Đang hiển thị **{len(page_videos)}** / **{total_videos}** video trong bộ lọc.")
@@ -19665,6 +19911,7 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                     display_status = _lay_trang_thai_video_danh_sach(v, ai_eval, doc_eval, user_role)
                     analysis_time = _lay_thoi_gian_phan_tich_on_dinh(v, ai_eval) or "Chưa phân tích"
                     upload_time = _lay_thoi_gian_upload_video(v)
+                    _render_selected_video_summary(v, ai_eval, doc_eval, symptom_lookup)
                     expander_label = (
                         f"{v['full_name']} — {v['exercise']} | "
                         f"Phân tích: {analysis_time} | Upload: {upload_time} | {display_status}"
@@ -20024,38 +20271,34 @@ def _render_main_tab_content(tab_titles, user_role):
 
                     # Nếu là Bác sĩ hoặc NCV, hiển thị danh sách triệu chứng
                     if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
+                        _dong_bo_json_dashboard_nen(force=False)
                         # --- DANH SÁCH TRIỆU CHỨNG BN (CHUYỂN TỪ SIDEBAR SANG ĐÂY) ---
                         if user_role == "Nghiên cứu viên":
                             st.markdown(_ncv_section_label("Danh sách triệu chứng BN mới nhất", "i-users"), unsafe_allow_html=True)
                         else:
                             st.markdown("### 👥 DANH SÁCH TRIỆU CHỨNG BN MỚI NHẤT")
-                        symptoms_data = load_data(SYMPTOMS_FILE)
+                        symptoms_data = load_symptoms_fresh()
                         if symptoms_data:
-                            # Nhóm các khai báo triệu chứng theo bệnh nhân để gộp bài tập
-                            grouped_symptoms = {}
-                            for item in symptoms_data:
-                                key = item.get('patient_id') or item.get('full_name')
-                                if key not in grouped_symptoms:
-                                    grouped_symptoms[key] = {
-                                        "full_name": item['full_name'],
-                                        "patient_id": item.get('patient_id', 'N/A'),
-                                        "age": item.get('age', 'N/A'),
-                                        "gender": item.get('gender', 'N/A'),
-                                        "symptoms": item.get('symptoms', ''),
-                                        "vas": item.get('vas', 'N/A'),
-                                        "time": item.get('time', ''),
-                                        "exercises": [item.get('exercise', 'N/A')]
-                                    }
-                                else:
-                                    ex = item.get('exercise', 'N/A')
-                                    if ex not in grouped_symptoms[key]["exercises"]:
-                                        grouped_symptoms[key]["exercises"].append(ex)
-                                    grouped_symptoms[key]["time"] = item.get('time', grouped_symptoms[key]["time"])
-                                    grouped_symptoms[key]["vas"] = item.get('vas', grouped_symptoms[key]["vas"])
-                        
-                            display_list = list(reversed(list(grouped_symptoms.values())))[:4]
+                            display_list = _group_latest_symptoms(symptoms_data, limit=4)
                             if user_role in ["Nghiên cứu viên", "Bác sĩ / KTV PHCN"]:
                                 st.markdown(_ncv_symptom_table(display_list), unsafe_allow_html=True)
+                                detail_cols = st.columns(min(4, len(display_list)))
+                                for i, s in enumerate(display_list):
+                                    with detail_cols[i % len(detail_cols)]:
+                                        if st.button(
+                                            "Chi tiết khai báo",
+                                            key=f"btn_symptom_detail_{user_role}_{i}_{hashlib.md5(_symptom_panel_key(s).encode()).hexdigest()[:8]}",
+                                            use_container_width=True,
+                                        ):
+                                            st.session_state.selected_symptom_detail_key = _symptom_panel_key(s)
+                                selected_symptom = next(
+                                    (
+                                        s for s in display_list
+                                        if _symptom_panel_key(s) == st.session_state.get("selected_symptom_detail_key")
+                                    ),
+                                    display_list[0] if display_list else None,
+                                )
+                                _render_symptom_detail_panel(selected_symptom)
                             else:
                                 symp_cols = st.columns(3)
                                 for i, s in enumerate(display_list):
@@ -21220,9 +21463,8 @@ def _render_demo_inline_nav(tab_titles, user_role):
 
 
 def _get_main_tab_titles_for_role(user_role):
-    if user_role == "Quản trị viên":
-        return ["🏠 TRANG CHỦ", "🛠️ QUẢN TRỊ VIÊN", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
-    if user_role == "Bác sĩ / KTV PHCN":
+    has_video_output = False
+    if user_role == ROLE_DOCTOR_KTV:
         selected_video_main = st.session_state.get('current_eval_video')
         _vid_key_meta = (
             (selected_video_main or {}).get("username", ""),
@@ -21233,351 +21475,12 @@ def _get_main_tab_titles_for_role(user_role):
             st.session_state["_meta_tab_vid_key"] = _vid_key_meta
             st.session_state["_meta_tab_has_output"] = _has_out
         has_video_output = st.session_state.get("_meta_tab_has_output", False)
-        titles = ["🏠 TRANG CHỦ", "📊 QUẢN LÝ ĐÁNH GIÁ & NCKH"]
-        if has_video_output:
-            titles.append("🎬 VIDEO & ẢNH")
-        titles += ["⏰ LỊCH NHẮC NHỞ", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "📞 THÔNG TIN LIÊN HỆ", "💬 PHẢN HỒI"]
-        return titles
-    if user_role == "Bệnh nhân":
-        return ["🏠 TRANG CHỦ", "📊 KẾT QUẢ ĐÁNH GIÁ", "⏰ LỊCH NHẮC NHỞ", "📚 THÔNG TIN TỔNG HỢP", "📞 THÔNG TIN LIÊN HỆ", "💬 PHẢN HỒI"]
-    return ["🏠 TRANG CHỦ", "📊 KẾT QUẢ ĐÁNH GIÁ", "🔬 PHÂN TÍCH & TRÍCH XUẤT DỮ LIỆU", "📚 THÔNG TIN TỔNG HỢP", "👥 HỒ SƠ ĐỀ TÀI & ĐỘI NGŨ CHUYÊN GIA", "💬 PHẢN HỒI"]
+    return main_tab_titles_for_role(user_role, has_doctor_video_output=has_video_output)
+
 
 
 def main():
-    # Do not force browser reloads after F5 on HF Spaces.
-    # Streamlit owns reconnect; manual location.reload() can loop into a blank app shell.
-    thuc_hien_khoi_tao_he_thong_mot_lan()
-    _xu_ly_route_query_actions()
-    _restore_login_from_route()
-
-    # Kiểm tra trạng thái đăng nhập ngay đầu hàm main
-    if not st.session_state.get("logged_in") or not st.session_state.get("user_info"):
-        if st.session_state.get("logged_in") and not st.session_state.get("user_info"):
-            st.session_state.logged_in = False
-        render_auth_screen(hien_thi_dang_nhap_dang_ky)
-        return
-
-    # Nạp nhẹ kết quả phân tích nền đã hoàn tất (không rerun) -> hiện ngay khi tải trang
-    poll_background_analysis_complete()
-
-    # Đồng bộ nền ngay sau đăng nhập hợp lệ — hiện UI ngay, không chờ Cloud
-    if st.session_state.pop("_need_home_sync", False):
-        _dong_bo_video_list_nen(force=True)
-
-    user_role = st.session_state.user_info.get('role', 'Bệnh nhân')
-
-    # Tự động chọn video đầu tiên một lần — tránh load lại danh sách mỗi lần chuyển tab
-    if user_role in ["Bác sĩ / KTV PHCN", "Nghiên cứu viên"]:
-        if not st.session_state.get('current_eval_video') and not st.session_state.get('_default_video_picked'):
-            all_vids = load_danh_sach_video_nghien_cuu()
-            if all_vids:
-                st.session_state.current_eval_video = all_vids[0]
-            st.session_state._default_video_picked = True
-
-    tab_titles = _get_main_tab_titles_for_role(user_role)
-    if 'active_tab' not in st.session_state or st.session_state.active_tab not in tab_titles:
-        st.session_state.active_tab = tab_titles[0]
-    if st.session_state.get("active_tab_widget") not in tab_titles:
-        st.session_state.active_tab_widget = st.session_state.active_tab
-    route_tab = _tab_from_slug(tab_titles, _query_value("tab"))
-    if route_tab and route_tab != st.session_state.get("active_tab_widget"):
-        st.session_state.active_tab = route_tab
-        st.session_state.active_tab_widget = route_tab
-
-    ui_event = ui_component(payload=_build_rehab_ui_payload(mode="app", tab_titles=tab_titles), key="rehab_app_shell")
-    _consume_rehab_ui_event(ui_event, tab_titles=tab_titles)
-    emit_shell_mount(spacing_top=0)
-    _sync_route_query(tab_titles=tab_titles)
-    if user_role == "Nghiên cứu viên":
-        st.markdown('<span class="ncv-workspace-anchor"></span>', unsafe_allow_html=True)
-    st.session_state["_demo_sidebar_nav_enabled"] = True
-    st.session_state["_topbar_nav_enabled"] = True
-
-    # Callback xử lý đổi theme nhanh
-    def update_theme_callback():
-        st.session_state.theme = 'dark' if st.session_state.get('theme_toggle_top', True) else 'light'
-
-    # Chuyển các điều khiển hệ thống vào Sidebar
-    with st.sidebar:
-        st.markdown('<div class="side-section">PANEL PHỤ TRỢ</div>', unsafe_allow_html=True)
-        st.markdown("### 🛠️ HỆ THỐNG")
-        
-        # 1. Chế độ Sáng/Tối
-        current_theme = st.session_state.get('theme', 'dark')
-        label = "🌙 Chế độ Tối" if current_theme == 'dark' else "☀️ Chế độ Sáng"
-        desired_toggle_state = current_theme == 'dark'
-        if st.session_state.get("theme_toggle_top") != desired_toggle_state:
-            st.session_state["theme_toggle_top"] = desired_toggle_state
-        st.toggle(label, key="theme_toggle_top", on_change=update_theme_callback)
-        
-        # 2. Thông tin người dùng & Đăng xuất
-        st.markdown(f"""
-        <div style="background: rgba(255, 215, 0, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.3); margin-top: 10px; margin-bottom: 10px;">
-            <div style="font-size: 0.8rem; color: #888;">Đang đăng nhập:</div>
-            <div style="color: #ffd700; font-weight: bold; font-size: 1.1rem; margin-bottom: 10px;">👤 {st.session_state.user_info['username']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # 3. Trạng thái đồng bộ Hugging Face Dataset (Đặc biệt quan trọng trên Space)
-        if HF_SPACE_ID or os.path.exists("/data"):
-            hf_ok, hf_msg = kiem_tra_quyen_hf_dataset()
-            if hf_ok:
-                sub = hf_msg or f"Dataset: <b>{HF_DATASET_ID}</b>"
-                st.markdown(f"""
-                <div style="background: rgba(46, 204, 113, 0.15); padding: 10px; border-radius: 8px; border: 1px solid rgba(46, 204, 113, 0.4); text-align: center; margin-top: 5px; margin-bottom: 15px;">
-                    <span style="color: #2ecc71; font-weight: bold; font-size: 0.85rem;">💚 Cloud Sync: ĐÃ KÍCH HOẠT</span>
-                    <p style="color: #aaa; font-size: 0.75rem; margin: 5px 0 0 0;">{sub}</p>
-                </div>
-                """, unsafe_allow_html=True)
-            elif HF_TOKEN:
-                lib_err = _hf_la_loi_thu_vien(hf_msg or "")
-                sync_label = "THƯ VIỆN LỖI" if lib_err else "TOKEN LỖI"
-                st.markdown(f"""
-                <div style="background: rgba(241, 196, 15, 0.15); padding: 12px; border-radius: 8px; border: 1px solid rgba(241, 196, 15, 0.4); text-align: center; margin-top: 5px; margin-bottom: 15px;">
-                    <span style="color: #f1c40f; font-weight: bold; font-size: 0.85rem;">⚠️ Cloud Sync: {sync_label}</span>
-                    <p style="color: #ddd; font-size: 0.75rem; margin: 5px 0 0 0;">{hf_msg or 'Token không đọc được Dataset.'}</p>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                <div style="background: rgba(231, 76, 60, 0.15); padding: 12px; border-radius: 8px; border: 1px solid rgba(231, 76, 60, 0.4); text-align: center; margin-top: 5px; margin-bottom: 15px;">
-                    <span style="color: #e74c3c; font-weight: bold; font-size: 0.85rem;">⚠️ Cloud Sync: TẮT (NGUY HIỂM)</span>
-                    <p style="color: #ddd; font-size: 0.75rem; margin: 5px 0 0 0;">Dữ liệu sẽ bị xóa sạch khi Space restart! Hãy cấu hình <b>HF_TOKEN</b> (loại Write) trong Space Secrets.</p>
-                </div>
-                """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <div style="background: rgba(52, 152, 219, 0.15); padding: 10px; border-radius: 8px; border: 1px solid rgba(52, 152, 219, 0.4); text-align: center; margin-top: 5px; margin-bottom: 15px;">
-                <span style="color: #3498db; font-weight: bold; font-size: 0.85rem;">💾 Bộ nhớ: Local Storage</span>
-                <p style="color: #aaa; font-size: 0.75rem; margin: 5px 0 0 0;">Đang chạy offline trên máy tính cá nhân.</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        if st.button("🚪 Đăng xuất hệ thống", width="stretch", key="logout_sidebar", type="secondary"):
-            _dang_xuat_ve_dang_nhap()
-        st.markdown("---")
-
-    is_light = st.session_state.get('theme') == 'light'
-    
-    # --- KHỞI TẠO MẶC ĐỊNH ĐỂ TRÁNH LỖI UNBOUNDLOCALERROR ---
-    ma_bai_tap = list(BAI_TAP.keys())[0]
-    bai_tap = BAI_TAP[ma_bai_tap]
-    
-    with st.sidebar:
-        st.markdown(f"### 🎭 VAI TRÒ: {user_role.upper()}")
-        
-        if user_role == "Nghiên cứu viên":
-            st.markdown("### 🔬 THÔNG TIN CHUYÊN GIA")
-            st.markdown(f"""
-            <div class="custom-card" style="padding: 10px; border-left: 5px solid #00c6ff; background: rgba(0, 198, 255, 0.05);">
-                <p style="margin:0; font-weight:bold; color:#00c6ff;">👤 {st.session_state.user_info.get('full_name', 'Chuyên gia AI')}</p>
-                <p style="margin:0; font-size:0.8rem; color:#888;">Trường Đại học Y tế Công cộng</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("### ⚙️ CẤU HÌNH AI & TỐC ĐỘ")
-            st.slider("Độ tự tin tối thiểu (Confidence)", 0.0, 1.0, 0.5, key="ncv_confidence", help="Ngưỡng để AI chấp nhận một điểm khớp xương.")
-            st.selectbox("Tốc độ xử lý", 
-                         options=[0, 1, 2, 4], 
-                         index=([0, 1, 2, 4].index(st.session_state.get("ncv_skip_frames", 0))
-                                  if st.session_state.get("ncv_skip_frames", 0) in [0, 1, 2, 4]
-                                  else 0),
-                         format_func=lambda x: "Tự động (theo độ dài video)" if x==0 else f"Nhanh (Bỏ qua {x} frame)",
-                         key="ncv_skip_frames",
-                         help="0 = Tự động tối ưu theo độ dài video (video >100s tự bỏ frame). Chọn giá trị khác để ghi đè.")
-            st.selectbox("Độ phân giải video (Video Quality)",
-                         options=[480, 720, 1080],
-                         index=([480, 720, 1080].index(st.session_state.get("ncv_resize_width", 720))
-                                  if st.session_state.get("ncv_resize_width", 720) in [480, 720, 1080]
-                                  else 1),
-                         format_func=lambda x: "480p (Tốc độ tối ưu)" if x==480 else ("720p (HD - Chuẩn sắc nét)" if x==720 else "1080p (Full HD - Cực kỳ chuẩn xác)"),
-                         key="ncv_resize_width",
-                         help="Độ phân giải càng cao thì vẽ khung xương càng sắc nét và bám sát khớp bệnh nhân hơn.")
-            st.slider("Độ nhạy chuyển động (Sensitivity)", 0.0, 1.0, 0.7, key="ncv_sensitivity", help="Ảnh hưởng đến việc tính toán vận tốc khớp.")
-            if "ncv_giai_doan" in st.session_state:
-                st.session_state.ncv_giai_doan = normalize_phase_selection(st.session_state.ncv_giai_doan)
-            st.selectbox("🌱 Giai đoạn tập bệnh nhân (Mặc định video):",
-                         options=[PHASE_UI_LABELS["g1"],
-                                  PHASE_UI_LABELS["g2"],
-                                  PHASE_UI_LABELS["g3"]],
-                         index=1,
-                         key="ncv_giai_doan",
-                         help="Điều chỉnh ngưỡng sai số để vẽ khung xương và phát âm thanh phản hồi trực tiếp khi xử lý video.")
-            
-            st.markdown("### 📊 THỐNG KÊ HỆ THỐNG")
-            total_vids, pending_ai, avg_acc = _thong_ke_video_nghien_cuu()
-            
-            st.markdown(f"""
-            <div style="background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                <p style="margin:0; font-size:0.85rem; color: #aaa;">📁 Video chờ xử lý: <b style="color: #00c6ff;">{pending_ai}</b></p>
-                <p style="margin:5px 0; font-size:0.85rem; color: #aaa;">🎯 Accuracy TB: <b style="color: #00ff00;">{avg_acc:.1f}%</b></p>
-                <p style="margin:0; font-size:0.85rem; color: #aaa;">📚 Tổng dữ liệu: <b style="color: #ffd700;">{total_vids} Video</b></p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("### 🎯 CHỌN MÔ HÌNH")
-            st.selectbox("Mô hình Pose", 
-                         options=["MediaPipe Heavy", "MediaPipe Full", "MediaPipe Lite"], 
-                         index=(["MediaPipe Heavy", "MediaPipe Full", "MediaPipe Lite"].index(
-                             st.session_state.get("ncv_model_type", "MediaPipe Heavy"))
-                             if st.session_state.get("ncv_model_type", "MediaPipe Heavy")
-                             in ["MediaPipe Heavy", "MediaPipe Full", "MediaPipe Lite"]
-                             else 0),
-                         key="ncv_model_type",
-                         help=(
-                             "Heavy (Complexity 2): chính xác nhất — mặc định. "
-                             "Full (Complexity 1): cân bằng tốc độ/chính xác. "
-                             "Lite (Complexity 0): nhanh nhất."
-                         ))
-
-            st.markdown("### 🧹 LÀM MỚI TIẾN TRÌNH")
-            st.caption("Hủy tất cả tiến trình đang chạy/đang chờ để bắt đầu phân tích lại từ đầu.")
-            if st.button("🧹 HỦY TẤT CẢ & LÀM MỚI", key="sidebar_reset_progress", use_container_width=True, type="secondary"):
-                n_removed = clear_all_progress_files()
-                # Reset trạng thái phân tích trong phiên hiện tại
-                for _k in ("reanalyze_triggered", "view_old_analysis", "has_data", "stats", "angle_df", "current_eval_video"):
-                    st.session_state.pop(_k, None)
-                st.toast(f"🧹 Đã làm mới — xóa {n_removed} tiến trình. Bạn có thể tải/phân tích lại từ đầu.", icon="✅")
-                st.rerun()
-
-            # st.markdown("### 🎯 CHỌN BÀI TẬP") # Cắt bỏ chọn bài tập ở sidebar cho NCV
-            # ma_bai_tap = st.selectbox("Bài tập nghiên cứu", list(BAI_TAP.keys()), format_func=lambda x: f"{BAI_TAP[x]['icon']} {BAI_TAP[x]['ten']}")
-            # bai_tap = BAI_TAP[ma_bai_tap]
-            
-        elif user_role == "Quản trị viên":
-            st.markdown("### 👑 QUẢN TRỊ HỆ THỐNG")
-            st.markdown(f"""
-            <div style="background: rgba(255, 215, 0, 0.05); padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.2); margin-bottom: 15px;">
-                <p style="margin:0; font-weight:bold; color:#ffd700;">👤 {st.session_state.user_info.get('full_name', 'Administrator')}</p>
-                <p style="margin:0; font-size:0.8rem; color:#888;">Quyền hạn tối cao (Super User)</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.info("""
-            **Chức năng các Tab quản trị:**
-            1. **🏠 TRANG CHỦ**: Dashboard thống kê, biểu đồ và chỉ số hiệu suất hệ thống.
-            2. **🛠️ QUẢN TRỊ**: Cấp tài khoản mới, xóa người dùng và reset database.
-            3. **📊 NHẬT KÝ**: Xem log hoạt động chi tiết của tất cả người dùng.
-            4. **📖 HƯỚNG DẪN**: Quản lý tài liệu và video hướng dẫn sử dụng.
-            5. **🏥 KIẾN THỨC**: Thư viện nội dung chuyên môn về PHCN vai.
-            6. **🌐 CÔNG NGHỆ**: Thông số kỹ thuật về hạ tầng AI và Computer Vision.
-            """)
-            
-            st.markdown("### 🔍 TRA CỨU NHANH")
-            q_user = st.text_input("Tìm kiếm Username", placeholder="VD: patient01")
-            if q_user:
-                db_u = load_users()
-                if q_user in db_u:
-                    st.success(f"Tìm thấy: {db_u[q_user].get('full_name')} ({db_u[q_user].get('role')})")
-                else:
-                    st.error("Không tìm thấy người dùng.")
-
-        else:
-            if user_role == "Bác sĩ / KTV PHCN":
-                # 1. HỒ SƠ CHUYÊN GIA TRONG SIDEBAR
-                st.markdown("### 🩺 HỒ SƠ CHUYÊN GIA")
-                st.markdown(f"""
-                <div style="background: linear-gradient(135deg, rgba(0, 198, 255, 0.1) 0%, rgba(0, 114, 255, 0.1) 100%); 
-                            padding: 15px; border-radius: 12px; border: 1px solid rgba(0, 198, 255, 0.2); margin-bottom: 10px;">
-                    <p style="margin:0; font-weight:bold; color:#00c6ff; font-size: 1.05rem;">👨‍⚕️ {st.session_state.user_info.get('full_name', 'Bác sĩ / KTV')}</p>
-                    <p style="margin:0; font-size:0.8rem; color:#888; margin-top: 4px;">Chuyên gia Phục hồi chức năng</p>
-                    <hr style="margin: 10px 0; border: 0; border-top: 1px solid rgba(0, 198, 255, 0.2);">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #aaa;">
-                        <span>Cơ sở:</span>
-                        <span style="color: #fff;">ĐH Y tế Công cộng</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # THỐNG KÊ NHANH CHO BÁC SĨ — dùng cache để tránh load 341KB mỗi rerun
-                v_list = load_danh_sach_video_nghien_cuu()
-                v_mtime, e_mtime = _mtimes_video_eval()
-                evals_db_cached = _evals_dedup_cached(e_mtime)
-                
-                # Đếm O(n): build set các (username, video_name, exercise) đã được bác sĩ đánh giá
-                evaluated_keys = {
-                    (e.get('patient_username'), e.get('video_name'), e.get('exercise'))
-                    for e in evals_db_cached
-                    if e.get('doctor_username') and e.get('doctor_username') != "AI_Researcher"
-                }
-                pending_eval = sum(
-                    1 for v in v_list
-                    if (v.get('username'), v.get('video_name'), v.get('exercise')) not in evaluated_keys
-                )
-                total_patients = len(set(v.get('username') for v in v_list if v.get('username')))
-
-                st.markdown(f"""
-                <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-                    <div style="flex:1; background: rgba(255,255,255,0.03); padding: 12px 8px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                        <p style="margin:0; font-size: 0.65rem; color: #888; font-weight: bold;">CHỜ ĐÁNH GIÁ</p>
-                        <p style="margin:5px 0 0; font-size: 1.3rem; font-weight: bold; color: #ff4b4b;">{pending_eval}</p>
-                    </div>
-                    <div style="flex:1; background: rgba(255,255,255,0.03); padding: 12px 8px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                        <p style="margin:0; font-size: 0.65rem; color: #888; font-weight: bold;">TỔNG BỆNH NHÂN</p>
-                        <p style="margin:5px 0 0; font-size: 1.3rem; font-weight: bold; color: #00c6ff;">{total_patients}</p>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            else: # Vai trò Bệnh nhân
-                # HƯỚNG DẪN SỬ DỤNG CÁC TAB (thay thế form cũ đã chuyển sang Tab 1)
-                full_name = st.session_state.user_info.get('full_name', 'Bệnh nhân')
-                st.markdown(f"""
-                <div style="background: linear-gradient(135deg, rgba(0, 198, 255, 0.08) 0%, rgba(0, 114, 255, 0.08) 100%);
-                            padding: 14px; border-radius: 12px; border: 1px solid rgba(0, 198, 255, 0.2); margin-bottom: 15px;">
-                    <p style="margin:0; font-weight:bold; color:#00c6ff; font-size: 1rem;">🏥 Xin chào, {full_name}!</p>
-                    <p style="margin:4px 0 0; font-size:0.8rem; color:#888;">Bệnh nhân - Hệ thống PHCN AI</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown("### 📚 HƯỚNG DẪN SỬ DỤNG")
-                st.markdown("""
-                <div style="font-size: 0.88rem; line-height: 1.7;">
-                <p>👉 Hệ thống hỗ trợ bạn qua các Tab sau:</p>
-                <p>🏠 <b>TRANG CHỦ</b><br>
-                <span style="color:#aaa; font-size:0.8rem;">Khai báo thông tin, triệu chứng, chọn bài tập và tải video tập luyện lên cho Bác sĩ.</span></p>
-                <p>📊 <b>KẾT QUẢ ĐÁNH GIÁ</b><br>
-                <span style="color:#aaa; font-size:0.8rem;">Xem nhận xét của Bác sĩ/KTV và kết quả phân tích AI về chuyển động của bạn.</span></p>
-                <p>⏰ <b>LỊCH NHẮC NHỞ</b><br>
-                <span style="color:#aaa; font-size:0.8rem;">Xem lịch tái khám và các nhắc nhở tập luyện hàng ngày.</span></p>
-                <p>📚 <b>THÔNG TIN</b><br>
-                <span style="color:#aaa; font-size:0.8rem;">Tìm hiểu về bài tập phục hồi chức năng vai và các kiến thức y tế hữu ích.</span></p>
-                <p>📞 <b>LIÊN HỆ</b><br>
-                <span style="color:#aaa; font-size:0.8rem;">Thông tin liên hệ với Bác sĩ/KTV khi cần hỗ trợ khẩn cấp.</span></p>
-                </div>
-                """, unsafe_allow_html=True)
-
-        
-        st.markdown("---")
-        st.markdown("**👨‍🏫 Giảng viên hướng dẫn 1 (Khoa học dữ liệu):** TS. Trần Hồng Việt 🎓")
-        st.markdown("**👩‍🏫 Giảng viên hướng dẫn 2 (Lâm sàng):** Nguyễn Thị Thùy Chi 🎓")
-        st.markdown("**🏥 Trường Đại học Y tế Công cộng**")
-        st.markdown("**👩‍⚕️ Chủ nhiệm đề tài:** Đinh Lê Quỳnh Phương")
-    
-    # Khởi tạo hoặc khôi phục active_tab (đồng bộ widget sau reload — tránh trang trống)
-    if 'active_tab' not in st.session_state or st.session_state.active_tab not in tab_titles:
-        st.session_state.active_tab = tab_titles[0]
-    if st.session_state.get("active_tab_widget") not in tab_titles:
-        st.session_state.pop("active_tab_widget", None)
-        st.session_state.active_tab = tab_titles[0]
-
-    try:
-        role_renderers = {
-            "Bệnh nhân": patient_frontend.render,
-            "Bác sĩ / KTV PHCN": doctor_ktv_frontend.render,
-            "Nghiên cứu viên": researcher_frontend.render,
-            "Quản trị viên": admin_frontend.render,
-        }
-        role_renderers.get(user_role, patient_frontend.render)(tab_titles, _render_main_tab_content)
-    except Exception as tab_err:
-        st.error(f"💥 Lỗi hiển thị nội dung tab: {tab_err}")
-        import traceback
-        st.code(traceback.format_exc())
-
-    # ==================== FOOTER CHUNG (LUÔN HIỆN Ở DƯỚI CÙNG) ====================
-    st.markdown('<div id="rehab-footer-anchor"></div>', unsafe_allow_html=True)
-    hien_thi_footer_chung()
-
+    return run_app(_build_mvc_context())
 
 if __name__ == "__main__":
     try:

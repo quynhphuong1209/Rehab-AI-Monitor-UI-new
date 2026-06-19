@@ -1045,6 +1045,7 @@ _AUTH_NAV_CSS = """
 }
 .stApp:not(:has(.auth-shell-anchor)) [data-testid="stMainBlockContainer"],
 .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewBlockContainer"]{
+  padding-top:0!important;
   max-width:none!important;
   width:calc(100vw - 24px)!important;
   margin-left:12px!important;
@@ -1815,6 +1816,20 @@ html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shel
   font-size:17px;
   font-weight:700;
 }
+.ncv-row-action{
+  min-height:30px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:var(--teal-strong);
+  background:var(--teal-12);
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+}
 .ncv-table-empty{padding:18px;color:var(--ink-3);text-align:center}
 .st-key-inline_active_tab_widget{
   margin:12px clamp(14px,3vw,30px) 18px!important;
@@ -1987,9 +2002,15 @@ html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shel
 }
 @media (max-width:760px){
   .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewContainer"]>.main .block-container,
-  .stApp:not(:has(.auth-shell-anchor)) [data-testid="stMainBlockContainer"],
-  .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewBlockContainer"]{
+  .stApp:not(:has(.auth-shell-anchor)) [data-testid="stMainBlockContainer"]{
     padding-top:calc(var(--rehab-content-top,112px) + 4px)!important;
+    max-width:none!important;
+    width:calc(100vw - 28px)!important;
+    margin-left:14px!important;
+    margin-right:14px!important;
+  }
+  .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewBlockContainer"]{
+    padding-top:0!important;
     max-width:none!important;
     width:calc(100vw - 28px)!important;
     margin-left:14px!important;
@@ -3331,6 +3352,20 @@ _NCV_DASHBOARD_CSS = """
   font-size:17px;
   font-weight:700;
 }
+.ncv-row-action{
+  min-height:30px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:var(--teal-strong);
+  background:var(--teal-12);
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+}
 .ncv-table-empty{
   padding:18px;
   color:var(--ink-3);
@@ -3350,6 +3385,109 @@ _NCV_DASHBOARD_CSS = """
   padding:14px 16px;
   margin:12px 0 16px;
 }
+.ncv-filter-note{
+  display:inline-flex;
+  align-items:center;
+  min-height:26px;
+  padding:0 10px;
+  margin:0 0 10px;
+  border-radius:999px;
+  background:var(--teal-12);
+  color:var(--teal-strong);
+  font-size:12px;
+  font-weight:800;
+}
+.ncv-select-panel{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);
+  padding:14px 16px 12px;
+  margin:12px 0 14px;
+}
+.ncv-selected-video-card{
+  display:grid;
+  grid-template-columns:auto minmax(180px,1.4fr) repeat(4,minmax(120px,1fr));
+  gap:12px;
+  align-items:center;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);
+  padding:14px 16px;
+  margin:12px 0;
+}
+.ncv-selected-video-avatar{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:var(--teal);
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  font-size:12px;
+  font-weight:900;
+}
+.ncv-selected-video-card span,
+.ncv-detail-grid span,
+.ncv-detail-desc span{
+  display:block;
+  color:var(--ink-3);
+  font-size:11.5px;
+  font-weight:800;
+}
+.ncv-selected-video-card b{
+  display:block;
+  color:var(--ink);
+  font-size:13px;
+  line-height:1.35;
+}
+.ncv-selected-video-main span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.ncv-detail-panel{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);
+  padding:16px;
+  margin:12px 0 18px;
+}
+.ncv-detail-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--line-2);
+}
+.ncv-detail-head b{color:var(--ink);font-size:15px}
+.ncv-detail-head span{color:var(--ink-3);font-size:12px;font-weight:800}
+.ncv-detail-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin-top:14px;
+}
+.ncv-detail-grid>div{
+  min-height:58px;
+  padding:10px 12px;
+  border:1px solid var(--line-2);
+  border-radius:10px;
+  background:var(--surface-2);
+}
+.ncv-detail-grid b{display:block;margin-top:4px;color:var(--ink);font-size:13px;line-height:1.35}
+.ncv-detail-desc{
+  margin-top:12px;
+  padding:12px;
+  border:1px solid var(--line-2);
+  border-radius:10px;
+  background:var(--surface-2);
+}
+.ncv-detail-desc p{margin:5px 0 0;color:var(--ink-2);font-size:13px;line-height:1.5}
 .ncv-filter-card [data-testid="stHorizontalBlock"],
 .ncv-batch-card [data-testid="stHorizontalBlock"]{
   gap:12px!important;
@@ -3424,6 +3562,8 @@ _NCV_DASHBOARD_CSS = """
 @media (max-width:980px){
   .ncv-page{margin-top:18px}
   .ncv-stat-grid,.ncv-patient-grid{grid-template-columns:1fr 1fr}
+  .ncv-selected-video-card{grid-template-columns:auto 1fr}
+  .ncv-detail-grid{grid-template-columns:1fr}
 }
 @media (max-width:760px){
   .stApp:has(.ncv-workspace-anchor) [data-testid="stAppViewContainer"]>.main .block-container,

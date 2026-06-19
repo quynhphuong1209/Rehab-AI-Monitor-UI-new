@@ -11,7 +11,11 @@
   }
   html[data-rehab-role-ui="researcher"] .ncv-table-card,
   html[data-rehab-role-ui="researcher"] .ncv-stat-card,
-  html[data-rehab-role-ui="researcher"] .ncv-patient-card {
+  html[data-rehab-role-ui="researcher"] .ncv-patient-card,
+  html[data-rehab-role-ui="researcher"] .ncv-filter-card,
+  html[data-rehab-role-ui="researcher"] .ncv-select-panel,
+  html[data-rehab-role-ui="researcher"] .ncv-selected-video-card,
+  html[data-rehab-role-ui="researcher"] .ncv-detail-panel {
     border-radius: 8px !important;
     border-color: var(--rehab-line) !important;
     background: var(--rehab-card) !important;
