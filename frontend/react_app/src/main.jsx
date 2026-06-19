@@ -1,17 +1,20 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 
 const roots = new WeakMap();
 
 function norm(value) {
-  return String(value || "").toLowerCase();
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function roleKey(payload) {
   const role = norm(payload?.role || payload?.user?.role);
-  if (role.includes("quản") || role.includes("quan")) return "admin";
-  if (role.includes("nghiên") || role.includes("nghien") || role.includes("ncv")) return "researcher";
-  if (role.includes("bác") || role.includes("bac") || role.includes("ktv")) return "doctor";
+  if (role.includes("quan") || role.includes("admin")) return "admin";
+  if (role.includes("nghien") || role.includes("ncv")) return "researcher";
+  if (role.includes("bac") || role.includes("ktv")) return "doctor";
   return "patient";
 }
 
@@ -54,12 +57,23 @@ function Metrics({ items }) {
 function SymptomsTable({ symptoms }) {
   const rows = symptoms || [];
   if (!rows.length) {
-    return <div className="rehab-react-list-item"><b>Chưa có khai báo</b><span>Form bên trái sẽ lưu vào patient_symptoms.json.</span></div>;
+    return (
+      <div className="rehab-react-list-item">
+        <b>Chưa có khai báo</b>
+        <span>Form bên trái sẽ lưu vào patient_symptoms.json.</span>
+      </div>
+    );
   }
   return (
     <table className="rehab-react-table">
       <thead>
-        <tr><th>Ngày</th><th>VAS</th><th>Vị trí</th><th>Mô tả</th><th>Bài tập</th></tr>
+        <tr>
+          <th>Ngày</th>
+          <th>VAS</th>
+          <th>Vị trí</th>
+          <th>Mô tả</th>
+          <th>Bài tập</th>
+        </tr>
       </thead>
       <tbody>
         {rows.map((row, idx) => (
@@ -150,7 +164,11 @@ function DoctorKtvApp({ payload }) {
   const stats = payload.sideStats || {};
   return (
     <main className="rehab-react-shell">
-      <Title eyebrow="Clinical workspace" title="Danh sách bệnh nhân" subtitle="Bảng mềm cho hàng chờ đánh giá, giữ backend đánh giá Streamlit ở lớp dưới trong giai đoạn chuyển đổi." />
+      <Title
+        eyebrow="Clinical workspace"
+        title="Danh sách bệnh nhân"
+        subtitle="Bảng mềm cho hàng chờ đánh giá, giữ backend đánh giá Streamlit ở lớp dưới trong giai đoạn chuyển đổi."
+      />
       <Metrics items={[
         { label: "Tổng bệnh nhân", value: stats.patients ?? 0, sub: "Theo video hiện có" },
         { label: "Chờ đánh giá", value: stats.pending ?? 0, sub: "Lấy từ đánh giá thật" },
@@ -171,7 +189,11 @@ function ResearcherApp({ payload }) {
   const stats = payload.sideStats || {};
   return (
     <main className="rehab-react-shell">
-      <Title eyebrow="Research workspace" title="Quản lý Dataset" subtitle="Không gian NCV cho dataset, video nghiên cứu và tiến trình AI/MediaPipe." />
+      <Title
+        eyebrow="Research workspace"
+        title="Quản lý Dataset"
+        subtitle="Không gian NCV cho dataset, video nghiên cứu và tiến trình AI/MediaPipe."
+      />
       <Metrics items={[
         { label: "Video nghiên cứu", value: stats.total_videos ?? stats.videos ?? 0, sub: "Tổng dữ liệu" },
         { label: "Đã có AI", value: stats.ai_done ?? 0, sub: "Kết quả phân tích" },
@@ -192,7 +214,11 @@ function AdminApp({ payload }) {
   const stats = payload.sideStats || {};
   return (
     <main className="rehab-react-shell">
-      <Title eyebrow="Admin workspace" title="Bảng điều khiển hệ thống" subtitle="Quản lý tài khoản, dữ liệu và audit log bằng layout card/table mềm." />
+      <Title
+        eyebrow="Admin workspace"
+        title="Bảng điều khiển hệ thống"
+        subtitle="Quản lý tài khoản, dữ liệu và audit log bằng layout card/table mềm."
+      />
       <Metrics items={[
         { label: "Tài khoản", value: stats.accounts ?? 0, sub: "Users JSON" },
         { label: "Video", value: stats.videos ?? 0, sub: "Video list" },

@@ -1,14 +1,13 @@
 (function () {
   const css = `
   html[data-rehab-role-ui="researcher"] [data-testid="stAppViewContainer"] > .main .block-container {
-    max-width: min(1560px, calc(100vw - 80px)) !important;
-    width: 100% !important;
+    max-width: none !important;
   }
   html[data-rehab-role-ui="researcher"] .rehab-role-eyebrow {
     color:#4F46E5; border-color:rgba(79,70,229,.24); background:rgba(79,70,229,.10);
   }
   html[data-rehab-role-ui="researcher"] .rehab-role-head {
-    margin-top:4px;
+    margin-top:0;
   }
   html[data-rehab-role-ui="researcher"] .ncv-table-card,
   html[data-rehab-role-ui="researcher"] .ncv-stat-card,

@@ -114,33 +114,36 @@
   html[data-rehab-shell] [data-testid="stSidebar"],
   html[data-rehab-shell] [data-testid="stSidebarCollapsedControl"] { display:none !important; }
   html[data-rehab-shell] .block-container,
+  html[data-rehab-shell] [data-testid="stMainBlockContainer"],
   html[data-rehab-shell] [data-testid="stAppViewContainer"] > .main .block-container {
-    padding-top: calc(var(--rehab-content-top) + 8px) !important;
-    max-width: calc(100vw - 48px) !important;
-    width: 100% !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    padding-top: calc(var(--rehab-content-top) + 4px) !important;
+    max-width: none !important;
+    width: calc(100vw - 24px) !important;
+    margin-left: 12px !important;
+    margin-right: 12px !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     transition:max-width .2s ease, margin .2s ease, padding .2s ease;
   }
   html[data-rehab-shell][data-rehab-drawer-open="true"] .block-container,
+  html[data-rehab-shell][data-rehab-drawer-open="true"] [data-testid="stMainBlockContainer"],
   html[data-rehab-shell][data-rehab-drawer-open="true"] [data-testid="stAppViewContainer"] > .main .block-container {
-    max-width: calc(100vw - var(--rehab-drawer-w) - 48px) !important;
-    margin-left: calc(var(--rehab-drawer-w) + 24px) !important;
-    margin-right: 24px !important;
+    max-width: none !important;
+    width: calc(100vw - var(--rehab-drawer-w) - 24px) !important;
+    margin-left: calc(var(--rehab-drawer-w) + 12px) !important;
+    margin-right: 12px !important;
   }
   html[data-rehab-shell] .rehab-js-content-anchor { height:0 !important; }
   #rehab-react-root {
-    position:relative; z-index:5; width:calc(100vw - 48px);
-    margin:calc(var(--rehab-content-top) + 8px) auto 24px;
+    position:relative; z-index:5; width:calc(100vw - 24px);
+    margin:calc(var(--rehab-content-top) + 4px) 12px 24px;
     transition:width .2s ease, margin .2s ease, opacity .16s ease;
   }
   #rehab-react-root:empty { display:none; }
   html[data-rehab-drawer-open="true"] #rehab-react-root {
-    width:calc(100vw - var(--rehab-drawer-w) - 48px);
-    margin-left:calc(var(--rehab-drawer-w) + 24px);
-    margin-right:24px;
+    width:calc(100vw - var(--rehab-drawer-w) - 24px);
+    margin-left:calc(var(--rehab-drawer-w) + 12px);
+    margin-right:12px;
   }
   html[data-rehab-mode="auth"] #rehab-react-root { display:none; }
   .rehab-react-shell {
@@ -388,7 +391,7 @@
   .rehab-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   html[data-rehab-shell] .rehab-workspace,
   html[data-rehab-shell] .rehab-role-workspace {
-    width:100%; max-width:min(1560px, calc(100vw - 80px)); margin:0 auto;
+    width:100%; max-width:none !important; margin:0;
   }
   html[data-rehab-shell] .rehab-role-head {
     display:flex; align-items:flex-end; justify-content:space-between; gap:24px;
@@ -527,6 +530,33 @@
     color:var(--rehab-muted) !important;
     opacity:.58 !important;
     font-weight:500 !important;
+  }
+  html[data-rehab-shell] .main-footer,
+  html[data-rehab-shell] .main-footer *,
+  html[data-rehab-shell] .footer,
+  html[data-rehab-shell] .footer *,
+  html[data-rehab-shell] .project-footer,
+  html[data-rehab-shell] .project-footer *,
+  html[data-rehab-shell] .du-footer,
+  html[data-rehab-shell] .du-footer *,
+  html[data-rehab-shell] .contact-footer,
+  html[data-rehab-shell] .contact-footer * {
+    font-family:var(--rehab-ui) !important;
+    letter-spacing:0 !important;
+  }
+  html[data-rehab-shell] .main-footer h1,
+  html[data-rehab-shell] .main-footer h2,
+  html[data-rehab-shell] .main-footer h3,
+  html[data-rehab-shell] .footer h1,
+  html[data-rehab-shell] .footer h2,
+  html[data-rehab-shell] .footer h3,
+  html[data-rehab-shell] .project-footer h1,
+  html[data-rehab-shell] .project-footer h2,
+  html[data-rehab-shell] .project-footer h3,
+  html[data-rehab-shell] .du-footer h1,
+  html[data-rehab-shell] .du-footer h2,
+  html[data-rehab-shell] .du-footer h3 {
+    font-family:var(--rehab-display) !important;
   }
   .rehab-auth-loading-root {
     position:fixed; inset:var(--rehab-topbar-h) 0 0 0; z-index:2147482400;
@@ -677,22 +707,27 @@
     .rehab-backdrop.is-open { display:block; }
     html[data-rehab-shell] .rehab-js-content-anchor { height:0 !important; }
     html[data-rehab-shell] .block-container,
+    html[data-rehab-shell] [data-testid="stMainBlockContainer"],
     html[data-rehab-shell] [data-testid="stAppViewContainer"] > .main .block-container {
-      padding-top:calc(var(--rehab-content-top) + 8px) !important;
-      padding-left:18px!important;
-      padding-right:18px!important;
-      margin-left:auto!important;
-      margin-right:auto!important;
+      padding-top:calc(var(--rehab-content-top) + 4px) !important;
+      width:calc(100vw - 28px) !important;
+      padding-left:0!important;
+      padding-right:0!important;
+      margin-left:14px!important;
+      margin-right:14px!important;
     }
+    html[data-rehab-shell][data-rehab-drawer-open="true"] .block-container,
+    html[data-rehab-shell][data-rehab-drawer-open="true"] [data-testid="stMainBlockContainer"],
     html[data-rehab-shell][data-rehab-drawer-open="true"] [data-testid="stAppViewContainer"] > .main .block-container {
-      max-width:100% !important;
-      margin-left:auto!important;
-      margin-right:auto!important;
+      width:calc(100vw - 28px) !important;
+      max-width:none !important;
+      margin-left:14px!important;
+      margin-right:14px!important;
     }
     #rehab-react-root,
     html[data-rehab-drawer-open="true"] #rehab-react-root {
       width:calc(100vw - 28px);
-      margin:calc(var(--rehab-content-top) + 8px) 14px 18px;
+      margin:calc(var(--rehab-content-top) + 4px) 14px 18px;
     }
     .rehab-react-grid,
     .rehab-react-panel {
@@ -707,7 +742,7 @@
     }
     html[data-rehab-shell] .rehab-role-head {
       display:block;
-      margin:4px 0 18px;
+      margin:0 0 18px;
     }
     html[data-rehab-shell] .rehab-role-head h1 {
       font-size:clamp(25px,7vw,32px) !important;
@@ -838,6 +873,24 @@
       toast.id = "rehab-toast";
       toast.className = "rehab-toast";
       doc.body.appendChild(toast);
+    }
+
+    let fab = doc.getElementById("rehab-drawer-fab");
+    if (fab) {
+      const cleanFab = fab.cloneNode(true);
+      fab.parentNode.replaceChild(cleanFab, fab);
+      fab = cleanFab;
+      fab.onclick = () => {
+        const open = doc.documentElement.dataset.rehabDrawerOpen === "true";
+        setDrawer(!open);
+      };
+    }
+    let backdrop = doc.getElementById("rehab-backdrop");
+    if (backdrop) {
+      const cleanBackdrop = backdrop.cloneNode(true);
+      backdrop.parentNode.replaceChild(cleanBackdrop, backdrop);
+      backdrop = cleanBackdrop;
+      backdrop.onclick = () => setDrawer(false);
     }
   }
 
@@ -1184,6 +1237,282 @@
     if (/Quản/.test(meta.label)) return adminSidebar(payload, sidebar, meta);
     return patientSidebar(payload, sidebar, meta);
   }
+
+  // Clean UTF-8 shell overrides. These replace older mojibake-rendered helpers
+  // without disturbing the existing bridge and backend events.
+  roleMeta = function(role) {
+    const value = String(role || "");
+    if (/quản|quan|admin/i.test(value)) return { kind:"admin", cls:"rb-qtv", icon:"i-cog", av:"QT", label:"Quản trị viên" };
+    if (/nghiên|nghien|ncv/i.test(value)) return { kind:"researcher", cls:"rb-ncv", icon:"i-micro", av:"NC", label:"Nghiên cứu viên" };
+    if (/bác|bac|ktv/i.test(value)) return { kind:"doctor", cls:"rb-doctor", icon:"i-stetho", av:"BS", label:"Bác sĩ / KTV PHCN" };
+    return { kind:"patient", cls:"rb-patient", icon:"i-heart", av:"BN", label:"Bệnh nhân" };
+  };
+
+  setDrawer = function(open) {
+    const doc = parentDoc();
+    const isAuth = doc.documentElement.dataset.rehabMode === "auth";
+    const nextOpen = !!open && !isAuth;
+    state.drawerOpen = nextOpen;
+    saveStorage({ drawerOpen: nextOpen });
+    doc.documentElement.dataset.rehabDrawerOpen = nextOpen ? "true" : "false";
+    const drawer = doc.getElementById("rehab-drawer");
+    const backdrop = doc.getElementById("rehab-backdrop");
+    const fab = doc.getElementById("rehab-drawer-fab");
+    if (drawer) {
+      drawer.classList.toggle("is-open", nextOpen);
+      drawer.setAttribute("aria-hidden", nextOpen ? "false" : "true");
+    }
+    if (backdrop) backdrop.classList.toggle("is-open", nextOpen);
+    if (fab) {
+      fab.classList.toggle("is-open", nextOpen);
+      fab.innerHTML = icon(nextOpen ? "i-close" : "i-menu");
+      fab.setAttribute("aria-expanded", nextOpen ? "true" : "false");
+      const label = nextOpen ? "Thu sidebar" : "Mở sidebar";
+      fab.title = label;
+      fab.setAttribute("aria-label", label);
+      fab.onclick = () => {
+        const currentOpen = doc.documentElement.dataset.rehabDrawerOpen === "true";
+        setDrawer(!currentOpen);
+      };
+    }
+  };
+
+  renderAuthFallback = function(payload) {
+    const doc = parentDoc();
+    let root = doc.getElementById("rehab-auth-root");
+    if (root && !root.classList.contains("rehab-auth-loading-root")) return;
+    if (!root) {
+      root = doc.createElement("main");
+      root.id = "rehab-auth-root";
+      doc.body.appendChild(root);
+    }
+    root.className = "rehab-auth-loading-root";
+    root.innerHTML = `
+      <div class="rehab-auth-loading-card" role="status" aria-live="polite">
+        <div class="rehab-auth-loading-pulse">${icon("i-pulse")}</div>
+        <b>Đang khởi tạo giao diện đăng nhập</b>
+        <span>Rehab AI Monitor đang nạp form ${esc(payload.authMode || "login")}...</span>
+      </div>
+    `;
+  };
+
+  renderTopbar = function(payload) {
+    const doc = parentDoc();
+    const topbar = doc.getElementById("rehab-topbar");
+    const mode = payload.mode || "app";
+    const user = payload.user || {};
+    const role = roleMeta(user.role || payload.role);
+    const tabs = Array.isArray(payload.tabs) ? payload.tabs : [];
+    const active = payload.activeTab || "";
+    const isAuth = mode === "auth";
+
+    const tabsHtml = isAuth ? "" : tabs.map((tab) => `
+      <button class="rehab-tab ${tab.id === active || tab.title === active ? "is-active" : ""}" data-tab="${esc(tab.id)}">
+        ${icon(tab.icon || "i-doc")}<span>${esc(tab.label || tab.title || tab.id)}</span>
+      </button>`).join("");
+
+    topbar.innerHTML = `
+      <div class="rehab-brand">
+        <div class="rehab-brand-mark">${icon("i-pulse")}</div>
+        <div class="rehab-brand-text">
+          <div class="rehab-brand-name">Rehab <b>AI</b> Monitor</div>
+          <div class="rehab-brand-sub">Hệ sinh thái lâm sàng · HUPH × BV Phạm Ngọc Thạch · 2026</div>
+        </div>
+      </div>
+      <nav class="rehab-tabs" aria-label="Điều hướng vai trò">${tabsHtml}</nav>
+      <div class="rehab-actions">
+        ${isAuth ? "" : `<span class="rehab-rolebadge ${role.cls}">${icon(role.icon)}${esc(role.label)}</span>`}
+        ${isAuth ? "" : `<div class="rehab-userchip"><div class="rehab-avatar">${esc(initials(user.full_name || user.username, role.av))}</div><div class="rehab-user-meta"><span class="rehab-user-name">${esc(user.full_name || user.username || "")}</span><span class="rehab-user-role">${esc(role.label)}</span></div></div>`}
+        ${isAuth ? "" : `<button class="rehab-icon-btn" data-action="logout" title="Đăng xuất">${icon("i-logout")}</button>`}
+        <button class="rehab-icon-btn" data-action="theme" title="Đổi giao diện sáng/tối">${icon(payload.theme === "dark" ? "i-sun" : "i-moon")}</button>
+      </div>
+    `;
+
+    topbar.querySelectorAll("[data-tab]").forEach((btn) => {
+      btn.onclick = () => sendEvent({ type: "tab", tab: btn.getAttribute("data-tab") });
+    });
+    const logoutBtn = topbar.querySelector('[data-action="logout"]');
+    if (logoutBtn) logoutBtn.onclick = () => sendEvent({ type: "logout" });
+    const themeBtn = topbar.querySelector('[data-action="theme"]');
+    if (themeBtn) {
+      themeBtn.onclick = () => {
+        const current = parentDoc().documentElement.dataset.rehabTheme || payload.theme || "light";
+        const next = current === "dark" ? "light" : "dark";
+        applyTheme(next);
+        sendEvent({ type: "theme", theme: next });
+      };
+    }
+  };
+
+  creditsHtml = function(sidebar) {
+    const credits = sidebar.credits || {};
+    return `
+      <hr class="rehab-side-divider">
+      <p><b>Giảng viên hướng dẫn 1:</b> ${esc(credits.mentor_data || "TS. Trần Hồng Việt")}</p>
+      <p><b>Giảng viên hướng dẫn 2:</b> ${esc(credits.mentor_clinical || "Nguyễn Thị Thùy Chi")}</p>
+      <p><b>${esc(credits.school || "Trường Đại học Y tế Công cộng")}</b></p>
+      <p><b>Chủ nhiệm đề tài:</b> ${esc(credits.owner || "Đinh Lê Quỳnh Phương")}</p>
+    `;
+  };
+
+  roleHeader = function(sidebar, meta) {
+    const profile = sidebar.profile || {};
+    return `
+      <div class="rehab-drawer-title">${icon(meta.icon)}VAI TRÒ</div>
+      <div class="rehab-drawer-role">
+        ${icon(meta.icon)}
+        <div><b>${esc(meta.label)}</b><span>${esc(profile.full_name || profile.username || "Rehab AI Monitor")}</span></div>
+      </div>
+      ${sidebar.notice ? `<div class="rehab-side-result"><b>Thông báo:</b> ${esc(sidebar.notice)}</div>` : ""}
+    `;
+  };
+
+  researcherSidebar = function(payload, sidebar, meta) {
+    const profile = sidebar.profile || payload.user || {};
+    const stats = sidebar.stats || payload.sideStats || {};
+    const controls = sidebar.controls || {};
+    const opts = sidebar.options || {};
+    return `
+      ${roleHeader(sidebar, meta)}
+      <div class="rehab-side-card">
+        <h3>${icon("i-flask")}Thông tin chuyên gia</h3>
+        <p><b>${esc(profile.full_name || "Đinh Lê Quỳnh Phương")}</b></p>
+        <p>Trường Đại học Y tế Công cộng</p>
+      </div>
+      <div class="rehab-side-card">
+        <h3>${icon("i-cog")}Cấu hình AI & tốc độ</h3>
+        ${sideFieldRange("ncv_confidence", "Độ tự tin tối thiểu (Confidence)", controls.ncv_confidence ?? 0.5)}
+        ${sideSelect("ncv_skip_frames", "Tốc độ xử lý", controls.ncv_skip_frames ?? 0, opts.skip_frames || [0,1,2,4], {
+          0:"Tự động (theo độ dài video)", 1:"Nhanh (bỏ qua 1 frame)", 2:"Nhanh (bỏ qua 2 frame)", 4:"Nhanh (bỏ qua 4 frame)"
+        })}
+        ${sideSelect("ncv_resize_width", "Độ phân giải video (Video Quality)", controls.ncv_resize_width ?? 480, opts.resize_width || [480,720,1080], {
+          480:"480p (tốc độ tối ưu)", 720:"720p (HD - sắc nét)", 1080:"1080p (Full HD - chuẩn xác)"
+        })}
+        ${sideFieldRange("ncv_sensitivity", "Độ nhạy chuyển động (Sensitivity)", controls.ncv_sensitivity ?? 0.7)}
+        ${sideSelect("ncv_giai_doan", "Giai đoạn tập bệnh nhân", controls.ncv_giai_doan || "Giai đoạn 2: Hồi phục (Sai số ±30°)", opts.phase_labels || [], null)}
+      </div>
+      <div class="rehab-side-card">
+        <h3>${icon("i-bars")}Thống kê hệ thống</h3>
+        <div class="rehab-kv"><span>Video chờ xử lý</span><b>${esc(stats.pending_ai ?? 0)}</b></div>
+        <div class="rehab-kv"><span>Accuracy TB</span><b>${esc(stats.avg_acc ?? 0)}%</b></div>
+        <div class="rehab-kv"><span>Tổng dữ liệu</span><b>${esc(stats.total_videos ?? 0)} Video</b></div>
+      </div>
+      <div class="rehab-side-card">
+        <h3>${icon("i-target")}Chọn mô hình</h3>
+        ${sideSelect("ncv_model_type", "Mô hình Pose", controls.ncv_model_type || "MediaPipe Heavy", opts.models || ["MediaPipe Heavy","MediaPipe Full","MediaPipe Lite"], null)}
+        <hr class="rehab-side-divider">
+        <h3>${icon("i-broom")}Làm mới tiến trình</h3>
+        <p>Hủy tất cả tiến trình đang chạy/đang chờ để bắt đầu phân tích lại từ đầu.</p>
+        <button class="rehab-side-button secondary" data-side-reset>${icon("i-broom")}Làm mới tiến trình</button>
+        ${creditsHtml(sidebar)}
+      </div>
+    `;
+  };
+
+  doctorSidebar = function(payload, sidebar, meta) {
+    const profile = sidebar.profile || payload.user || {};
+    const stats = sidebar.stats || payload.sideStats || {};
+    return `
+      ${roleHeader(sidebar, meta)}
+      <div class="rehab-side-card">
+        <h3>${icon("i-stetho")}Hồ sơ chuyên gia</h3>
+        <p><b>${esc(profile.full_name || "Doctor 1")}</b></p>
+        <p>Chuyên gia Phục hồi chức năng</p>
+        <div class="rehab-kv"><span>Cơ sở</span><b>ĐH Y tế Công cộng</b></div>
+        <div class="rehab-side-metrics">
+          <div class="rehab-side-metric"><span>Chờ đánh giá</span><b>${esc(stats.pending ?? 0)}</b></div>
+          <div class="rehab-side-metric"><span>Tổng bệnh nhân</span><b>${esc(stats.patients ?? 0)}</b></div>
+        </div>
+        ${creditsHtml(sidebar)}
+      </div>
+    `;
+  };
+
+  patientSidebar = function(payload, sidebar, meta) {
+    const profile = sidebar.profile || payload.user || {};
+    return `
+      ${roleHeader(sidebar, meta)}
+      <div class="rehab-side-card">
+        <h3>${icon("i-heart")}Xin chào, ${esc(profile.full_name || profile.username || "Bệnh nhân")}!</h3>
+        <p>Bệnh nhân - Hệ thống PHCN AI</p>
+      </div>
+      <div class="rehab-side-card">
+        <h3>${icon("i-doc")}Hướng dẫn sử dụng</h3>
+        <p>Hệ thống hỗ trợ bạn qua các tab sau:</p>
+        <div class="rehab-side-guide">
+          <div class="rehab-side-guide-item"><b>${icon("i-shield")}Trang chủ</b><span>Khai báo thông tin, triệu chứng, chọn bài tập và tải video tập luyện lên cho bác sĩ.</span></div>
+          <div class="rehab-side-guide-item"><b>${icon("i-bars")}Kết quả đánh giá</b><span>Xem nhận xét của bác sĩ/KTV và kết quả phân tích AI về chuyển động của bạn.</span></div>
+          <div class="rehab-side-guide-item"><b>${icon("i-bell")}Lịch nhắc nhở</b><span>Xem lịch tái khám và các nhắc nhở tập luyện hằng ngày.</span></div>
+          <div class="rehab-side-guide-item"><b>${icon("i-doc")}Thông tin</b><span>Tìm hiểu về bài tập phục hồi chức năng vai và kiến thức y tế hữu ích.</span></div>
+          <div class="rehab-side-guide-item"><b>${icon("i-mail")}Liên hệ</b><span>Thông tin liên hệ với bác sĩ/KTV khi cần hỗ trợ khẩn cấp.</span></div>
+        </div>
+        ${creditsHtml(sidebar)}
+      </div>
+    `;
+  };
+
+  adminSidebar = function(payload, sidebar, meta) {
+    const profile = sidebar.profile || payload.user || {};
+    const search = sidebar.adminSearch || {};
+    const result = search.result || null;
+    const resultHtml = result ? (
+      result.found
+        ? `<div class="rehab-side-result"><b>${esc(result.full_name)}</b><br>${esc(result.username)} · ${esc(result.role)}${result.email ? `<br>${esc(result.email)}` : ""}</div>`
+        : `<div class="rehab-side-result"><b>${esc(result.username || "")}</b><br>${esc(result.message || "Không tìm thấy người dùng.")}</div>`
+    ) : "";
+    return `
+      ${roleHeader(sidebar, meta)}
+      <div class="rehab-side-card">
+        <h3>${icon("i-cog")}Quản trị hệ thống</h3>
+        <p><b>${esc(profile.full_name || "System Administrator")}</b></p>
+        <p>Quyền hạn tối cao (Super User)</p>
+      </div>
+      <div class="rehab-side-card">
+        <h3>${icon("i-doc")}Chức năng các tab quản trị</h3>
+        <p><b>Trang chủ:</b> Dashboard thống kê, biểu đồ và chỉ số hiệu suất hệ thống.</p>
+        <p><b>Quản trị:</b> Cấp tài khoản mới, xóa người dùng và reset database.</p>
+        <p><b>Nhật ký:</b> Xem log hoạt động chi tiết của tất cả người dùng.</p>
+        <p><b>Hướng dẫn:</b> Quản lý tài liệu và video hướng dẫn sử dụng.</p>
+        <p><b>Kiến thức:</b> Thư viện nội dung chuyên môn về PHCN vai.</p>
+        <p><b>Công nghệ:</b> Thông số kỹ thuật về hạ tầng AI và Computer Vision.</p>
+      </div>
+      <div class="rehab-side-card">
+        <h3>${icon("i-search")}Tra cứu nhanh</h3>
+        <div class="rehab-side-field">
+          <label>${icon("i-user")}Tìm kiếm Username</label>
+          <input class="rehab-side-input" data-admin-search-input value="${esc(search.query || "")}" placeholder="VD: patient01">
+        </div>
+        <button class="rehab-side-button secondary" data-admin-search>${icon("i-search")}Tra cứu</button>
+        ${resultHtml}
+        ${creditsHtml(sidebar)}
+      </div>
+    `;
+  };
+
+  sidebarHtml = function(payload) {
+    const meta = roleMeta(payload.role || (payload.user || {}).role);
+    const sidebar = payload.sidebar || {};
+    if (meta.kind === "researcher") return researcherSidebar(payload, sidebar, meta);
+    if (meta.kind === "doctor") return doctorSidebar(payload, sidebar, meta);
+    if (meta.kind === "admin") return adminSidebar(payload, sidebar, meta);
+    return patientSidebar(payload, sidebar, meta);
+  };
+
+  renderRoleChrome = function(payload) {
+    if ((payload.mode || "app") === "auth") {
+      resetRoleShellForAuth();
+      return;
+    }
+    removeAuthRoot();
+    const role = roleMeta(payload.role || (payload.user || {}).role);
+    const key = role.kind === "admin" ? "Admin" :
+      role.kind === "doctor" ? "DoctorKtv" :
+      role.kind === "researcher" ? "Researcher" : "Patient";
+    const api = window["Rehab" + key + "UI"];
+    if (api && typeof api.mount === "function") {
+      api.mount(payload, sendEvent, { icon, esc, showToast });
+    }
+  };
 
   function renderDrawer(payload) {
     const doc = parentDoc();

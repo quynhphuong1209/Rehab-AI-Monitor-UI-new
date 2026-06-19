@@ -1,8 +1,7 @@
 (function () {
   const css = `
   html[data-rehab-role-ui="admin"] [data-testid="stAppViewContainer"] > .main .block-container {
-    max-width: min(1560px, calc(100vw - 80px)) !important;
-    width: 100% !important;
+    max-width: none !important;
   }
   html[data-rehab-role-ui="admin"] .rehab-role-eyebrow {
     color:var(--rehab-warning); border-color:rgba(217,119,6,.24); background:rgba(217,119,6,.10);

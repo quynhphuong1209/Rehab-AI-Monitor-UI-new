@@ -1037,14 +1037,26 @@ _AUTH_NAV_CSS = """
   box-shadow:none!important;
 }
 .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewContainer"]>.main .block-container{
-  padding-top:76px!important;
-  max-width:1120px!important;
+  padding-top:calc(var(--rehab-content-top,72px) + 4px)!important;
+  max-width:none!important;
+  width:calc(100vw - 24px)!important;
+  margin-left:12px!important;
+  margin-right:12px!important;
 }
 .stApp:not(:has(.auth-shell-anchor)) [data-testid="stMainBlockContainer"],
 .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewBlockContainer"]{
-  max-width:1120px!important;
-  margin-left:auto!important;
-  margin-right:auto!important;
+  max-width:none!important;
+  width:calc(100vw - 24px)!important;
+  margin-left:12px!important;
+  margin-right:12px!important;
+}
+html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewContainer"]>.main .block-container,
+html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stMainBlockContainer"],
+html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewBlockContainer"]{
+  max-width:none!important;
+  width:calc(100vw - var(--rehab-drawer-w,336px) - 24px)!important;
+  margin-left:calc(var(--rehab-drawer-w,336px) + 12px)!important;
+  margin-right:12px!important;
 }
 .stApp:not(:has(.auth-shell-anchor)) .topbar + div{
   margin-top:0!important;
@@ -1977,8 +1989,18 @@ _AUTH_NAV_CSS = """
   .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewContainer"]>.main .block-container,
   .stApp:not(:has(.auth-shell-anchor)) [data-testid="stMainBlockContainer"],
   .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewBlockContainer"]{
-    padding-top:124px!important;
-    max-width:100%!important;
+    padding-top:calc(var(--rehab-content-top,112px) + 4px)!important;
+    max-width:none!important;
+    width:calc(100vw - 28px)!important;
+    margin-left:14px!important;
+    margin-right:14px!important;
+  }
+  html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewContainer"]>.main .block-container,
+  html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stMainBlockContainer"],
+  html[data-rehab-shell][data-rehab-drawer-open="true"] .stApp:not(:has(.auth-shell-anchor)) [data-testid="stAppViewBlockContainer"]{
+    width:calc(100vw - 28px)!important;
+    margin-left:14px!important;
+    margin-right:14px!important;
   }
   .stApp:has(.auth-shell-anchor) [data-testid="stAppViewContainer"]>.main .block-container{
     padding:0!important;
