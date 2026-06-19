@@ -9,6 +9,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from auth.passwords import current_hash_version
+
 
 JsonDict = dict[str, Any]
 LoadUsers = Callable[[], dict[str, JsonDict]]
@@ -69,8 +71,9 @@ def reset_password(
         return False, "Thông tin tài khoản hoặc email không chính xác."
 
     users[user_key]["password"] = hash_password(password)
-    users[user_key]["hash_version"] = "pbkdf2_sha256"
+    users[user_key]["hash_version"] = current_hash_version()
     users[user_key]["updated_at"] = now_fn().isoformat()
+    users[user_key]["must_change_password"] = False
     save_users(users)
     return True, "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay."
 
@@ -106,10 +109,12 @@ def register_user(
 
     users[username] = {
         "password": hash_password(password),
+        "hash_version": current_hash_version(),
         "email": email,
         "full_name": full_name,
         "role": role or "Bệnh nhân",
         "created_at": now_fn().isoformat(),
+        "must_change_password": False,
     }
     save_users(users)
     return True, "Đăng ký thành công. Bạn có thể đăng nhập ngay."

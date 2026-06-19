@@ -116,11 +116,13 @@
         "mssv": "2317010071"
     },
     "2211090031": {
-        "password": "3f5ae8edf3e373abef97308ea598096c3fc8ea80e1e1920b555fc766244de585",
+        "password": "pbkdf2_sha256$260000$82753ae80dfe436c71051896db753595$b5fe1ffe8f9e5b68ea06cb2c9d4cfe5aa5f2190f7189a69cfe643dc2741044de",
         "full_name": "Đinh Lê Quỳnh Phương",
         "role": "Nghiên cứu viên",
         "email": "2211090031@studenthuph.edu.vn",
-        "mssv": "2211090031"
+        "mssv": "2211090031",
+        "hash_version": "pbkdf2_sha256",
+        "updated_at": "2026-06-18T20:42:25.320482+07:00"
     },
     "Đinh Lê Quỳnh Phương (NCV)": {
         "password": "3f5ae8edf3e373abef97308ea598096c3fc8ea80e1e1920b555fc766244de585",

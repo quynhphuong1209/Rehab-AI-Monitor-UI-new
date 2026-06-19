@@ -2069,7 +2069,8 @@
         },
         "frames_zip": "/data/processed_results/processed_1781489158_frames.zip",
         "sai_so": 30,
-        "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)"
+        "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)",
+        "frames_zip_path": "/data/processed_results/processed_1781489158_frames.zip"
     },
     {
         "username": "Cao Thị Thường",
@@ -4649,7 +4650,8 @@
         },
         "sai_so": 30,
         "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)",
-        "frames_zip": "/data/processed_results/processed_1781460259_frames.zip"
+        "frames_zip": "/data/processed_results/processed_1781460259_frames.zip",
+        "frames_zip_path": "/data/processed_results/processed_1781460259_frames.zip"
     },
     {
         "username": "Cao Thị Thường",
@@ -5799,7 +5801,8 @@
         },
         "frames_zip": "/data/processed_results/processed_1781426834_frames.zip",
         "sai_so": 30,
-        "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)"
+        "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)",
+        "frames_zip_path": "/data/processed_results/processed_1781426834_frames.zip"
     },
     {
         "username": "Hoàng Hạnh Nguyên",
@@ -6390,7 +6393,8 @@
         "df_path": "/data/processed_results/processed_1781152702_f_data.csv",
         "all_frames_data_path": "/data/processed_results/f_1781152702.json",
         "frames_zip": "/data/processed_results/processed_1781152702_frames.zip",
-        "status": "Đã phân tích"
+        "status": "Đã phân tích",
+        "frames_zip_path": "/data/processed_results/processed_1781152702_frames.zip"
     },
     {
         "username": "Cao Thị Thường",
@@ -7148,7 +7152,8 @@
         "df_path": "/data/processed_results/processed_1781140111_f_data.csv",
         "all_frames_data_path": "/data/processed_results/f_1781140111.json",
         "frames_zip": "/data/processed_results/processed_1781140111_frames.zip",
-        "status": "Đã phân tích"
+        "status": "Đã phân tích",
+        "frames_zip_path": "/data/processed_results/processed_1781140111_frames.zip"
     },
     {
         "username": "Nguyễn Thị Nga",
@@ -8142,6 +8147,7 @@
         "status": "Đã phân tích",
         "sai_so": 30,
         "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)",
-        "frames_zip": "/data/processed_results/processed_1781436697_frames.zip"
+        "frames_zip": "/data/processed_results/processed_1781436697_frames.zip",
+        "frames_zip_path": "/data/processed_results/processed_1781436697_frames.zip"
     }
 ]

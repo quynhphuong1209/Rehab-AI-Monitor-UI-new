@@ -126,6 +126,30 @@ from frontend.auth import screens as auth_screens
 from frontend.ui import emit_shell_mount, ui_component
 from models.auth import AuthenticatedUser
 from models.navigation import ROLE_DOCTOR_KTV, main_tab_titles_for_role
+from auth.passwords import (
+    current_hash_version as _current_password_hash_version,
+    hash_password_v2 as _hash_password_v2,
+    needs_password_rehash as _needs_password_rehash,
+    password_record_update as _password_record_update,
+    verify_password_hash as _verify_password_hash,
+    verify_password_record as _verify_password_record,
+)
+from auth.sessions import get_global_session_version, session_is_current
+from video.serving import (
+    allowed_media_file_path,
+    build_video_media_url,
+    media_token_from_request_path,
+    register_media_token,
+    resolve_media_token,
+    video_media_allowed_roots,
+)
+from video.validation import (
+    ALLOWED_UPLOAD_VIDEO_EXTENSIONS,
+    MAX_UPLOAD_SIZE_MB,
+    MAX_UPLOAD_SIZE_BYTES,
+    sanitize_filename,
+    validate_upload_metadata,
+)
 
 close_auth_shell = auth_screens.close_auth_shell
 open_auth_shell = auth_screens.open_auth_shell
@@ -2262,6 +2286,7 @@ def ensure_playable_video(video_path):
 # ============================================================
 _video_http_server_port = None
 _video_http_server_root = None
+_video_media_tokens = {}
 
 def _start_video_http_server():
     """Khởi động 1 lần duy nhất một HTTP server nhẹ để stream video file."""
@@ -2275,13 +2300,12 @@ def _start_video_http_server():
 
     serve_root = os.path.abspath(".")
     _video_http_server_root = serve_root
-    allowed_media_roots = [
-        os.path.abspath(UPLOAD_DIR),
-        os.path.abspath(PROCESSED_DIR),
-        os.path.abspath(os.path.join(".", "static")),
-        os.path.abspath(tempfile.gettempdir()),
-    ]
-    allowed_media_exts = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
+    allowed_media_roots = video_media_allowed_roots(
+        data_dir=DATA_DIR,
+        upload_dir=UPLOAD_DIR,
+        processed_dir=PROCESSED_DIR,
+        temp_dir=os.path.join(tempfile.gettempdir(), "rehab_videos"),
+    )
 
     class _RangeHandler(http.server.SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -2291,16 +2315,11 @@ def _start_video_http_server():
             pass  # tắt log tràn console
 
         def translate_path(self, path):
-            candidate = os.path.abspath(super().translate_path(path))
-            ext = os.path.splitext(candidate)[1].lower()
-            if ext not in allowed_media_exts:
+            token = media_token_from_request_path(path)
+            resolved = resolve_media_token(_video_media_tokens, token, allowed_media_roots)
+            if not resolved:
                 return os.path.join(serve_root, "__blocked__")
-            try:
-                if not any(os.path.commonpath([root, candidate]) == root for root in allowed_media_roots):
-                    return os.path.join(serve_root, "__blocked__")
-            except Exception:
-                return os.path.join(serve_root, "__blocked__")
-            return candidate
+            return resolved
 
         def do_GET(self):
             import re
@@ -2381,6 +2400,16 @@ def _get_video_server_url(video_path):
     if port is None or _video_http_server_root is None:
         return None
     try:
+        roots = video_media_allowed_roots(
+            data_dir=DATA_DIR,
+            upload_dir=UPLOAD_DIR,
+            processed_dir=PROCESSED_DIR,
+            temp_dir=os.path.join(tempfile.gettempdir(), "rehab_videos"),
+        )
+        if not allowed_media_file_path(video_path, roots):
+            return None
+        token = register_media_token(_video_media_tokens, video_path, roots, ttl_seconds=15 * 60)
+        return build_video_media_url(port, token, video_path)
         abs_video = os.path.abspath(video_path)
         abs_root  = os.path.abspath(_video_http_server_root)
         # Windows: kiểm tra cùng drive không (relpath giữa 2 drive khác nhau sẽ fail)
@@ -3883,6 +3912,7 @@ VIDEOS_FILE = os.path.join(DB_DIR, "video_list.json")
 RESEARCH_DATA_FILE = os.path.join(DB_DIR, "research_data.json")
 HISTORY_FILE = os.path.join(DB_DIR, "lich_su_tap_luyen.json")
 FEEDBACK_FILE = os.path.join(DB_DIR, "phan_hoi.json")
+SESSION_STATE_FILE = os.path.join(DB_DIR, "session_state.json")
 UPLOAD_DIR = os.path.join(DATA_DIR, "patient_uploads")
 PROCESSED_DIR = os.path.join(DATA_DIR, "processed_results")
 
@@ -6106,7 +6136,7 @@ def _get_cached_users_dict(mtime):
     for u, data in predefined.items():
         if u not in users:
             data.setdefault("created_at", get_vn_now().isoformat())
-            data.setdefault("hash_version", "pbkdf2_sha256")
+            data.setdefault("hash_version", _current_password_hash_version())
             users[u] = data
             
     # Đảm bảo các user cũ có role mặc định là Bệnh nhân
@@ -6130,46 +6160,35 @@ def save_users(users):
         pass
 
 def hash_password(password):
-    salt = secrets.token_hex(16)
-    rounds = int(os.environ.get("REHAB_PBKDF2_ROUNDS", "260000"))
-    digest = hashlib.pbkdf2_hmac("sha256", str(password).encode("utf-8"), salt.encode("utf-8"), rounds)
-    return f"pbkdf2_sha256${rounds}${salt}${digest.hex()}"
-
-def _legacy_sha256_password(password):
-    return hashlib.sha256(str(password).encode("utf-8")).hexdigest()
+    return _hash_password_v2(password)
 
 def verify_password(password, hashed):
-    hashed = str(hashed or "")
-    if hashed.startswith("pbkdf2_sha256$"):
-        try:
-            _, rounds, salt, digest_hex = hashed.split("$", 3)
-            calc = hashlib.pbkdf2_hmac(
-                "sha256",
-                str(password).encode("utf-8"),
-                salt.encode("utf-8"),
-                int(rounds),
-            ).hex()
-            return hmac.compare_digest(calc, digest_hex)
-        except Exception:
-            return False
-    if len(hashed) == 64 and all(c in "0123456789abcdefABCDEF" for c in hashed):
-        return hmac.compare_digest(_legacy_sha256_password(password), hashed)
-    return False
+    return _verify_password_hash(password, hashed).ok
 
 def _password_needs_rehash(user_record):
-    return not str((user_record or {}).get("password", "")).startswith("pbkdf2_sha256$")
+    return _needs_password_rehash(user_record)
 
 def _upgrade_password_hash_if_needed(users, username_key, password):
     try:
         record = users.get(username_key) or {}
         if _password_needs_rehash(record):
-            record["password"] = hash_password(password)
-            record["hash_version"] = "pbkdf2_sha256"
-            record["updated_at"] = get_vn_now().isoformat()
+            record.update(_password_record_update(password, updated_at=get_vn_now().isoformat()))
             users[username_key] = record
             save_users(users)
     except Exception as exc:
         print(f"[Auth] Could not upgrade password hash for {username_key}: {exc}")
+
+
+def _set_user_password_fields(record, password, *, must_change_password=None):
+    record = record if isinstance(record, dict) else {}
+    record.update(
+        _password_record_update(
+            password,
+            updated_at=get_vn_now().isoformat(),
+            must_change_password=must_change_password,
+        )
+    )
+    return record
 
 def _normalize_auth_text(value):
     """Chuẩn hóa chuỗi đăng nhập để tránh lệch dấu Unicode/khoảng trắng sau F5 hoặc copy-paste."""
@@ -6201,8 +6220,7 @@ def _roles_match(stored_role, selected_role):
 
 
 def _verify_auth_password(username_key, password, user_record):
-    stored_hash = (user_record or {}).get("password", "")
-    return verify_password(password, stored_hash)
+    return _verify_password_record(password, user_record).ok
 
 
 def don_dep_file_tam():
@@ -6480,6 +6498,7 @@ def _restore_login_from_route():
         "role": route_role,
         "route_user": route_user,
         "auth_type": "route",
+        "session_version": get_global_session_version(SESSION_STATE_FILE),
     }
     st.session_state.show_login_dialog = False
     st.session_state.pop("forgot_password_mode", None)
@@ -6547,6 +6566,16 @@ def _xu_ly_route_query_actions():
         st.session_state.theme = requested_theme
 
     if st.session_state.get("logged_in") and st.session_state.get("user_info"):
+        try:
+            info = st.session_state.get("user_info") or {}
+            if info.get("session_version") is None:
+                info["session_version"] = get_global_session_version(SESSION_STATE_FILE)
+                st.session_state.user_info = info
+            elif not session_is_current(SESSION_STATE_FILE, info.get("session_version")):
+                st.warning("Phien dang nhap da het hieu luc. Vui long dang nhap lai.")
+                _dang_xuat_ve_dang_nhap()
+        except Exception:
+            pass
         _sync_route_query()
 
 
@@ -6555,6 +6584,7 @@ def _hoan_tat_dang_nhap(username, user_record):
     user = AuthenticatedUser.from_record(username, user_record)
     st.session_state.logged_in = True
     st.session_state.user_info = user.to_session_dict()
+    st.session_state.user_info["session_version"] = get_global_session_version(SESSION_STATE_FILE)
     st.session_state.show_login_dialog = False
     st.session_state.active_tab = "🏠 TRANG CHỦ"
     st.session_state.pop("active_tab_widget", None)
@@ -6646,7 +6676,8 @@ if not st.session_state.get('logged_in'):
                 "username": getattr(user_detected, 'name', None) or user_detected.email.split("@")[0],
                 "email": user_detected.email,
                 "role": "Bệnh nhân", # Mặc định cho login Google là Bệnh nhân
-                "auth_type": "google"
+                "auth_type": "google",
+                "session_version": get_global_session_version(SESSION_STATE_FILE),
             }
             # Dọn dẹp trạng thái
             st.session_state.show_login_dialog = False
@@ -8501,7 +8532,7 @@ if inject_ncv_dashboard_css:
 
 MAX_UPLOAD_SIZE_MB = int(os.environ.get("REHAB_MAX_UPLOAD_SIZE_MB", "300"))
 MAX_FILE_SIZE_MB = MAX_UPLOAD_SIZE_MB
-ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv"}
+ALLOWED_VIDEO_EXTENSIONS = ALLOWED_UPLOAD_VIDEO_EXTENSIONS
 ALLOWED_VIDEO_MIME_PREFIXES = ("video/",)
 
 # ============================================
@@ -8515,6 +8546,7 @@ THUMBNAIL_QUALITY = 80
 THUMBNAIL_WIDTH = 320
 
 def validate_uploaded_video(file_upload):
+    return validate_upload_metadata(file_upload)
     if file_upload is None:
         return False, "Chưa chọn file video."
     name = getattr(file_upload, "name", "") or ""
@@ -19126,7 +19158,7 @@ def hien_thi_dang_nhap_dang_ky():
                         u_key = _auth_lookup_key(users, u_reset)
                         if u_key and _normalize_auth_text(users[u_key].get('email')) == _normalize_auth_text(e_reset):
                             if n_pass == c_pass and len(n_pass) >= 6:
-                                users[u_key]['password'] = hash_password(n_pass)
+                                _set_user_password_fields(users[u_key], n_pass, must_change_password=False)
                                 save_users(users)
                                 st.success("✅ Thành công! Hãy đăng nhập lại.")
                                 st.session_state.forgot_password_mode = False
@@ -19196,7 +19228,7 @@ def hien_thi_dang_nhap_dang_ky():
                                 cp_key = _auth_lookup_key(users, cp_u)
                                 if cp_key and _verify_auth_password(cp_key, cp_old, users[cp_key]):
                                     if cp_new == cp_conf and len(cp_new) >= 6:
-                                        users[cp_key]['password'] = hash_password(cp_new)
+                                        _set_user_password_fields(users[cp_key], cp_new, must_change_password=False)
                                         save_users(users)
                                         st.success("✅ Thành công! Hãy đăng nhập lại.")
                                         st.session_state.change_password_mode = False
@@ -19267,12 +19299,12 @@ def hien_thi_dang_nhap_dang_ky():
                         if _auth_lookup_key(users, reg_u_clean): st.error("❌ Tên đăng nhập này đã tồn tại")
                         else:
                             users[reg_u_clean] = {
-                                "password": hash_password(reg_p),
                                 "email": reg_e_clean,
                                 "full_name": _normalize_auth_text(reg_name) or reg_u_clean,
                                 "role": reg_role,
                                 "created_at": get_vn_now().isoformat()
                             }
+                            _set_user_password_fields(users[reg_u_clean], reg_p, must_change_password=False)
                             save_users(users)
                             st.success("🎉 Đăng ký thành công! Bạn có thể đăng nhập ngay.")
                                 
@@ -19416,12 +19448,12 @@ def hien_thi_tab_quan_tri_vien():
                             st.error("❌ Tên đăng nhập này đã được sử dụng!")
                         else:
                             users[new_u] = {
-                                "password": hash_password(new_p),
                                 "full_name": new_n,
                                 "role": new_r,
                                 "email": new_e,
-                                "created_at": get_vn_now().isoformat()
+                                "created_at": get_vn_now().isoformat(),
                             }
+                            _set_user_password_fields(users[new_u], new_p, must_change_password=True)
                             save_users(users)
                             st.success(f"✅ Đã tạo thành công tài khoản cho {new_n}!")
                             st.rerun()
@@ -19790,7 +19822,7 @@ def hien_thi_tab_doi_mat_khau():
             if verify_password(old_p, users[u]['password']):
                 if new_p == conf_p:
                     if len(new_p) >= 6:
-                        users[u]['password'] = hash_password(new_p)
+                        _set_user_password_fields(users[u], new_p, must_change_password=False)
                         save_users(users)
                         st.success("✅ Đã thay đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.")
                     else:
@@ -20892,8 +20924,9 @@ def _render_main_tab_content(tab_titles, user_role):
                                             except: pass
                                     
                                         timestamp = get_vn_now().strftime("%Y%m%d_%H%M%S")
-                                        base_name, _ = os.path.splitext(file_upload.name)
-                                        orig_ext = os.path.splitext(file_upload.name)[1].lower() or ".mp4"
+                                        safe_upload_name = sanitize_filename(file_upload.name, fallback="video.mp4")
+                                        base_name, _ = os.path.splitext(safe_upload_name)
+                                        orig_ext = os.path.splitext(safe_upload_name)[1].lower() or ".mp4"
                                         filename = f"{target_u}_{timestamp}_{base_name}{orig_ext}"
                                         video_path = os.path.join(save_dir, filename)
                                     
@@ -20942,8 +20975,9 @@ def _render_main_tab_content(tab_titles, user_role):
                             
                                 # Tạo tên file duy nhất giữ nguyên phần mở rộng gốc của video để biết định dạng thực tế
                                 timestamp = get_vn_now().strftime("%Y%m%d_%H%M%S")
-                                base_name, _ = os.path.splitext(file_upload.name)
-                                orig_ext = os.path.splitext(file_upload.name)[1].lower() or ".mp4"
+                                safe_upload_name = sanitize_filename(file_upload.name, fallback="video.mp4")
+                                base_name, _ = os.path.splitext(safe_upload_name)
+                                orig_ext = os.path.splitext(safe_upload_name)[1].lower() or ".mp4"
                             
                                 # file_path gốc có đuôi mở rộng thực tế (ví dụ: .mov)
                                 filename = f"{st.session_state.user_info['username']}_{timestamp}_{base_name}{orig_ext}"
