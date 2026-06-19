@@ -1,7 +1,11 @@
 (function () {
   const css = `
   html[data-rehab-role-ui="admin"] [data-testid="stAppViewContainer"] > .main .block-container {
-    max-width: 1120px !important;
+    max-width: min(1560px, calc(100vw - 80px)) !important;
+    width: 100% !important;
+  }
+  html[data-rehab-role-ui="admin"] .rehab-role-eyebrow {
+    color:var(--rehab-warning); border-color:rgba(217,119,6,.24); background:rgba(217,119,6,.10);
   }
   html[data-rehab-shell] .admin-dashboard,
   html[data-rehab-shell] .duk .page-head,
@@ -22,6 +26,12 @@
   html[data-rehab-role-ui="admin"] .stFormSubmitButton > button {
     border-radius: 8px !important;
     font-weight: 800 !important;
+  }
+  html[data-rehab-role-ui="admin"] .duk {
+    max-width:100% !important;
+  }
+  html[data-rehab-role-ui="admin"] .grid {
+    gap:16px !important;
   }
   `;
 

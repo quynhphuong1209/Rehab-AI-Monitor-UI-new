@@ -5830,6 +5830,8 @@ def _dang_xuat_ve_dang_nhap():
     st.session_state.logged_in = False
     st.session_state.user_info = None
     st.session_state.theme = theme
+    st.session_state["_auth_mode"] = "login"
+    st.session_state["show_login_dialog"] = False
     st.rerun()
 
 

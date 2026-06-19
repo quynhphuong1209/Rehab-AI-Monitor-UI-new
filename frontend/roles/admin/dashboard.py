@@ -13,8 +13,10 @@ from pathlib import Path
 
 import streamlit as st
 
+from frontend.roles.common import emit_role_workspace_close, emit_role_workspace_open, page_header
+
 try:
-    from demo_ui import block, card_close, card_open, kv, page_head, stat
+    from utils.demo_ui import block, card_close, card_open, kv, page_head, stat
 except Exception:  # pragma: no cover - fallback for unusual import contexts
     block = card_close = card_open = kv = page_head = stat = None
 
@@ -112,13 +114,22 @@ def render(
     render_tab_content: Callable[[Sequence[str], str], None],
 ) -> None:
     """Render Admin content through the role package entrypoint."""
-    active_tab = st.session_state.get("active_tab_widget") or st.session_state.get("active_tab")
-    if active_tab == "🏠 TRANG CHỦ":
-        overview_html = _admin_overview_html()
-        if overview_html:
-            st.markdown(overview_html, unsafe_allow_html=True)
-            st.session_state["_admin_package_rendered_home"] = True
-    else:
-        st.session_state.pop("_admin_package_rendered_home", None)
+    emit_role_workspace_open("admin")
+    page_header(
+        "Bảng điều khiển hệ thống",
+        "Quản lý tài khoản, video, đánh giá và vận hành với các thao tác có kiểm soát.",
+        "Admin workspace",
+    )
+    try:
+        active_tab = st.session_state.get("active_tab_widget") or st.session_state.get("active_tab")
+        if active_tab == "🏠 TRANG CHỦ":
+            overview_html = _admin_overview_html()
+            if overview_html:
+                st.markdown(overview_html, unsafe_allow_html=True)
+                st.session_state["_admin_package_rendered_home"] = True
+        else:
+            st.session_state.pop("_admin_package_rendered_home", None)
 
-    return render_tab_content(tab_titles, ROLE)
+        return render_tab_content(tab_titles, ROLE)
+    finally:
+        emit_role_workspace_close()

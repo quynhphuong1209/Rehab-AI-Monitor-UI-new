@@ -1,7 +1,11 @@
 (function () {
   const css = `
   html[data-rehab-role-ui="patient"] [data-testid="stAppViewContainer"] > .main .block-container {
-    max-width: 1120px !important;
+    max-width: min(1560px, calc(100vw - 80px)) !important;
+    width: 100% !important;
+  }
+  html[data-rehab-role-ui="patient"] .rehab-role-eyebrow {
+    color:var(--rehab-success); border-color:rgba(5,150,105,.24); background:rgba(5,150,105,.10);
   }
   html[data-rehab-role-ui="patient"] [data-testid="stVerticalBlockBorderWrapper"],
   html[data-rehab-role-ui="patient"] .ncv-table-card,
@@ -17,6 +21,9 @@
   html[data-rehab-role-ui="patient"] .stFormSubmitButton > button {
     border-radius: 8px !important;
     font-weight: 800 !important;
+  }
+  html[data-rehab-role-ui="patient"] .stFileUploader section {
+    min-height:128px !important;
   }
   `;
 

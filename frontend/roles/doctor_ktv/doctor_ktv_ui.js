@@ -1,7 +1,11 @@
 (function () {
   const css = `
   html[data-rehab-role-ui="doctor_ktv"] [data-testid="stAppViewContainer"] > .main .block-container {
-    max-width: 1120px !important;
+    max-width: min(1560px, calc(100vw - 80px)) !important;
+    width: 100% !important;
+  }
+  html[data-rehab-role-ui="doctor_ktv"] .rehab-role-eyebrow {
+    color:var(--rehab-blue-strong); border-color:rgba(31,111,224,.24); background:rgba(31,111,224,.10);
   }
   html[data-rehab-role-ui="doctor_ktv"] [data-testid="stDataFrame"],
   html[data-rehab-role-ui="doctor_ktv"] .ncv-table-card,
@@ -17,6 +21,10 @@
   html[data-rehab-role-ui="doctor_ktv"] .stFormSubmitButton > button {
     border-radius: 8px !important;
     font-weight: 800 !important;
+  }
+  html[data-rehab-role-ui="doctor_ktv"] [data-testid="stDataFrame"],
+  html[data-rehab-role-ui="doctor_ktv"] div[data-testid="stExpander"] {
+    margin-bottom:16px !important;
   }
   `;
 

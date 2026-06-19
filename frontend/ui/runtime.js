@@ -48,36 +48,51 @@
   :root {
     --rehab-primary:#0F172A;
     --rehab-secondary:#475569;
-    --rehab-blue:#256ED9;
-    --rehab-blue-strong:#1E5FC4;
+    --rehab-blue:#1F6FE0;
+    --rehab-blue-strong:#1657BC;
     --rehab-accent:#0284C7;
     --rehab-success:#059669;
     --rehab-warning:#D97706;
     --rehab-danger:#DC2626;
-    --rehab-bg:#EAF1FA;
+    --rehab-bg:#E8EDF5;
     --rehab-bg-soft:#F8FAFC;
     --rehab-card:#FFFFFF;
-    --rehab-line:#D6E1F0;
+    --rehab-surface-2:#F4F7FC;
+    --rehab-surface-3:#EDF2FA;
+    --rehab-line:#DFE6F1;
     --rehab-muted:#64748B;
-    --rehab-shadow:0 22px 50px rgba(15,23,42,.12);
-    --rehab-shadow-sm:0 2px 8px rgba(15,23,42,.08);
+    --rehab-shadow:0 22px 55px rgba(15,23,42,.13);
+    --rehab-shadow-sm:0 4px 12px rgba(15,23,42,.08);
     --rehab-ui:Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --rehab-display:"Fraunces", Georgia, serif;
-    --rehab-mono:"JetBrains Mono", "Fira Code", monospace;
+    --rehab-display:"Fraunces", Georgia, "Times New Roman", serif;
+    --rehab-mono:"IBM Plex Mono", "JetBrains Mono", "Fira Code", monospace;
     --rehab-r:8px;
     --rehab-r-lg:20px;
     --rehab-topbar-h:72px;
+    --ag-neutral-bg:#F8FAFC;
+    --ag-card-bg:#FFFFFF;
+    --ag-terminal-bg:#0B0F19;
+    --ag-accent:#0284C7;
+    --ag-success:#059669;
+    --ag-warning:#D97706;
+    --ag-danger:#DC2626;
   }
   html[data-rehab-theme="dark"] {
     --rehab-primary:#E5EDF7;
     --rehab-secondary:#A9B8CB;
-    --rehab-bg:#0B111B;
-    --rehab-bg-soft:#111B2A;
-    --rehab-card:#101A29;
-    --rehab-line:#243348;
-    --rehab-muted:#93A4B8;
+    --rehab-blue:#5B9BFF;
+    --rehab-blue-strong:#8BB6FF;
+    --rehab-bg:#0A1119;
+    --rehab-bg-soft:#111A26;
+    --rehab-card:#101A27;
+    --rehab-surface-2:#152130;
+    --rehab-surface-3:#1A2839;
+    --rehab-line:#1F2C3B;
+    --rehab-muted:#7C8B9B;
     --rehab-shadow:0 22px 50px rgba(0,0,0,.34);
     --rehab-shadow-sm:0 2px 8px rgba(0,0,0,.24);
+    --ag-neutral-bg:#0A1119;
+    --ag-card-bg:#101A27;
   }
   html[data-rehab-shell] body,
   html[data-rehab-shell] .stApp,
@@ -96,9 +111,12 @@
   html[data-rehab-shell] #MainMenu { display:none !important; }
   html[data-rehab-shell] [data-testid="stAppViewContainer"] > .main .block-container {
     padding-top: 0 !important;
-    max-width: 1120px !important;
+    max-width: min(1560px, calc(100vw - 80px)) !important;
+    width: 100% !important;
     margin-left: auto !important;
     margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
   html[data-rehab-shell] .rehab-js-content-anchor { height:74px !important; }
   html[data-rehab-shell] h1,
@@ -106,6 +124,17 @@
   html[data-rehab-shell] h3 {
     color: var(--rehab-primary) !important;
     letter-spacing: 0 !important;
+  }
+  html[data-rehab-shell] h1,
+  html[data-rehab-shell] h2 {
+    font-family: var(--rehab-display) !important;
+    font-weight: 700 !important;
+  }
+  html[data-rehab-shell] p,
+  html[data-rehab-shell] li,
+  html[data-rehab-shell] label,
+  html[data-rehab-shell] [data-testid="stMarkdownContainer"] {
+    font-family: var(--rehab-ui) !important;
   }
   #rehab-ui-sprite { position:absolute; width:0; height:0; overflow:hidden; }
   .rehab-icon { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex:none; }
@@ -214,6 +243,163 @@
     box-shadow:0 18px 42px rgba(0,0,0,.24); font:700 13px var(--rehab-ui);
   }
   .rehab-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  html[data-rehab-shell] .rehab-workspace,
+  html[data-rehab-shell] .rehab-role-workspace {
+    width:100%; max-width:min(1560px, calc(100vw - 80px)); margin:0 auto;
+  }
+  html[data-rehab-shell] .rehab-role-head {
+    display:flex; align-items:flex-end; justify-content:space-between; gap:24px;
+    margin:8px 0 24px;
+  }
+  html[data-rehab-shell] .rehab-role-head h1 {
+    margin:0; color:var(--rehab-primary) !important;
+    font:700 clamp(28px, 2.4vw, 38px)/1.08 var(--rehab-display) !important;
+  }
+  html[data-rehab-shell] .rehab-role-head p {
+    margin:8px 0 0; max-width:720px; color:var(--rehab-muted) !important;
+    font-size:14.5px !important; line-height:1.55 !important;
+  }
+  html[data-rehab-shell] .rehab-role-eyebrow {
+    display:inline-flex; align-items:center; min-height:24px; margin-bottom:10px;
+    padding:4px 10px; border:1px solid rgba(31,111,224,.20); border-radius:999px;
+    color:var(--rehab-blue-strong); background:rgba(31,111,224,.10);
+    font:800 11px/1 var(--rehab-ui); text-transform:uppercase; letter-spacing:.3px;
+  }
+  html[data-rehab-shell] .rehab-role-actions {
+    display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap;
+  }
+  html[data-rehab-shell] .rehab-role-metrics {
+    display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; margin:0 0 24px;
+  }
+  html[data-rehab-shell] .rehab-role-metrics .rehab-metric-card {
+    display:flex; flex-direction:column; gap:8px; min-height:112px; justify-content:center;
+  }
+  html[data-rehab-shell] .rehab-role-metrics .rehab-metric-card b {
+    display:block; font:800 28px/1 var(--rehab-mono) !important; color:var(--rehab-primary) !important;
+  }
+  html[data-rehab-shell] .rehab-role-metrics .rehab-metric-card span {
+    color:var(--rehab-secondary) !important; font:800 13px/1.25 var(--rehab-ui) !important;
+  }
+  html[data-rehab-shell] .rehab-role-metrics .rehab-metric-card small {
+    color:var(--rehab-muted) !important; font:600 12px/1.35 var(--rehab-ui) !important;
+  }
+  html[data-rehab-shell] .rehab-section {
+    margin:24px 0;
+  }
+  html[data-rehab-shell] .rehab-soft-card,
+  html[data-rehab-shell] .rehab-data-card,
+  html[data-rehab-shell] .rehab-table-shell,
+  html[data-rehab-shell] .rehab-metric-card,
+  html[data-rehab-shell] .metric-card,
+  html[data-rehab-shell] .custom-card,
+  html[data-rehab-shell] .info-box,
+  html[data-rehab-shell] .card,
+  html[data-rehab-shell] .stat,
+  html[data-rehab-shell] [data-testid="stVerticalBlockBorderWrapper"],
+  html[data-rehab-shell] div[data-testid="stExpander"],
+  html[data-rehab-shell] [data-testid="stForm"],
+  html[data-rehab-shell] [data-testid="stDataFrame"] {
+    background:var(--rehab-card) !important;
+    border:1px solid var(--rehab-line) !important;
+    border-radius:8px !important;
+    box-shadow:var(--rehab-shadow-sm) !important;
+  }
+  html[data-rehab-shell] .rehab-data-card,
+  html[data-rehab-shell] .rehab-metric-card {
+    padding:16px;
+  }
+  html[data-rehab-shell] .rehab-metric-card b,
+  html[data-rehab-shell] .metric-card .metric-value,
+  html[data-rehab-shell] .stat .value {
+    font-family:var(--rehab-mono) !important;
+    font-size:24px !important;
+    line-height:1 !important;
+    color:var(--rehab-primary) !important;
+  }
+  html[data-rehab-shell] .rehab-metric-card span,
+  html[data-rehab-shell] .metric-card .metric-label,
+  html[data-rehab-shell] .stat .label {
+    color:var(--rehab-muted) !important;
+    font-size:12.5px !important;
+  }
+  html[data-rehab-shell] .rehab-status {
+    display:inline-flex; align-items:center; justify-content:center; min-height:24px;
+    padding:4px 10px; border-radius:999px; font:800 12px var(--rehab-ui);
+    background:var(--rehab-surface-3); color:var(--rehab-secondary);
+  }
+  html[data-rehab-shell] .rehab-status.success { background:rgba(5,150,105,.12); color:var(--rehab-success); }
+  html[data-rehab-shell] .rehab-status.warning { background:rgba(217,119,6,.14); color:var(--rehab-warning); }
+  html[data-rehab-shell] .rehab-status.danger { background:rgba(220,38,38,.12); color:var(--rehab-danger); }
+  html[data-rehab-shell] .rehab-terminal-log,
+  html[data-rehab-shell] pre.rehab-terminal-log {
+    background:var(--ag-terminal-bg) !important; color:#38BDF8 !important;
+    border:1px solid rgba(56,189,248,.22) !important; border-radius:8px !important;
+    padding:16px !important; font:500 13px/1.45 var(--rehab-mono) !important;
+    overflow:auto;
+  }
+  html[data-rehab-shell] .rehab-chat-row { display:flex; margin:16px 0; }
+  html[data-rehab-shell] .rehab-chat-row.user { justify-content:flex-end; }
+  html[data-rehab-shell] .rehab-chat-bubble {
+    max-width:min(720px, 84vw); border-radius:8px; padding:12px 16px;
+    background:var(--rehab-card); border:1px solid var(--rehab-line); color:var(--rehab-primary);
+  }
+  html[data-rehab-shell] .rehab-chat-row.user .rehab-chat-bubble {
+    background:#E2E8F0; border-color:#E2E8F0; color:#0F172A;
+  }
+  html[data-rehab-shell] [data-testid="stDataFrame"] {
+    overflow:hidden !important;
+  }
+  html[data-rehab-shell] [data-testid="stDataFrame"] iframe,
+  html[data-rehab-shell] [data-testid="stDataFrame"] canvas {
+    border-radius:8px !important;
+  }
+  html[data-rehab-shell] .stButton > button,
+  html[data-rehab-shell] .stFormSubmitButton > button,
+  html[data-rehab-shell] button[kind],
+  html[data-rehab-shell] div[data-testid="stDownloadButton"] > button {
+    border-radius:8px !important;
+    min-height:40px !important;
+    font:800 13px var(--rehab-ui) !important;
+    transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease !important;
+  }
+  html[data-rehab-shell] .stButton > button:hover,
+  html[data-rehab-shell] .stFormSubmitButton > button:hover,
+  html[data-rehab-shell] div[data-testid="stDownloadButton"] > button:hover {
+    transform:translateY(-1px);
+    box-shadow:var(--rehab-shadow-sm) !important;
+  }
+  html[data-rehab-shell] input,
+  html[data-rehab-shell] textarea,
+  html[data-rehab-shell] [contenteditable="true"] {
+    font-family:var(--rehab-ui) !important;
+  }
+  html[data-rehab-shell] .stTextInput input,
+  html[data-rehab-shell] .stTextArea textarea,
+  html[data-rehab-shell] .stNumberInput input,
+  html[data-rehab-shell] .stDateInput input {
+    padding:12px 16px !important;
+  }
+  .rehab-auth-loading-root {
+    position:fixed; inset:var(--rehab-topbar-h) 0 0 0; z-index:2147482400;
+    display:grid; place-items:center; padding:28px;
+    background:
+      radial-gradient(60vw 50vh at 8% -8%, rgba(31,111,224,.12), transparent 60%),
+      radial-gradient(55vw 50vh at 105% 0%, rgba(91,155,255,.10), transparent 55%),
+      var(--rehab-bg);
+  }
+  .rehab-auth-loading-card {
+    width:min(430px, calc(100vw - 40px)); border:1px solid var(--rehab-line);
+    border-radius:20px; background:var(--rehab-card); box-shadow:var(--rehab-shadow);
+    padding:28px; color:var(--rehab-primary); font-family:var(--rehab-ui);
+  }
+  .rehab-auth-loading-card b { display:block; font:800 20px/1.2 var(--rehab-display); margin-bottom:8px; }
+  .rehab-auth-loading-card span { color:var(--rehab-muted); font-size:13px; }
+  .rehab-auth-loading-pulse {
+    width:40px; height:40px; border-radius:12px; display:grid; place-items:center; margin-bottom:16px;
+    color:#fff; background:linear-gradient(145deg, var(--rehab-blue), var(--rehab-blue-strong));
+    animation:rehabPulse 1.1s ease-in-out infinite;
+  }
+  @keyframes rehabPulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(.96); opacity:.72; } }
   html[data-rehab-shell] [data-testid="stVerticalBlockBorderWrapper"],
   html[data-rehab-shell] div[data-testid="stExpander"] { border-radius:8px !important; }
   html[data-rehab-shell] .ncv-stat-grid,
@@ -295,10 +481,21 @@
   html[data-rehab-shell] .ncv-batch-card { padding:16px; margin:10px 0 18px; }
   html[data-rehab-shell] .stTextInput div[data-baseweb="input"],
   html[data-rehab-shell] .stTextArea div[data-baseweb="textarea"],
+  html[data-rehab-shell] .stNumberInput div[data-baseweb="input"],
+  html[data-rehab-shell] .stDateInput div[data-baseweb="input"],
+  html[data-rehab-shell] .stFileUploader section,
   html[data-rehab-shell] .stSelectbox div[data-baseweb="select"] > div {
     border-radius:8px !important;
     background:var(--rehab-bg-soft) !important;
     border-color:var(--rehab-line) !important;
+    box-shadow:none !important;
+  }
+  html[data-rehab-shell] .stTextInput div[data-baseweb="input"]:focus-within,
+  html[data-rehab-shell] .stTextArea div[data-baseweb="textarea"]:focus-within,
+  html[data-rehab-shell] .stNumberInput div[data-baseweb="input"]:focus-within,
+  html[data-rehab-shell] .stSelectbox div[data-baseweb="select"] > div:focus-within {
+    border-color:var(--rehab-blue) !important;
+    box-shadow:0 0 0 3px rgba(31,111,224,.12) !important;
   }
   html[data-rehab-theme="dark"] .stTextInput div[data-baseweb="input"] svg,
   html[data-rehab-theme="dark"] .stTextInput [data-testid="InputInstructions"],
@@ -324,13 +521,31 @@
     .rehab-backdrop { inset:112px 0 0 0; }
     html[data-rehab-shell] .rehab-js-content-anchor { height:112px !important; }
     html[data-rehab-shell] [data-testid="stAppViewContainer"] > .main .block-container { padding-left:18px!important; padding-right:18px!important; }
+    html[data-rehab-shell] .rehab-workspace,
+    html[data-rehab-shell] .rehab-role-workspace {
+      max-width:100% !important;
+    }
+    html[data-rehab-shell] .rehab-role-head {
+      display:block;
+      margin:4px 0 18px;
+    }
+    html[data-rehab-shell] .rehab-role-head h1 {
+      font-size:clamp(25px,7vw,32px) !important;
+    }
+    html[data-rehab-shell] .rehab-role-head p {
+      max-width:100%;
+      font-size:13.5px !important;
+    }
     html[data-rehab-shell] .ncv-stat-grid,
-    html[data-rehab-shell] .ncv-patient-grid { grid-template-columns:1fr; }
+    html[data-rehab-shell] .ncv-patient-grid,
+    html[data-rehab-shell] .rehab-role-metrics { grid-template-columns:1fr; }
   }
   @media (max-width: 520px) {
     .rehab-tabs { display:flex; }
     .rehab-tab { height:34px; padding:0 10px; font-size:12px; }
     .rehab-topbar:has(.rehab-tabs:empty) { min-height:64px !important; }
+    .rehab-actions { gap:6px; max-width:46vw; }
+    .rehab-icon-btn { width:36px; height:36px; border-radius:10px; }
     .rehab-drawer { top:112px; }
     .rehab-drawer-fab { top:124px; }
     .rehab-backdrop { inset:112px 0 0 0; }
@@ -339,7 +554,7 @@
   }
   `;
 
-  const state = { payload: null, drawerOpen: false, lastEventId: 0 };
+  const state = { payload: null, drawerOpen: false, lastEventId: 0, authRetryTimer: null, authRetryCount: 0 };
 
   function parentDoc() {
     try { return window.parent.document; } catch (_) { return document; }
@@ -464,6 +679,15 @@
     doc.documentElement.setAttribute("data-theme", t);
   }
 
+  function normalizePayload(payload) {
+    const next = Object.assign({}, payload || {});
+    if (!next.mode) next.mode = next.loggedIn ? "app" : "auth";
+    if (!next.theme) next.theme = parentDoc().documentElement.dataset.rehabTheme || "light";
+    if (!Array.isArray(next.tabs)) next.tabs = [];
+    if (!next.user || typeof next.user !== "object") next.user = {};
+    return next;
+  }
+
   function setDrawer(open) {
     state.drawerOpen = !!open;
     saveStorage({ drawerOpen: state.drawerOpen });
@@ -487,6 +711,51 @@
     toast.classList.add("show");
     clearTimeout(showToast._timer);
     showToast._timer = setTimeout(() => toast.classList.remove("show"), 2200);
+  }
+
+  function clearAuthRetry() {
+    if (state.authRetryTimer) {
+      clearTimeout(state.authRetryTimer);
+      state.authRetryTimer = null;
+    }
+    state.authRetryCount = 0;
+  }
+
+  function removeAuthRoot() {
+    const doc = parentDoc();
+    const root = doc.getElementById("rehab-auth-root");
+    if (root) root.remove();
+  }
+
+  function resetRoleShellForAuth() {
+    const doc = parentDoc();
+    delete doc.documentElement.dataset.rehabRoleUi;
+    setDrawer(false);
+    const drawer = doc.getElementById("rehab-drawer");
+    const fab = doc.getElementById("rehab-drawer-fab");
+    const backdrop = doc.getElementById("rehab-backdrop");
+    if (drawer) drawer.innerHTML = "";
+    if (fab) fab.classList.add("is-hidden");
+    if (backdrop) backdrop.classList.remove("is-open");
+  }
+
+  function renderAuthFallback(payload) {
+    const doc = parentDoc();
+    let root = doc.getElementById("rehab-auth-root");
+    if (root && !root.classList.contains("rehab-auth-loading-root")) return;
+    if (!root) {
+      root = doc.createElement("main");
+      root.id = "rehab-auth-root";
+      doc.body.appendChild(root);
+    }
+    root.className = "rehab-auth-loading-root";
+    root.innerHTML = `
+      <div class="rehab-auth-loading-card" role="status" aria-live="polite">
+        <div class="rehab-auth-loading-pulse">${icon("i-pulse")}</div>
+        <b>Đang khởi tạo giao diện đăng nhập</b>
+        <span>Rehab AI Monitor đang nạp form ${esc(payload.authMode || "login")}...</span>
+      </div>
+    `;
   }
 
   function renderTopbar(payload) {
@@ -615,12 +884,40 @@
   }
 
   function renderAuth(payload) {
-    if (window.RehabAuthUI && typeof window.RehabAuthUI.mount === "function") {
-      window.RehabAuthUI.mount(payload, sendEvent, { icon, esc, showToast });
+    const mode = (payload && payload.mode) || "app";
+    if (mode !== "auth") {
+      clearAuthRetry();
+      removeAuthRoot();
+      return;
     }
+    resetRoleShellForAuth();
+    if (window.RehabAuthUI && typeof window.RehabAuthUI.mount === "function") {
+      clearAuthRetry();
+      try {
+        window.RehabAuthUI.mount(payload, sendEvent, { icon, esc, showToast });
+      } catch (error) {
+        console.error("[RehabRuntime] Auth mount failed", error);
+        renderAuthFallback(payload || {});
+        showToast("Đang nạp lại giao diện đăng nhập...");
+      }
+      return;
+    }
+    renderAuthFallback(payload || {});
+    if (state.authRetryCount >= 80 || state.authRetryTimer) return;
+    state.authRetryCount += 1;
+    state.authRetryTimer = setTimeout(() => {
+      state.authRetryTimer = null;
+      const latest = state.payload || {};
+      if ((latest.mode || "app") === "auth") renderAuth(latest);
+    }, state.authRetryCount < 12 ? 75 : 180);
   }
 
   function renderRoleChrome(payload) {
+    if ((payload.mode || "app") === "auth") {
+      resetRoleShellForAuth();
+      return;
+    }
+    removeAuthRoot();
     const role = String(payload.role || (payload.user || {}).role || "");
     const key = /quản|quan/i.test(role) ? "Admin" :
       /bác|bac|ktv/i.test(role) ? "DoctorKtv" :
@@ -632,7 +929,7 @@
   }
 
   function mount(payload) {
-    state.payload = payload || {};
+    state.payload = normalizePayload(payload);
     ensureBase();
     const stored = storage();
     if (typeof stored.drawerOpen === "boolean") state.drawerOpen = stored.drawerOpen;
