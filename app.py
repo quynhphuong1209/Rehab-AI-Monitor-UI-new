@@ -117,6 +117,21 @@ except Exception:
 
 import streamlit as st
 
+from backend.analysis_jobs import AnalysisSlotPool, max_concurrent_analysis_from_env
+from backend.hf_workflow import (
+    hf_auth_headers,
+    hf_dataset_resolve_url,
+    hf_is_library_error,
+    hf_local_target_path,
+    hf_min_size_for_path,
+    hf_token_fingerprint,
+)
+from backend.frame_gallery import (
+    filter_frame_indices,
+    frame_phase_status,
+    frame_status_counts,
+    paginate_indices,
+)
 from backend import symptoms as symptom_backend
 from controllers import run_app
 from controllers.context import AppContext
@@ -138,6 +153,24 @@ from video.validation import (
     MAX_UPLOAD_SIZE_MB,
     sanitize_filename,
     validate_upload_metadata,
+)
+from video.serving import (
+    TranscodingJobRegistry,
+    build_direct_video_html,
+    get_final_h264_path as _serving_get_final_h264_path,
+    is_http_video_source,
+    is_non_playable_video_path,
+    is_scratch_video_path,
+    strip_to_original_upload,
+    video_fallback_paths as _serving_video_fallback_paths,
+    video_raw_only_paths as _serving_video_raw_only_paths,
+)
+from video.jobs import (
+    build_async_h264_command,
+    original_candidates_for_h264,
+    transcode_error_log_path,
+    transcode_temp_path,
+    write_transcode_error_log,
 )
 from frontend.roles import admin as admin_frontend
 from frontend.roles import doctor_ktv as doctor_ktv_frontend
@@ -279,109 +312,32 @@ def get_clean_rel_path(path):
 
 def _la_duong_dan_video_gia(path):
     """Chan artifact frame/CSV/ZIP bi nham thanh video can tai/phat."""
-    if not path:
-        return True
-    p = str(path).replace("\\", "/")
-    low = p.lower()
-    base = os.path.basename(low)
-    if low.endswith((".json", ".csv", ".zip", ".jpg", ".jpeg", ".png", ".webp")):
-        return True
-    if not low.endswith((".mp4", ".mov", ".avi", ".mkv", ".webm")):
-        return True
-    if (
-        base.endswith("_frames.mp4")
-        or base.endswith("_frames_f.mp4")
-        or "_frames_" in base
-        or ("/processed_results/processed_" in low and "_frames/" in low)
-    ):
-        return True
-    return False
+    return is_non_playable_video_path(path)
 
 
 def get_final_h264_path(video_path):
     """Trả về đường dẫn tệp H264 đích (_f.mp4) tương ứng một cách chuẩn xác, độc lập với định dạng/cú pháp phần mở rộng gốc."""
-    if not video_path or _la_duong_dan_video_gia(video_path):
-        return ""
-    if video_path.endswith('_f.mp4'):
-        return video_path
-    base, _ = os.path.splitext(video_path)
-    if base.endswith('_f'):
-        return base + ".mp4"
-    return base + "_f.mp4"
+    return _serving_get_final_h264_path(video_path)
 
 
 def video_fallback_paths(file_path):
     """Các đường dẫn video có thể tồn tại trên Dataset (H.264 _f.mp4 hoặc bản gốc .mp4)."""
-    if not file_path:
-        return []
-    try:
-        norm = get_local_frame_path(file_path) or file_path
-    except Exception:
-        norm = file_path
-    if _la_duong_dan_video_gia(norm):
-        return []
-    candidates = []
-    if norm.endswith('_f.mp4'):
-        candidates = [norm, norm.replace('_f.mp4', '.mp4')]
-    elif norm.endswith('_ffmp.mp4'):
-        base_mp4 = norm.replace('_ffmp.mp4', '.mp4')
-        candidates = [norm, base_mp4]
-    else:
-        h264 = get_final_h264_path(norm)
-        candidates = [h264, norm] if h264 != norm else [norm]
-    seen, out = set(), []
-    for p in candidates:
-        if p and p not in seen:
-            seen.add(p)
-            out.append(p)
-    return out
+    return _serving_video_fallback_paths(file_path, local_frame_resolver=get_local_frame_path)
 
 
 def _is_scratch_video_path(path):
     """File tạm transcode — không phát được (màn đen/xám trên trình duyệt)."""
-    if not path:
-        return False
-    low = str(path).replace("\\", "/").lower()
-    return any(
-        tag in low
-        for tag in ("_ftmp.mp4", "_ttmp.mp4", "_ffmp.mp4", ".ftmp.mp4", "/transcode_error")
-    )
+    return is_scratch_video_path(path)
 
 
 def _strip_to_original_upload(path):
     """Đưa path về file upload gốc, bỏ hậu tố transcode tạm."""
-    if not path:
-        return path
-    p = str(path)
-    for suffix in ("_ftmp.mp4", "_ttmp.mp4", "_ffmp.mp4", "_f.mp4"):
-        if p.endswith(suffix):
-            return p[: -len(suffix)] + ".mp4"
-    return p
+    return strip_to_original_upload(path)
 
 
 def video_raw_only_paths(file_path):
     """Chỉ video gốc BN upload — không fallback sang processed/_f/_ftmp."""
-    if not file_path:
-        return []
-    try:
-        norm = get_local_frame_path(file_path) or file_path
-    except Exception:
-        norm = file_path
-    candidates = []
-    for p in (norm, _strip_to_original_upload(norm)):
-        if p and not _is_scratch_video_path(p):
-            candidates.append(p)
-        base, ext = os.path.splitext(_strip_to_original_upload(p or ""))
-        if base and ext.lower() == ".mp4":
-            mov = base + ".mov"
-            if not _is_scratch_video_path(mov):
-                candidates.append(get_local_frame_path(mov) or mov)
-    seen, out = set(), []
-    for p in candidates:
-        if p and p not in seen and not _is_scratch_video_path(p):
-            seen.add(p)
-            out.append(p)
-    return out
+    return _serving_video_raw_only_paths(file_path, local_frame_resolver=get_local_frame_path)
 
 
 def _tim_video_upload_goc(v):
@@ -1450,10 +1406,8 @@ def video_has_audio_track(path):
 
 import threading
 
-if '_transcoding_jobs' not in globals():
-    _transcoding_jobs = set()
-if '_transcoding_lock' not in globals():
-    _transcoding_lock = threading.Lock()
+if not isinstance(globals().get('_transcoding_jobs'), TranscodingJobRegistry):
+    _transcoding_jobs = TranscodingJobRegistry(globals().get('_transcoding_jobs'))
 
 def ensure_playable_video(video_path):
     """Đảm bảo video có định dạng H.264 mượt mà (đuôi _f.mp4) để chơi được trên trình duyệt.
@@ -1500,10 +1454,8 @@ def ensure_playable_video(video_path):
         return final_h264
 
     # Khởi chạy tải và convert bất đồng bộ hoàn toàn dưới nền để tránh chặn luồng UI
-    with _transcoding_lock:
-        if final_h264 in _transcoding_jobs:
-            return video_path
-        _transcoding_jobs.add(final_h264)
+    if not _transcoding_jobs.start(final_h264):
+        return video_path
 
     def _async_download_and_transcode():
         nonlocal video_path
@@ -1525,12 +1477,8 @@ def ensure_playable_video(video_path):
                         is_corrupted = True
                 
                 if is_corrupted:
-                    possible_orig_paths = []
-                    base_without_f = video_path.replace('_f.mp4', '')
-                    for ext in ['.mp4', '.mov', '.MOV', '.avi', '.mkv']:
-                        possible_orig_paths.append(base_without_f + ext)
                     orig_recovered_path = None
-                    for p_orig in possible_orig_paths:
+                    for p_orig in original_candidates_for_h264(video_path):
                         if os.path.exists(p_orig) or ensure_local_file(p_orig):
                             orig_recovered_path = p_orig
                             break
@@ -1558,8 +1506,8 @@ def ensure_playable_video(video_path):
 
             # 2. XÓA CẢ FILE TẠM, FILE H264 CŨ VÀ LOG LỖI CŨ
             # Dùng đuôi _ftmp.mp4 (không phải .mp4.tmp) để ffmpeg nhận đúng container MP4
-            tmp_h264 = final_h264.replace('_f.mp4', '_ftmp.mp4')
-            error_log_path = os.path.join(os.path.dirname(final_h264), "transcode_error.txt")
+            tmp_h264 = transcode_temp_path(final_h264)
+            error_log_path = transcode_error_log_path(final_h264)
             for f_clean in [final_h264, tmp_h264, error_log_path]:
                 if os.path.exists(f_clean):
                     try: os.remove(f_clean)
@@ -1568,26 +1516,7 @@ def ensure_playable_video(video_path):
             # 3. TRÍCH CODEC & TRANSCODE — ghi vào file TẠM _ftmp.mp4 trước
             # Sau khi xong mới đổi tên → _f.mp4 KHÔNG BAO GIỜ bị nửa vời (moov atom not found)
             v_codec, a_codec = get_video_codec(video_path)
-            cmd = [
-                'ffmpeg', '-y',
-                '-i', video_path,
-                '-vcodec', 'libx264',
-                '-pix_fmt', 'yuv420p',
-                '-preset', 'ultrafast',
-                '-vf', 'scale=-2:min(480\\,ih)',
-                '-crf', '30',
-                '-maxrate', '500k',
-                '-bufsize', '1000k',
-                '-movflags', '+faststart',
-                '-threads', '2',
-                '-map', '0:v:0', '-map', '0:a?',
-            ]
-            if a_codec:
-                cmd.extend(['-c:a', 'aac'])
-            else:
-                cmd.extend(['-an'])
-            cmd.extend(['-f', 'mp4'])  # ← ép rõ format MP4 để tránh lỗi nhận dạng container
-            cmd.append(tmp_h264)  # ← ghi vào file TẠM
+            cmd = build_async_h264_command(video_path, tmp_h264, has_audio=bool(a_codec))
 
             print(f"[Async Video] Đang convert {video_path} sang H.264 (file tạm: {tmp_h264})...")
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=1800)
@@ -1595,12 +1524,13 @@ def ensure_playable_video(video_path):
             if result.returncode != 0:
                 print("[Async Video] FFmpeg failed:", result.returncode, result.stderr[-500:])
                 try:
-                    error_log_path = os.path.join(os.path.dirname(final_h264), "transcode_error.txt")
-                    with open(error_log_path, "w", encoding="utf-8") as f_err:
-                        f_err.write(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                        f_err.write(f"Cmd: {' '.join(cmd)}\n")
-                        f_err.write(f"Exit Code: {result.returncode}\n")
-                        f_err.write(f"Stderr:\n{result.stderr}\n")
+                    error_log_path = transcode_error_log_path(final_h264)
+                    write_transcode_error_log(
+                        error_log_path,
+                        cmd=cmd,
+                        exit_code=result.returncode,
+                        stderr=result.stderr,
+                    )
                     push_file_to_hf_async(error_log_path)
                 except:
                     pass
@@ -1617,10 +1547,11 @@ def ensure_playable_video(video_path):
                 if not _check_video_valid_cached(tmp_h264, mtime_f, size_f):
                     print("[Async Video] File tạm không hợp lệ sau ffmpeg. Xóa...")
                     try:
-                        error_log_path = os.path.join(os.path.dirname(final_h264), "transcode_error.txt")
-                        with open(error_log_path, "w", encoding="utf-8") as f_err:
-                            f_err.write(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                            f_err.write("Error: Output file failed integrity check after ffmpeg.\n")
+                        error_log_path = transcode_error_log_path(final_h264)
+                        write_transcode_error_log(
+                            error_log_path,
+                            message="Output file failed integrity check after ffmpeg.",
+                        )
                         push_file_to_hf_async(error_log_path)
                     except:
                         pass
@@ -1638,7 +1569,7 @@ def ensure_playable_video(video_path):
 
                 # Xóa log lỗi cũ
                 try:
-                    error_log_path = os.path.join(os.path.dirname(final_h264), "transcode_error.txt")
+                    error_log_path = transcode_error_log_path(final_h264)
                     if os.path.exists(error_log_path):
                         os.remove(error_log_path)
                 except:
@@ -1668,10 +1599,8 @@ def ensure_playable_video(video_path):
         except Exception as err:
             print(f"[Async Video] Lỗi trong tiến trình chạy nền: {err}")
             try:
-                error_log_path = os.path.join(os.path.dirname(final_h264), "transcode_error.txt")
-                with open(error_log_path, "w", encoding="utf-8") as f_err:
-                    f_err.write(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                    f_err.write(f"Exception: {str(err)}\n")
+                error_log_path = transcode_error_log_path(final_h264)
+                write_transcode_error_log(error_log_path, exception=err)
                 push_file_to_hf_async(error_log_path)
             except:
                 pass
@@ -1681,8 +1610,7 @@ def ensure_playable_video(video_path):
                     try: os.remove(f_clean)
                     except: pass
         finally:
-            with _transcoding_lock:
-                _transcoding_jobs.discard(final_h264)
+            _transcoding_jobs.discard(final_h264)
 
     threading.Thread(target=_async_download_and_transcode, daemon=True).start()
     return video_path
@@ -2721,22 +2649,10 @@ def render_video(video_path, check_h264=True, prefer_raw=False):
             pass
 
     # URL trực tiếp (YouTube, HF, ...)
-    if isinstance(video_path, str) and (video_path.startswith('http://') or video_path.startswith('https://')):
+    if is_http_video_source(video_path):
         try:
             import streamlit.components.v1 as _stcomp
-            _stcomp.html(f"""
-<!DOCTYPE html><html><head>
-<style>
-  body{{margin:0;padding:0;background:transparent;overflow:hidden;}}
-  video{{width:100%;height:auto;max-height:520px;border-radius:8px;display:block;background:#000;object-fit:contain;}}
-</style>
-</head><body>
-<video id="vp" controls preload="auto" playsinline>
-  <source src="{video_path}" type="video/mp4">
-  Trình duyệt không hỗ trợ video HTML5.
-</video>
-</body></html>
-""", height=255)
+            _stcomp.html(build_direct_video_html(video_path), height=255)
         except Exception as e:
             st.error(f'⚠️ Lỗi hiển thị video: {e}')
         return
@@ -3248,22 +3164,15 @@ _hf_last_download_error = None
 
 def _hf_min_size_for_path(path):
     """Ngưỡng kích thước tối thiểu theo loại file — CSV/JSON nhỏ vẫn hợp lệ."""
-    if not path:
-        return 5 * 1024
-    low = str(path).lower()
-    if low.endswith(".csv"):
-        return 80
-    if low.endswith(".json"):
-        return 2
-    return 5 * 1024
+    return hf_min_size_for_path(path)
 
 
 def _hf_token_fingerprint():
-    return hashlib.md5(f"{HF_TOKEN or ''}:{HF_DATASET_ID or ''}".encode()).hexdigest()[:12]
+    return hf_token_fingerprint(HF_TOKEN, HF_DATASET_ID)
 
 
 def _hf_auth_headers():
-    return {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+    return hf_auth_headers(HF_TOKEN)
 
 
 def _lam_sach_cache_khi_doi_hf_token():
@@ -3280,16 +3189,7 @@ def _lam_sach_cache_khi_doi_hf_token():
 
 
 def _hf_la_loi_thu_vien(err_text):
-    err = str(err_text or "").lower()
-    return any(
-        x in err
-        for x in (
-            "cannot import name",
-            "importerror",
-            "no module named 'huggingface_hub'",
-            "no module named huggingface_hub",
-        )
-    )
+    return hf_is_library_error(err_text)
 
 
 def _hf_verify_dataset_via_http():
@@ -3297,13 +3197,11 @@ def _hf_verify_dataset_via_http():
     if not (HF_TOKEN and HF_DATASET_ID):
         return False, "Chưa cấu hình HF_TOKEN hoặc HF_DATASET_ID."
     try:
-        import urllib.parse
         import requests
-        probe = urllib.parse.quote("video_list.json", safe="/")
-        url = f"https://huggingface.co/datasets/{HF_DATASET_ID}/resolve/main/{probe}"
+        url = hf_dataset_resolve_url(HF_DATASET_ID, "video_list.json")
         resp = requests.get(
             url,
-            headers={"Authorization": f"Bearer {HF_TOKEN}"},
+            headers=_hf_auth_headers(),
             timeout=30,
             stream=True,
         )
@@ -3335,16 +3233,14 @@ def _hf_download_via_http(rel_path, min_size=80, quiet=False):
         _hf_last_download_error = "Chưa cấu hình HF_TOKEN hoặc HF_DATASET_ID."
         return None
     try:
-        import urllib.parse
         import requests
         rel_norm = rel_path.replace("\\", "/")
-        rel_enc = urllib.parse.quote(rel_norm, safe="/")
-        url = f"https://huggingface.co/datasets/{HF_DATASET_ID}/resolve/main/{rel_enc}"
-        target = os.path.normpath(os.path.join(DATA_DIR, rel_norm))
+        url = hf_dataset_resolve_url(HF_DATASET_ID, rel_norm)
+        target = hf_local_target_path(DATA_DIR, rel_norm)
         os.makedirs(os.path.dirname(target) or DATA_DIR, exist_ok=True)
         resp = requests.get(
             url,
-            headers={"Authorization": f"Bearer {HF_TOKEN}"},
+            headers=_hf_auth_headers(),
             timeout=180,
             stream=True,
         )
@@ -8321,72 +8217,23 @@ _start_analysis_lock = threading.Lock()  # serialize khoi chay — CHONG start 2
 
 # Số video phân tích chạy SONG SONG. HF Space mặc định 1 (Gậy + Heavy: chạy từng video).
 # Ghi đè: biến môi trường MAX_CONCURRENT_ANALYSIS=2
-_hf_default_concurrent = "1" if (os.environ.get("HF_SPACE_ID") or os.environ.get("SPACE_ID") or os.path.exists("/data")) else "4"
-try:
-    MAX_CONCURRENT_ANALYSIS = max(1, min(8, int(os.environ.get("MAX_CONCURRENT_ANALYSIS", _hf_default_concurrent))))
-except (TypeError, ValueError):
-    MAX_CONCURRENT_ANALYSIS = 1 if _hf_default_concurrent == "1" else 4
+MAX_CONCURRENT_ANALYSIS = max_concurrent_analysis_from_env(
+    os.environ,
+    data_path_exists=os.path.exists("/data"),
+)
 JOB_ORPHAN_SECONDS = 90  # Không có heartbeat trong 90s → coi job bị gián đoạn, tự khởi động lại
 
 
-class AnalysisSlotPool:
-    """Quản lý slot phân tích — tự nhả slot khi thread chết / heartbeat cũ (tránh kẹt hàng đợi)."""
-
-    def __init__(self, max_slots):
-        self.max_slots = max(1, max_slots)
-        self._lock = threading.Lock()
-        self._holders = {}
-
-    def _purge_dead(self):
-        for vp in list(self._holders.keys()):
-            t = _running_threads.get(vp)
-            if t is None or not t.is_alive():
-                self._holders.pop(vp, None)
-                continue
-            prog = _load_progress_file(vp)
-            if not prog or prog.get("status") != "processing":
-                self._holders.pop(vp, None)
-                continue
-            hb = float(prog.get("heartbeat") or prog.get("start_time") or 0)
-            if hb and (time.time() - hb) > JOB_ORPHAN_SECONDS:
-                self._holders.pop(vp, None)
-                _running_threads.pop(vp, None)
-
-    def try_acquire(self, video_path, priority=False, timeout=2.0):
-        deadline = time.time() + timeout
-        while time.time() < deadline:
-            with self._lock:
-                self._purge_dead()
-                if priority and len(self._holders) >= self.max_slots:
-                    oldest_vp, oldest_hb = None, float("inf")
-                    for vp in self._holders:
-                        prog = _load_progress_file(vp) or {}
-                        hb = float(prog.get("heartbeat") or prog.get("start_time") or 0) or time.time()
-                        if hb < oldest_hb:
-                            oldest_hb, oldest_vp = hb, vp
-                    if oldest_vp and (time.time() - oldest_hb) > 45:
-                        self._holders.pop(oldest_vp, None)
-                if video_path in self._holders or len(self._holders) < self.max_slots:
-                    self._holders[video_path] = time.time()
-                    return True
-            time.sleep(0.12)
-        return False
-
-    def release(self, video_path):
-        with self._lock:
-            self._holders.pop(video_path, None)
-
-    def holder_summary(self):
-        with self._lock:
-            self._purge_dead()
-            names = []
-            for vp in self._holders:
-                prog = _load_progress_file(vp) or {}
-                names.append(prog.get("video_name") or os.path.basename(vp))
-            return names
+def _load_analysis_progress_file(video_path):
+    return _load_progress_file(video_path)
 
 
-_analysis_slots = AnalysisSlotPool(MAX_CONCURRENT_ANALYSIS)
+_analysis_slots = AnalysisSlotPool(
+    MAX_CONCURRENT_ANALYSIS,
+    running_threads=_running_threads,
+    progress_loader=_load_analysis_progress_file,
+    orphan_seconds=JOB_ORPHAN_SECONDS,
+)
 
 def doc_lock_save_data(file_path, handle_fn):
     """
@@ -15188,55 +15035,13 @@ Dòng **Xác suất 3 lớp** (nếu có): tổng ~100%, cho biết mô hình ph
     # Hàm helper tính G1/G2/G3 status cho một frame_data
     def _frame_phase_status(f_data, threshold):
         """Tính PASS/NEAR/FAIL cho frame theo ngưỡng sai số threshold"""
-        if threshold is None:
-            idx = f_data.get('index', 1) - 1
-            if 'segment_bounds' in st.session_state and st.session_state.segment_bounds:
-                n0, n1, n2, n3 = st.session_state.segment_bounds
-                if n0 <= idx < n1:
-                    threshold = PHASE_ERROR["g1"]
-                elif n1 <= idx < n2:
-                    threshold = PHASE_ERROR["g2"]
-                elif n2 <= idx < n3:
-                    threshold = PHASE_ERROR["g3"]
-                else:
-                    threshold = PHASE_ERROR["g2"]
-            else:
-                threshold = PHASE_ERROR["g2"]
-        
-        eval_info = f_data.get('eval_info', {})
-        cv = eval_info.get('shoulder_ref', 90)
-        ck = eval_info.get('elbow_ref', 170)
-
-        if is_gay_ex:
-            vt = f_data.get('goc_vai_trai')
-            vp = f_data.get('goc_vai_phai')
-            kt = f_data.get('goc_khuyu_trai')
-            kp = f_data.get('goc_khuyu_phai')
-            if vt is None or vp is None or kt is None or kp is None:
-                return "FAIL"
-            vd = (abs(vt - cv) <= threshold) and (abs(vp - cv) <= threshold)
-            kd = (abs(kt - ck) <= threshold) and (abs(kp - ck) <= threshold)
-            vn = (abs(vt - cv) <= threshold * 1.5) and (abs(vp - cv) <= threshold * 1.5)
-            kn = (abs(kt - ck) <= threshold * 1.5) and (abs(kp - ck) <= threshold * 1.5)
-            if vd and kd:
-                return "PASS"
-            elif vn and kn:
-                return "NEAR"
-            return "FAIL"
-        else:
-            goc_v = f_data.get('goc_vai')
-            goc_k = f_data.get('goc_khuyu')
-            if goc_v is None or goc_k is None:
-                return "FAIL"
-            vd = abs(goc_v - cv) <= threshold
-            kd = abs(goc_k - ck) <= threshold
-            vn = abs(goc_v - cv) <= threshold * 1.5
-            kn = abs(goc_k - ck) <= threshold * 1.5
-            if vd and kd:
-                return "PASS"
-            elif vn and kn:
-                return "NEAR"
-            return "FAIL"
+        return frame_phase_status(
+            f_data,
+            threshold,
+            is_gay_exercise=is_gay_ex,
+            segment_bounds=st.session_state.get("segment_bounds"),
+            phase_error=PHASE_ERROR,
+        )
 
     # Hàm helper render grid HTML frames
     def _render_frame_grid(indices_list, frame_data_list, quality_mode_val, tab_threshold, tab_key, key_suffix_val):
@@ -15375,23 +15180,20 @@ Dòng **Xác suất 3 lớp** (nếu có): tổng ~100%, cho biết mô hình ph
             if st.button("🔄", width="stretch", key=f"fref_{tab_key}_{key_suffix_val}"):
                 st.rerun()
 
-        # Áp dụng sub_filter
-        if sub_filter == "PASS":
-            indices_list = [i for i in indices_list if _frame_phase_status(frame_data_list[i], tab_threshold) == "PASS"]
-        elif sub_filter == "NEAR":
-            indices_list = [i for i in indices_list if _frame_phase_status(frame_data_list[i], tab_threshold) == "NEAR"]
-        elif sub_filter == "FAIL":
-            indices_list = [i for i in indices_list if _frame_phase_status(frame_data_list[i], tab_threshold) == "FAIL"]
-
-        total_f = len(indices_list)
-        total_p = max(1, (total_f + fpp - 1) // fpp)
-        if st.session_state[page_key] > total_p:
-            st.session_state[page_key] = total_p
+        status_for_idx = lambda f_data: _frame_phase_status(f_data, tab_threshold)
+        indices_list = filter_frame_indices(indices_list, frame_data_list, sub_filter, status_for_idx)
+        page_inds, current_page, total_p, total_f = paginate_indices(
+            indices_list,
+            page=st.session_state[page_key],
+            per_page=fpp,
+        )
+        st.session_state[page_key] = current_page
 
         # Đếm PASS/NEAR/FAIL theo ngưỡng giai đoạn
-        cnt_pass = sum(1 for i in indices_list if _frame_phase_status(frame_data_list[i], tab_threshold) == "PASS")
-        cnt_near = sum(1 for i in indices_list if _frame_phase_status(frame_data_list[i], tab_threshold) == "NEAR")
-        cnt_fail = total_f - cnt_pass - cnt_near
+        counts = frame_status_counts(indices_list, frame_data_list, status_for_idx)
+        cnt_pass = counts.get("PASS", 0)
+        cnt_near = counts.get("NEAR", 0)
+        cnt_fail = counts.get("FAIL", 0)
 
         # Thẻ thống kê
         sc1, sc2, sc3, sc4 = st.columns(4)
@@ -15416,10 +15218,6 @@ Dòng **Xác suất 3 lớp** (nếu có): tổng ~100%, cho biết mô hình ph
         if total_f == 0:
             st.info("ℹ️ Không có frame nào trong bộ lọc này.")
             return
-
-        s_idx = (st.session_state[page_key] - 1) * fpp
-        e_idx = min(s_idx + fpp, total_f)
-        page_inds = indices_list[s_idx:e_idx]
 
         # Xác định ZIP và đọc TOÀN BỘ frames trang hiện tại từ ZIP một lần (tránh mở ZIP N lần)
         has_zip = False

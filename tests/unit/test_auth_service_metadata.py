@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from backend.auth_service import register_user, reset_password
-from auth.passwords import current_hash_version, verify_password_hash
+from auth.passwords import current_hash_version
 
 
 def _now():
