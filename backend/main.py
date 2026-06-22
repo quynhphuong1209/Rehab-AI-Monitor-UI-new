@@ -189,6 +189,9 @@ DEFAULT_CORS_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5183",
     "http://localhost:5183",
+    "https://rehab-ai-monitor.pages.dev",
+    "https://rehab-ai-monitor.com",
+    "https://www.rehab-ai-monitor.com",
 ]
 
 
