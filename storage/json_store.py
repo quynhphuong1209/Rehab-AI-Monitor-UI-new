@@ -44,13 +44,13 @@ def write_json(path: str | os.PathLike[str], data: Any) -> None:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
                 f.write("\n")
-            last_error: PermissionError | None = None
+            last_error: OSError | None = None
             for attempt in range(20):
                 try:
                     os.replace(tmp_name, p)
                     last_error = None
                     break
-                except PermissionError as exc:
+                except OSError as exc:
                     last_error = exc
                     time.sleep(0.05 * (attempt + 1))
             if last_error is not None:
