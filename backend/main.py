@@ -182,6 +182,23 @@ ARTIFACT_METADATA_KEYS = (
 )
 ANALYSIS_METADATA_KEYS = ("metrics", "sai_so", "giai_doan")
 LOCAL_ARTIFACT_ALIAS_KEYS = ("_local_video_artifacts", "local_video_artifacts", "source_video_index")
+DEFAULT_CORS_ORIGINS = [
+    "http://127.0.0.1:5174",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+    "http://127.0.0.1:5183",
+    "http://localhost:5183",
+]
+
+
+def _env_list(name: str) -> list[str]:
+    raw = os.environ.get(name, "")
+    return [item.strip() for item in re.split(r"[\s,]+", raw) if item.strip()]
+
+
+CORS_ORIGINS = list(dict.fromkeys([*DEFAULT_CORS_ORIGINS, *_env_list("REHAB_CORS_ORIGINS")]))
+CORS_ORIGIN_REGEX = os.environ.get("REHAB_CORS_ORIGIN_REGEX") or r"https?://(127\.0\.0\.1|localhost):\d+"
 
 
 class LoginRequest(BaseModel):
@@ -7271,15 +7288,8 @@ app = FastAPI(title="Rehab AI Monitor API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5174",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
-        "http://127.0.0.1:5183",
-        "http://localhost:5183",
-    ],
-    allow_origin_regex=r"https?://(127\.0\.0\.1|localhost):\d+",
+    allow_origins=CORS_ORIGINS,
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

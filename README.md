@@ -93,10 +93,15 @@ Mở web tại `http://127.0.0.1:5174`. API docs ở `http://127.0.0.1:8001/docs
 
 ```powershell
 cd D:\Downloads\Rehab-AI-Monitor-UI-new
-docker compose up --build
+$env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
+docker compose up -d --build
 ```
 
 Docker Compose mount trực tiếp `database/`, `patient_uploads/`, `processed_results/` và các JSON root vào container, nên dữ liệu local vẫn giữ nguyên như khi chạy bằng terminal. Frontend chạy ở `http://127.0.0.1:5174`, backend chạy ở `http://127.0.0.1:8001`.
+
+### Deploy production đề xuất
+
+Hướng dẫn đẩy server theo mô hình **Cloudflare Pages + VPS Docker/Caddy + dữ liệu local giữ nguyên bước đầu** nằm ở [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md). Mô hình này đưa frontend lên Cloudflare Pages, backend FastAPI lên VPS, còn R2/Postgres để migrate sau khi server đã chạy ổn.
 
 <!-- LOCAL_WEB_SNAPSHOT_END -->
 
@@ -212,7 +217,67 @@ Nhận định từ biểu đồ hiện tại: nhóm Codman có độ ổn đị
 
 ---
 
-## 5. THÔNG TIN TRIỆU CHỨNG LÂM SÀNG ĐANG GHI NHẬN
+## 5. CODMAN THEO 3 GIAI ĐOẠN VÀ DỮ LIỆU BIỂU ĐỒ LOCAL WEB
+
+Dữ liệu dưới đây lấy từ 4 video Codman mới nhất trong `database/video_list.json` có đủ `metrics_g1`, `metrics_g2`, `metrics_g3` và đang được local web dùng để dựng biểu đồ. Giai đoạn 1, 2, 3 lần lượt tương ứng ngưỡng sai số góc khớp **±45°**, **±30°**, **±15°**. Tất cả bệnh nhân được ghi bằng mã ẩn danh.
+
+### 5.1. Tổng quan 4 video Codman mới nhất
+
+| BN | Kết quả | Accuracy | PASS | NEAR | FAIL | UNKNOWN | Tổng frame | MAE | F1 | Precision | Recall |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| BN01 | Đúng | 95.31% | 3048 | 27 | 123 | 10 | 3208 | 4.36° | 0.976 | 0.961 | 0.953 |
+| BN02 | Đúng | 96.65% | 2540 | 53 | 35 | 0 | 2628 | 3.97° | 0.983 | 0.986 | 0.967 |
+| BN03 | Đúng | 100.00% | 2740 | 0 | 0 | 0 | 2740 | 2.88° | 1.000 | 1.000 | 1.000 |
+| BN04 | Đúng | 84.00% | 2321 | 186 | 256 | 0 | 2763 | 9.88° | 0.913 | 0.901 | 0.840 |
+
+### 5.2. Kết quả Codman tách GĐ1/GĐ2/GĐ3
+
+| BN | Giai đoạn | Ngưỡng | Accuracy | PASS | NEAR | FAIL | Frame hợp lệ | MAE | F1 | ICC |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| BN01 | GĐ1 | ±45° | 99.89% | 943 | 1 | 0 | 944 | 5.37° | 0.990 | 0.873 |
+| BN01 | GĐ2 | ±30° | 99.47% | 1306 | 6 | 1 | 1313 | 3.96° | 0.990 | 0.901 |
+| BN01 | GĐ3 | ±15° | 64.75% | 700 | 108 | 283 | 1091 | 9.70° | 0.691 | 0.786 |
+| BN02 | GĐ1 | ±45° | 96.48% | 712 | 26 | 0 | 738 | 12.90° | 0.969 | 0.722 |
+| BN02 | GĐ2 | ±30° | 92.63% | 955 | 73 | 3 | 1031 | 9.06° | 0.935 | 0.799 |
+| BN02 | GĐ3 | ±15° | 48.54% | 417 | 100 | 342 | 859 | 13.69° | 0.549 | 0.706 |
+| BN03 | GĐ1 | ±45° | 99.87% | 796 | 1 | 0 | 797 | 11.40° | 0.990 | 0.752 |
+| BN03 | GĐ2 | ±30° | 100.00% | 1135 | 0 | 0 | 1135 | 10.90° | 0.990 | 0.762 |
+| BN03 | GĐ3 | ±15° | 31.56% | 255 | 254 | 299 | 808 | 13.49° | 0.400 | 0.710 |
+| BN04 | GĐ1 | ±45° | 99.75% | 802 | 2 | 0 | 804 | 12.73° | 0.990 | 0.725 |
+| BN04 | GĐ2 | ±30° | 82.23% | 944 | 195 | 9 | 1148 | 12.16° | 0.844 | 0.737 |
+| BN04 | GĐ3 | ±15° | 53.76% | 436 | 69 | 306 | 811 | 11.11° | 0.595 | 0.758 |
+
+### 5.3. Dữ liệu biểu đồ góc khớp Codman theo giai đoạn
+
+| BN | Giai đoạn | Vai TB / min-max / SD | Khuỷu TB / min-max / SD | Góc vai chuẩn | Góc khuỷu chuẩn |
+| --- | --- | --- | --- | ---: | ---: |
+| BN01 | GĐ1 | 52.31° / 0.03-123.41° / 31.66° | 164.92° / 119.17-179.98° / 14.08° | 47.48° | 168.15° |
+| BN01 | GĐ2 | 45.81° / 0.02-95.37° / 25.50° | 163.65° / 0.40-180.00° / 18.29° | 44.60° | 166.36° |
+| BN01 | GĐ3 | 31.02° / 0.11-177.28° / 20.45° | 143.83° / 4.97-180.00° / 39.78° | 30.34° | 154.36° |
+| BN02 | GĐ1 | 51.89° / 0.02-109.00° / 31.67° | 163.32° / 119.33-179.91° / 14.38° | 46.21° | 172.85° |
+| BN02 | GĐ2 | 49.73° / 11.55-96.61° / 27.15° | 167.21° / 104.91-178.98° / 7.21° | 44.70° | 173.05° |
+| BN02 | GĐ3 | 31.45° / 0.01-126.85° / 15.44° | 152.83° / 0.21-178.97° / 26.07° | 36.42° | 174.09° |
+| BN03 | GĐ1 | 26.27° / 0.04-68.89° / 19.92° | 162.75° / 129.71-175.85° / 7.32° | 36.95° | 174.08° |
+| BN03 | GĐ2 | 25.61° / 0.02-64.93° / 19.63° | 163.93° / 148.59-172.36° / 3.38° | 36.91° | 174.11° |
+| BN03 | GĐ3 | 18.25° / 0.02-43.52° / 11.14° | 160.47° / 140.37-172.54° / 7.22° | 30.78° | 174.87° |
+| BN04 | GĐ1 | 69.70° / 2.28-120.02° / 34.88° | 143.38° / 68.45-179.96° / 30.53° | 58.14° | 146.02° |
+| BN04 | GĐ2 | 91.07° / 18.99-179.76° / 21.55° | 156.43° / 12.98-179.98° / 26.96° | 75.38° | 161.73° |
+| BN04 | GĐ3 | 90.69° / 48.30-129.39° / 21.37° | 159.59° / 105.91-179.59° / 11.38° | 76.08° | 164.26° |
+
+### 5.4. Dữ liệu boxplot góc khớp Codman
+
+Boxplot trên local web dùng chuỗi góc theo frame khi mở chi tiết video. Snapshot README ghi lại thống kê tóm tắt đang có trong `video_list.json` để đối chiếu báo cáo: min, trung bình, max và độ lệch chuẩn của góc vai/khuỷu.
+
+| BN | Vai min | Vai TB | Vai max | Vai SD | Khuỷu min | Khuỷu TB | Khuỷu max | Khuỷu SD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| BN01 | 0.02° | 44.32° | 177.28° | 26.83° | 0.40° | 159.25° | 180.00° | 27.47° |
+| BN02 | 0.01° | 44.36° | 126.85° | 27.01° | 0.21° | 161.42° | 179.91° | 18.40° |
+| BN03 | 0.02° | 23.63° | 68.89° | 17.98° | 129.71° | 162.57° | 175.85° | 6.14° |
+| BN04 | 2.28° | 84.74° | 179.76° | 27.80° | 12.98° | 153.56° | 179.98° | 25.59° |
+
+---
+
+## 6. THÔNG TIN TRIỆU CHỨNG LÂM SÀNG ĐANG GHI NHẬN
 
 | Mã ẩn danh | Nhóm tuổi | VAS | Tóm tắt triệu chứng/hồ sơ |
 | --- | --- | ---: | --- |
@@ -223,7 +288,7 @@ Nhận định từ biểu đồ hiện tại: nhóm Codman có độ ổn đị
 
 ---
 
-## 6. NHẬN ĐỊNH LÂM SÀNG & KẾ HOẠCH THEO BỆNH NHÂN
+## 7. NHẬN ĐỊNH LÂM SÀNG & KẾ HOẠCH THEO BỆNH NHÂN
 
 ### BN01
 - Dữ liệu hiện có: 3 video, 2 video AI mới; accuracy trung bình 82.94%.
@@ -251,7 +316,7 @@ Nhận định từ biểu đồ hiện tại: nhóm Codman có độ ổn đị
 
 ---
 
-## 7. TRẠNG THÁI BÁC SĨ/KTV VÀ NCV TRÊN HỆ THỐNG
+## 8. TRẠNG THÁI BÁC SĨ/KTV VÀ NCV TRÊN HỆ THỐNG
 
 - Bác sĩ/KTV có thể xem 8 video AI mới nhất kèm biểu đồ góc khớp, phân bố frame, histogram, boxplot, radar chỉ số nghiên cứu và bảng metrics.
 - `doctor_evaluations.json` hiện có 77 phiếu: 14 phiếu AI tự đồng bộ, 5 phiếu từ `doctor1`, 5 phiếu từ `NCV: Đinh Lê Quỳnh Phương`, 50 phiếu NCV cũ và 3 phiếu chưa gắn tên người đánh giá.

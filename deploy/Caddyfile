@@ -1,0 +1,23 @@
+{$API_DOMAIN} {
+    encode gzip zstd
+
+    request_body {
+        max_size {$REHAB_UPLOAD_MAX_SIZE}
+    }
+
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+    }
+
+    @health path /health
+    header @health Cache-Control "no-store"
+
+    reverse_proxy backend:8001 {
+        transport http {
+            dial_timeout 10s
+            read_timeout 10m
+            write_timeout 10m
+        }
+    }
+}

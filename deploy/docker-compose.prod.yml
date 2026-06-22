@@ -1,0 +1,58 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: rehab-ai-backend
+    environment:
+      REHAB_REPO_ROOT: /app
+      REHAB_DATABASE_DIR: /app/database
+      REHAB_DATASET_DIR: /app/database/dataset
+      REHAB_CORS_ORIGINS: ${FRONTEND_ORIGIN}
+      REHAB_CORS_ORIGIN_REGEX: ${REHAB_CORS_ORIGIN_REGEX:-}
+      REHAB_TOKEN_SECRET: ${REHAB_TOKEN_SECRET}
+      REHAB_UPLOAD_MAX_MB: ${REHAB_UPLOAD_MAX_MB:-600}
+      HF_TOKEN: ${HF_TOKEN:-}
+      HF_DATASET_ID: ${HF_DATASET_ID:-quynhphuong1209/Rehab-AI-Monitor-2026-data}
+      HF_BUCKET_ID: ${HF_BUCKET_ID:-quynhphuong1209/Rehab-AI-Monitor-2026-storage}
+    volumes:
+      - ../database:/app/database
+      - ../patient_uploads:/app/patient_uploads
+      - ../processed_results:/app/processed_results
+      - ../video_list.json:/app/video_list.json
+      - ../doctor_evaluations.json:/app/doctor_evaluations.json
+      - ../patient_symptoms.json:/app/patient_symptoms.json
+      - ../research_data.json:/app/research_data.json
+      - ../lich_su_tap_luyen.json:/app/lich_su_tap_luyen.json
+      - ../schedules.json:/app/schedules.json
+    expose:
+      - "8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: rehab-ai-caddy
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+      REHAB_UPLOAD_MAX_SIZE: ${REHAB_UPLOAD_MAX_SIZE:-700MB}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
