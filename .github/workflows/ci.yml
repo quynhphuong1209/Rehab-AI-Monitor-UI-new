@@ -17,6 +17,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest
       - name: Compile
         run: |
           python -m py_compile app.py utils/reference_utils.py utils/pose_classifier_utils.py utils/checkpoint_utils.py utils/path_security.py scripts/sync_from_hf.py scripts/sync_data_and_report.py scripts/reset_data.py scripts/revoke_sessions.py storage/json_store.py storage/migrations.py models/schemas.py auth/permissions.py auth/accounts.py auth/passwords.py auth/sessions.py video/validation.py video/serving.py jobs/models.py backend/auth_service.py
