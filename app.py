@@ -2512,7 +2512,7 @@ def _nap_bieu_do_nhanh_tu_cloud(v, giu_phan_tich_moi=False):
     return bool(st.session_state.get("angle_df") is not None), v
 
 
-def _fragment_tien_do_tai_media(v, key_suffix=""):
+def _fragment_tien_do_tai_media(v):
     """Fragment 1s — cập nhật tiến độ tải Cloud + tự hiện biểu đồ khi CSV sẵn sàng."""
 
     def _poll():
@@ -2539,7 +2539,7 @@ def _fragment_tien_do_tai_media(v, key_suffix=""):
     _poll()
 
 
-def _quay_lai_ket_qua_cu_da_luu(v, rerun=False):
+def _quay_lai_ket_qua_cu_da_luu(v):
     """Nạp kết quả đã lưu đầy đủ — biểu đồ ngay, video/frames tải song song."""
     global _hf_last_download_error
     _hf_last_download_error = None
@@ -2589,7 +2589,7 @@ def _quay_lai_ket_qua_cu_da_luu(v, rerun=False):
     return False
 
 
-def _hien_thi_hang_video_va_tien_do(v, key_suffix, is_processing=False):
+def _hien_thi_hang_video_va_tien_do(v, key_suffix):
     """Hàng 2 cột: video gốc (trái) + luồng phân tích 4 bước (phải) — theo screenshot 3."""
     col_v1, col_v2 = st.columns([1.0, 1.0])
     with col_v1:
@@ -2620,7 +2620,7 @@ def hien_thi_nut_tai_lai_va_phan_tich_moi(v_re, key_suffix=""):
             type="secondary",
             use_container_width=True,
         ):
-            _quay_lai_ket_qua_cu_da_luu(v_re, rerun=False)
+            _quay_lai_ket_qua_cu_da_luu(v_re)
     with c2:
         if st.button(
             "🚀 Chạy phân tích mới",
@@ -2632,7 +2632,7 @@ def hien_thi_nut_tai_lai_va_phan_tich_moi(v_re, key_suffix=""):
             _xu_ly_ket_qua_khoi_dong_phan_tich(khoi_dong_phan_tich_lai_video(v_re, auto_start=True))
 
 
-def render_video(video_path, check_h264=True, prefer_raw=False):
+def render_video(video_path, prefer_raw=False):
     """Hiển thị video: ưu tiên HTTP Range Request server (local) để phát ngay lập tức.
     prefer_raw=True: phát video gốc BN upload (danh sách video), không dùng processed/_f.mp4."""
     if not video_path:
@@ -5228,7 +5228,7 @@ def _roles_match(stored_role, selected_role):
     return _normalize_auth_text(stored_role or "Bệnh nhân") == _normalize_auth_text(selected_role or "Bệnh nhân")
 
 
-def _verify_auth_password(username_key, password, user_record):
+def _verify_auth_password(_username_key, password, user_record):
     return _verify_password_record(password, user_record).ok
 
 
@@ -6429,7 +6429,7 @@ def tinh_goc(a, b, c):
     cos = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-10)
     return np.degrees(np.arccos(np.clip(cos, -1.0, 1.0)))
 
-def ve_cung_tron_goc(image, point1, center, point3, angle, color, radius=40):
+def ve_cung_tron_goc(image, point1, center, point3, color, radius=40):
     """Vẽ cung tròn hiển thị góc tại khớp"""
     try:
         # Tính toán vector
@@ -6862,32 +6862,32 @@ def xu_ly_frame(frame, model, chuan, frame_idx, fps=30, dynamic_chuan=None, acti
     if exercise_name == "gay":
         # Vẽ cả hai bên (Trái và Phải)
         # Bên Trái
-        ve_cung_tron_goc(frame_output, hong_t, vai_t, khuyu_t, goc_vai_t, mau_vai_t, radius=int(35 * scale_factor))
-        ve_cung_tron_goc(frame_output, vai_t, khuyu_t, co_tay_t, goc_khuyu_t, mau_khuyu_t, radius=int(30 * scale_factor))
+        ve_cung_tron_goc(frame_output, hong_t, vai_t, khuyu_t, mau_vai_t, radius=int(35 * scale_factor))
+        ve_cung_tron_goc(frame_output, vai_t, khuyu_t, co_tay_t, mau_khuyu_t, radius=int(30 * scale_factor))
         cv2.putText(frame_output, f"{int(goc_vai_t)}", (vai_t[0] - int(45 * scale_factor), vai_t[1] - int(15 * scale_factor)), 
                     cv2.FONT_HERSHEY_SIMPLEX, font_scale_large, mau_vai_t, text_thick)
         cv2.putText(frame_output, f"{int(goc_khuyu_t)}", (khuyu_t[0] - int(45 * scale_factor), khuyu_t[1] - int(15 * scale_factor)), 
                     cv2.FONT_HERSHEY_SIMPLEX, font_scale_large, mau_khuyu_t, text_thick)
         
         # Bên Phải
-        ve_cung_tron_goc(frame_output, hong_p, vai_p, khuyu_p, goc_vai_p, mau_vai_p, radius=int(35 * scale_factor))
-        ve_cung_tron_goc(frame_output, vai_p, khuyu_p, co_tay_p, goc_khuyu_p, mau_khuyu_p, radius=int(30 * scale_factor))
+        ve_cung_tron_goc(frame_output, hong_p, vai_p, khuyu_p, mau_vai_p, radius=int(35 * scale_factor))
+        ve_cung_tron_goc(frame_output, vai_p, khuyu_p, co_tay_p, mau_khuyu_p, radius=int(30 * scale_factor))
         cv2.putText(frame_output, f"{int(goc_vai_p)}", (vai_p[0] + int(15 * scale_factor), vai_p[1] - int(15 * scale_factor)), 
                     cv2.FONT_HERSHEY_SIMPLEX, font_scale_large, mau_vai_p, text_thick)
         cv2.putText(frame_output, f"{int(goc_khuyu_p)}", (khuyu_p[0] + int(15 * scale_factor), khuyu_p[1] - int(15 * scale_factor)), 
                     cv2.FONT_HERSHEY_SIMPLEX, font_scale_large, mau_khuyu_p, text_thick)
     elif exercise_name == "codman":
         # Chỉ vẽ bên Phải (Tay tập cố định)
-        ve_cung_tron_goc(frame_output, hong_p, vai_p, khuyu_p, goc_vai_p, mau_vai_p, radius=int(35 * scale_factor))
-        ve_cung_tron_goc(frame_output, vai_p, khuyu_p, co_tay_p, goc_khuyu_p, mau_khuyu_p, radius=int(30 * scale_factor))
+        ve_cung_tron_goc(frame_output, hong_p, vai_p, khuyu_p, mau_vai_p, radius=int(35 * scale_factor))
+        ve_cung_tron_goc(frame_output, vai_p, khuyu_p, co_tay_p, mau_khuyu_p, radius=int(30 * scale_factor))
         cv2.putText(frame_output, f"{int(goc_vai_p)}", (vai_p[0] + int(15 * scale_factor), vai_p[1] - int(15 * scale_factor)), 
                     cv2.FONT_HERSHEY_SIMPLEX, font_scale_large, mau_vai_p, text_thick)
         cv2.putText(frame_output, f"{int(goc_khuyu_p)}", (khuyu_p[0] + int(15 * scale_factor), khuyu_p[1] - int(15 * scale_factor)), 
                     cv2.FONT_HERSHEY_SIMPLEX, font_scale_large, mau_khuyu_p, text_thick)
     else:
         # Vẽ theo active_side mặc định (cho bài tập khác như Dây kháng lực)
-        ve_cung_tron_goc(frame_output, pts_vai[0], pts_vai[1], pts_vai[2], goc_vai, mau_vai, radius=int(35 * scale_factor))
-        ve_cung_tron_goc(frame_output, pts_khuyu[0], pts_khuyu[1], pts_khuyu[2], goc_khuyu, mau_khuyu, radius=int(30 * scale_factor))
+        ve_cung_tron_goc(frame_output, pts_vai[0], pts_vai[1], pts_vai[2], mau_vai, radius=int(35 * scale_factor))
+        ve_cung_tron_goc(frame_output, pts_khuyu[0], pts_khuyu[1], pts_khuyu[2], mau_khuyu, radius=int(30 * scale_factor))
         cv2.putText(frame_output, f"{int(goc_vai)}", (pts_vai[1][0] + int(15 * scale_factor), pts_vai[1][1] - int(15 * scale_factor)), 
                     cv2.FONT_HERSHEY_SIMPLEX, font_scale_large, mau_vai, text_thick)
         cv2.putText(frame_output, f"{int(goc_khuyu)}", (pts_khuyu[1][0] + int(15 * scale_factor), pts_khuyu[1][1] - int(15 * scale_factor)), 
@@ -9041,7 +9041,7 @@ def hien_thi_video_goc_fragment(video_or_v, key_suffix, video_name=""):
         if video_path:
             # render_video tự xử lý mọi fallback: local → HF Cloud stream → cảnh báo
             st.caption(f"🎬 Video gốc BN — {video_name or ''}")
-            _vid_ok = render_video(video_path, check_h264=False, prefer_raw=True)
+            _vid_ok = render_video(video_path, prefer_raw=True)
             if not _vid_ok:
                 _hien_thi_gan_lai_video_ui(vrec, video_path, key_suffix)
         else:
@@ -9352,7 +9352,7 @@ def _noi_dung_khu_vuc_phan_tich(v, key_suffix, video_path):
                 _xu_ly_ket_qua_khoi_dong_phan_tich(khoi_dong_phan_tich_lai_video(v, auto_start=True))
         with c2:
             if v.get("metrics") and st.button("⬅️ Xem kết quả cũ", width="stretch", type="secondary", key=f"btn_old_stall_{key_suffix}"):
-                _quay_lai_ket_qua_cu_da_luu(v, rerun=False)
+                _quay_lai_ket_qua_cu_da_luu(v)
 
     elif is_slow:
         import re as _re
@@ -9386,7 +9386,7 @@ def _noi_dung_khu_vuc_phan_tich(v, key_suffix, video_path):
                 _xu_ly_ket_qua_khoi_dong_phan_tich(khoi_dong_phan_tich_lai_video(v, auto_start=True))
         with c3:
             if v.get("metrics") and st.button("⬅️ Kết quả cũ", width="stretch", type="secondary", key=f"btn_old_slow_{key_suffix}"):
-                _quay_lai_ket_qua_cu_da_luu(v, rerun=False)
+                _quay_lai_ket_qua_cu_da_luu(v)
 
     elif is_processing:
         detail = f" — {status_msg}" if status_msg else ""
@@ -9463,7 +9463,7 @@ def _noi_dung_khu_vuc_phan_tich(v, key_suffix, video_path):
                 _lam_moi_giao_dien_sau_nut()
         with c2:
             if st.button("⬅️ Quay lại xem kết quả cũ đã lưu", width="stretch", type="secondary", key=f"btn_back_old_{key_suffix}"):
-                _quay_lai_ket_qua_cu_da_luu(v, rerun=False)
+                _quay_lai_ket_qua_cu_da_luu(v)
         _sel_model_label = "chế độ nhanh" if _is_hf_runtime() else st.session_state.get("ncv_model_type", "MediaPipe Heavy").replace("MediaPipe ", "")
         if st.button(f"⚡ Dừng & chạy lại với {_sel_model_label}", width="stretch", type="primary", key=f"btn_restart_model_{key_suffix}"):
             _dung_phan_tich()
@@ -9651,7 +9651,7 @@ def lay_so_khung_video(video_path):
         return 0, 15.0
 
 
-def tinh_tham_so_toc_do_phan_tich(video_path, exercise_name, model_type, skip_step, resize_width):
+def tinh_tham_so_toc_do_phan_tich(video_path, model_type, skip_step, resize_width):
     """Tự động tối ưu tốc độ xử lý cho video dài.
 
     Khi NCV để mặc định (skip=0, resize=720), hàm này tự chỉnh:
@@ -9839,7 +9839,7 @@ def khoi_phuc_job_phan_tich_sau_deploy(cold_start=False):
             ui_prog, ui_msg = checkpoint_ui_progress(ckpt_resume)
         else:
             model_type, skip_step, resize_width = tinh_tham_so_toc_do_phan_tich(
-                vp, exercise, model_type, skip_step, resize_width
+                vp, model_type, skip_step, resize_width
             )
             ui_prog = max(float(job.get("progress") or 0), 0.01)
             ui_msg = "🔄 Tiếp tục phân tích sau khi Space khởi động lại / job bị gián đoạn..."
@@ -10024,7 +10024,7 @@ def bat_dau_phan_tich_background(
         force_train_classifier = False
     else:
         model_type, skip_step, resize_width = tinh_tham_so_toc_do_phan_tich(
-            video_path, exercise_name, model_type, skip_step, resize_width
+            video_path, model_type, skip_step, resize_width
         )
     skip_step = skip_step_theo_model(model_type, skip_step)
 
@@ -11279,7 +11279,7 @@ def ve_bieu_do_goc_khuyu(df, bt, sai_so_override=None):
     return fig
 
 
-def ve_bieu_do_histogram(df, bt):
+def ve_bieu_do_histogram(df):
     """Vẽ biểu đồ histogram phân phối góc"""
     fig = make_subplots(rows=1, cols=2, 
                         subplot_titles=("<b>Phân phối góc vai</b>", "<b>Phân phối góc khuỷu</b>"),
@@ -12166,7 +12166,7 @@ def _hien_thi_tab_phan_tich_noi_dung(key_suffix="", stats_ext=None, df_ext=None,
                     st.session_state.current_eval_video = v
 
             if has_metrics:
-                _fragment_tien_do_tai_media(v, key_suffix)
+                _fragment_tien_do_tai_media(v)
 
             prog_data = read_progress(v.get('video_path'))
             is_processing = bool(
@@ -12187,7 +12187,7 @@ def _hien_thi_tab_phan_tich_noi_dung(key_suffix="", stats_ext=None, df_ext=None,
                     width="stretch",
                     type="primary",
                 ):
-                    _quay_lai_ket_qua_cu_da_luu(v, rerun=False)
+                    _quay_lai_ket_qua_cu_da_luu(v)
 
             da_co_du_lieu = bool(
                 st.session_state.get("has_data")
@@ -12197,13 +12197,13 @@ def _hien_thi_tab_phan_tich_noi_dung(key_suffix="", stats_ext=None, df_ext=None,
 
             # Ảnh 2: video đã có kết quả lưu — luôn dùng layout gọn, tải Cloud liền mạch
             if has_metrics and (is_processing or st.session_state.get("reanalyze_triggered")):
-                _hien_thi_hang_video_va_tien_do(v, key_suffix, is_processing=is_processing)
+                _hien_thi_hang_video_va_tien_do(v, key_suffix)
                 return
 
             # Ảnh 1: video chưa từng phân tích — màn chờ lần đầu
             if not hien_thi_bieu_do and not has_metrics and (is_processing or st.session_state.get("reanalyze_triggered")):
                 _hien_thi_thong_bao_che_do_phan_tich_moi()
-                _hien_thi_hang_video_va_tien_do(v, key_suffix, is_processing=is_processing)
+                _hien_thi_hang_video_va_tien_do(v, key_suffix)
                 return
 
             if not hien_thi_bieu_do and not has_metrics:
@@ -12700,7 +12700,7 @@ def _hien_thi_tab_phan_tich_noi_dung(key_suffix="", stats_ext=None, df_ext=None,
     fig_pie = ve_bieu_do_tron_thong_ke(tk_selected)
     fig_vai = ve_bieu_do_goc_vai(df, bt, sai_so_override=sai_so_selected)
     fig_khuyu = ve_bieu_do_goc_khuyu(df, bt, sai_so_override=sai_so_selected)
-    fig_hist = ve_bieu_do_histogram(df, bt)
+    fig_hist = ve_bieu_do_histogram(df)
     fig_box_vai, fig_box_khuyu = ve_bieu_do_boxplot_phan_loai(df)
     fig_radar = ve_bieu_do_radar(tk_selected)
 
@@ -13332,7 +13332,7 @@ def hien_thi_form_danh_gia_bac_si():
             
             v_to_render = selected_video.get('processed_path') if (selected_video.get('status') == "Đã phân tích" and selected_video.get('processed_path')) else selected_video.get('video_path')
             if v_to_render:
-                render_video(v_to_render, check_h264=(selected_video.get('status') == "Đã phân tích"))
+                render_video(v_to_render)
             
             with st.form("doctor_eval_form_final_v_fixed"):
                 col1, col2 = st.columns(2)
@@ -13641,7 +13641,7 @@ def hien_thi_tab_ket_qua_da_chon(my_history_vids, my_evals, user_role, is_fresh_
 
     hien_thi_noi_dung_ket_qua(selected_v, my_evals)
 
-def _hien_thi_khoi_nhan_xet_danh_gia(eval_data, accent_color, accent_bg, accent_border, default_source):
+def _hien_thi_khoi_nhan_xet_danh_gia(eval_data, accent_color, accent_border, default_source):
     """Hiển thị một khối nhận xét đánh giá (chỉ văn bản, không biểu đồ)."""
     if not eval_data:
         return
@@ -13703,7 +13703,6 @@ def hien_thi_noi_dung_ket_qua(selected_v, my_evals):
         _hien_thi_khoi_nhan_xet_danh_gia(
             ai_eval,
             accent_color="#00CED1",
-            accent_bg="rgba(0,206,209,0.08)",
             accent_border="rgba(0,206,209,0.35)",
             default_source="Nghiên cứu viên / Hệ thống AI",
         )
@@ -13722,7 +13721,6 @@ def hien_thi_noi_dung_ket_qua(selected_v, my_evals):
         _hien_thi_khoi_nhan_xet_danh_gia(
             doc_eval,
             accent_color="#ffd700",
-            accent_bg="rgba(255,215,0,0.08)",
             accent_border="rgba(255,215,0,0.35)",
             default_source="Bác sĩ / KTV PHCN",
         )
@@ -15044,7 +15042,7 @@ Dòng **Xác suất 3 lớp** (nếu có): tổng ~100%, cho biết mô hình ph
         )
 
     # Hàm helper render grid HTML frames
-    def _render_frame_grid(indices_list, frame_data_list, quality_mode_val, tab_threshold, tab_key, key_suffix_val):
+    def _render_frame_grid(indices_list, frame_data_list, tab_threshold, tab_key, key_suffix_val):
         page_key = f"fp_{tab_key}_{key_suffix_val}"
         if page_key not in st.session_state:
             st.session_state[page_key] = 1
@@ -15461,7 +15459,7 @@ Dòng **Xác suất 3 lớp** (nếu có): tổng ~100%, cho biết mô hình ph
     if is_gay_ex:
         st.info("📋 **Bài tập với gậy:** Đánh giá động thái khớp vai & khuỷu theo tư thế chuẩn tương đương.")
         ss_chuan = tk.get('sai_so', 30)
-        _render_frame_grid(list(range(len(all_frames_data))), all_frames_data, None, ss_chuan, "all", key_suffix)
+        _render_frame_grid(list(range(len(all_frames_data))), all_frames_data, ss_chuan, "all", key_suffix)
     else:
         # Lấy ranh giới phân đoạn đã tính toán ở trên
         if 'segment_bounds' not in st.session_state or st.session_state.get('last_processed_video_for_bounds') != processed_video_path:
@@ -15495,19 +15493,19 @@ Dòng **Xác suất 3 lớp** (nếu có): tổng ~100%, cho biết mô hình ph
 
         with tab_all:
             st.caption("Hiển thị tất cả khung hình. Badge màu theo **giai đoạn mặc định** bạn đã chọn trước khi phân tích.")
-            _render_frame_grid(all_indices, all_frames_data, None, None, "all", key_suffix)
+            _render_frame_grid(all_indices, all_frames_data, None, "all", key_suffix)
 
         with tab_g1:
             st.info(f"🟢 **Giai đoạn 1 — Khởi đầu (Sai số ±{PHASE_ERROR['g1']}°):** Chỉ hiển thị các khung hình thuộc **Lượt tập 1**. Badge **PASS** = lệch chuẩn ≤ {PHASE_ERROR['g1']}°.")
-            _render_frame_grid(g1_indices, all_frames_data, None, PHASE_ERROR["g1"], "g1", key_suffix)
+            _render_frame_grid(g1_indices, all_frames_data, PHASE_ERROR["g1"], "g1", key_suffix)
 
         with tab_g2:
             st.info(f"🟡 **Giai đoạn 2 — Hồi phục (Sai số ±{PHASE_ERROR['g2']}°):** Chỉ hiển thị các khung hình thuộc **Lượt lặp lại lần 2**. Badge **PASS** = lệch chuẩn ≤ {PHASE_ERROR['g2']}°.")
-            _render_frame_grid(g2_indices, all_frames_data, None, PHASE_ERROR["g2"], "g2", key_suffix)
+            _render_frame_grid(g2_indices, all_frames_data, PHASE_ERROR["g2"], "g2", key_suffix)
 
         with tab_g3:
             st.info(f"🔴 **Giai đoạn 3 — Chuẩn xác (Sai số ±{PHASE_ERROR['g3']}°):** Chỉ hiển thị các khung hình thuộc **Lượt lặp lại lần 3**. Badge **PASS** = lệch chuẩn ≤ {PHASE_ERROR['g3']}°.")
-            _render_frame_grid(g3_indices, all_frames_data, None, PHASE_ERROR["g3"], "g3", key_suffix)
+            _render_frame_grid(g3_indices, all_frames_data, PHASE_ERROR["g3"], "g3", key_suffix)
 
     st.write("")  # Final spacer
 
@@ -16460,7 +16458,7 @@ def _noi_dung_danh_sach_video_fragment(user_role, video_list_preloaded=None):
                                             active_display_path, prefer_raw=True, video_record=v
                                         )
                                         if play_path and not _is_scratch_video_path(play_path):
-                                            render_video(play_path, check_h264=False, prefer_raw=True)
+                                            render_video(play_path, prefer_raw=True)
                                         elif _is_scratch_video_path(play_path):
                                             st.error(
                                                 "❌ Đang trỏ nhầm file tạm transcode (_ftmp). "

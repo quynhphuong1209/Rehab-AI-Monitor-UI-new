@@ -1,0 +1,268 @@
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import time
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
+
+from backend.main import (  # noqa: E402
+    _analysis_metrics,
+    _apply_ml_to_records,
+    _apply_people_filter_to_record,
+    _apply_phase_thresholds_to_records,
+    _clean_text,
+    _ensure_sound_playback_video,
+    _exercise_key,
+    _frame_number_key,
+    _frame_with_detected_pose,
+    _load_data,
+    _pose_landmarks,
+    _relative_repo_path,
+    _render_analysis_artifacts_from_records,
+    _resolve_existing_path,
+    _save_data,
+)
+
+
+def _records_path(video: dict) -> Path | None:
+    for key in ("all_frames_data_path", "frames_json", "results_json"):
+        path = _resolve_existing_path(video.get(key))
+        if path:
+            return path
+    processed = _resolve_existing_path(video.get("processed_path"))
+    if processed:
+        stem = processed.stem
+        if stem.endswith("_sound"):
+            stem = stem[: -len("_sound")]
+        if stem.endswith("_f"):
+            stem = stem[: -len("_f")]
+        if stem.startswith("processed_"):
+            candidate = REPO_ROOT / "processed_results" / f"f_{stem.removeprefix('processed_')}.json"
+            if candidate.is_file():
+                return candidate
+    return None
+
+
+def _load_records(path: Path) -> list[dict]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(data, dict):
+        rows = data.get("frames") or data.get("data") or []
+    else:
+        rows = data
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def _video_source(video: dict) -> Path | None:
+    for key in ("video_path", "raw_video_path", "processed_path"):
+        path = _resolve_existing_path(video.get(key))
+        if path and path.is_file():
+            return path
+    return None
+
+
+def _processed_paths(video: dict, records_path: Path) -> tuple[Path, Path, Path]:
+    processed = _resolve_existing_path(video.get("processed_path"))
+    if processed and processed.suffix.lower() == ".mp4":
+        stem = processed.stem
+        if stem.endswith("_sound"):
+            stem = stem[: -len("_sound")]
+        if stem.endswith("_f"):
+            stem = stem[: -len("_f")]
+    else:
+        stem = f"processed_{records_path.stem.removeprefix('f_')}"
+    output = REPO_ROOT / "processed_results" / f"{stem}_f.mp4"
+    frames_zip = REPO_ROOT / "processed_results" / f"{stem}_frames.zip"
+    csv_path = REPO_ROOT / "processed_results" / f"{stem}_data.csv"
+    return output, frames_zip, csv_path
+
+
+def _ffmpeg_probe(path: Path) -> tuple[float, int, int, int]:
+    try:
+        import cv2  # type: ignore[import-not-found]
+    except Exception:
+        return 30.0, 720, 1280, 0
+    cap = cv2.VideoCapture(str(path))
+    fps = float(cap.get(cv2.CAP_PROP_FPS) or 0) or 30.0
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0) or 720
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0) or 1280
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    cap.release()
+    return fps, width, height, total
+
+
+def update_video(idx: int, video: dict, *, render: bool, limit: int | None = None) -> dict:
+    exercise = video.get("exercise") or video.get("video_name")
+    exercise_key = _exercise_key(exercise)
+    if exercise_key not in {"codman", "pulley"}:
+        return {"idx": idx, "skipped": "exercise"}
+    records_path = _records_path(video)
+    source = _video_source(video)
+    if not records_path or not records_path.is_file() or not source:
+        return {"idx": idx, "skipped": "missing_artifact_or_video"}
+
+    records = _load_records(records_path)
+    fps, width, height, total_frames = _ffmpeg_probe(source)
+    output_video, frames_zip, csv_path = _processed_paths(video, records_path)
+    changed = 0
+    unknown_before = sum(1 for row in records if row.get("filtered_stranger") or _clean_text(row.get("status")).upper() == "UNKNOWN")
+
+    try:
+        import cv2  # type: ignore[import-not-found]
+        import mediapipe as mp  # type: ignore[import-not-found]
+    except Exception as exc:
+        return {"idx": idx, "error": f"missing cv2/mediapipe: {exc}"}
+
+    frame_targets = [
+        int(_frame_number_key(row.get("frame") or row.get("index") or row.get("frame_number")) or pos + 1)
+        for pos, row in enumerate(records)
+    ]
+    target_to_positions: dict[int, list[int]] = {}
+    for pos, frame_no in enumerate(frame_targets):
+        target_to_positions.setdefault(max(1, int(frame_no)), []).append(pos)
+    cap = cv2.VideoCapture(str(source))
+    pose = mp.solutions.pose.Pose(
+        static_image_mode=exercise_key == "codman",
+        model_complexity=2,
+        enable_segmentation=False,
+        min_detection_confidence=0.35,
+    )
+    try:
+        frame_no = 0
+        processed_positions = 0
+        max_target = max(target_to_positions) if target_to_positions else 0
+        while True:
+            ok, frame = cap.read()
+            if not ok or frame is None:
+                break
+            frame_no += 1
+            positions = target_to_positions.get(frame_no)
+            if not positions:
+                if max_target and frame_no > max_target:
+                    break
+                continue
+            for pos in positions:
+                if limit is not None and processed_positions >= limit:
+                    break
+                row = records[pos]
+                before = json.dumps(
+                    {
+                        "status": row.get("status"),
+                        "filtered": row.get("filtered_stranger"),
+                        "points": len(_pose_landmarks(row)),
+                        "reason": row.get("stranger_reason"),
+                    },
+                    sort_keys=True,
+                )
+                if len(_pose_landmarks(row)) < 33 or _clean_text(row.get("status")).upper() == "UNKNOWN":
+                    row = _frame_with_detected_pose(frame, row, pose_context=pose)
+                row = _apply_people_filter_to_record(frame, row, exercise)
+                records[pos] = row
+                after = json.dumps(
+                    {
+                        "status": row.get("status"),
+                        "filtered": row.get("filtered_stranger"),
+                        "points": len(_pose_landmarks(row)),
+                        "reason": row.get("stranger_reason"),
+                    },
+                    sort_keys=True,
+                )
+                if before != after:
+                    changed += 1
+                processed_positions += 1
+            if limit is not None and processed_positions >= limit:
+                break
+            if processed_positions and processed_positions % 250 == 0:
+                print(f"[{idx}] {video.get('video_name')} scanned {processed_positions}/{len(records)} changed={changed}", flush=True)
+    finally:
+        cap.release()
+        pose.close()
+
+    phase_bounds = _apply_phase_thresholds_to_records(records, exercise)
+    metrics = _analysis_metrics(records, total_frames or len(records), 0.0, exercise)
+    records_path.write_text(json.dumps(records, ensure_ascii=False), encoding="utf-8")
+
+    if csv_path.is_file():
+        try:
+            metrics = _apply_ml_to_records(csv_path, records_path, records, metrics, exercise)
+        except Exception as exc:
+            metrics["ml_status"] = f"skip ML refresh: {exc}"
+
+    rendered = 0
+    if render:
+        target_width = min(width, 720)
+        target_width = max(2, target_width - (target_width % 2))
+        target_height = max(2, int(round(height * target_width / max(1, width))))
+        target_height -= target_height % 2
+        rendered = _render_analysis_artifacts_from_records(
+            source,
+            output_video,
+            frames_zip,
+            records,
+            fps=fps,
+            skip=max(1, round(total_frames / max(1, len(records)))) if total_frames and len(records) < total_frames else 1,
+            target_width=target_width,
+            target_height=target_height,
+            exercise=exercise,
+            on_progress=lambda done, total: print(f"[{idx}] render {done}/{total}", flush=True),
+        )
+        if rendered:
+            sound_path, sound_updates = _ensure_sound_playback_video(output_video, records, exercise, metrics=metrics)
+            if sound_path:
+                video["processed_path"] = _relative_repo_path(sound_path)
+                if sound_updates.get("audio_video_path"):
+                    video["audio_video_path"] = sound_updates["audio_video_path"]
+            else:
+                video["processed_path"] = _relative_repo_path(output_video)
+            video["frames_zip"] = _relative_repo_path(frames_zip)
+            video["frames_zip_path"] = _relative_repo_path(frames_zip)
+
+    unknown_after = sum(1 for row in records if row.get("filtered_stranger") or _clean_text(row.get("status")).upper() == "UNKNOWN")
+    video["all_frames_data_path"] = _relative_repo_path(records_path)
+    video["metrics"] = metrics
+    video["accuracy"] = metrics.get("do_chinh_xac")
+    video["status"] = "Đã phân tích"
+    video["artifact_updated_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    return {
+        "idx": idx,
+        "video": video.get("video_name"),
+        "frames": len(records),
+        "changed": changed,
+        "unknown_before": unknown_before,
+        "unknown_after": unknown_after,
+        "rendered": rendered,
+        "metrics": {k: metrics.get(k) for k in ("frame_dung", "frame_gan_dung", "frame_sai", "frame_khong_nhan_dang", "tong_frame_hop_le")},
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--indices", nargs="*", type=int)
+    parser.add_argument("--contains", default="")
+    parser.add_argument("--render", action="store_true")
+    parser.add_argument("--limit", type=int)
+    args = parser.parse_args()
+
+    videos = _load_data("video_list")
+    selected: list[int] = args.indices or []
+    if args.contains:
+        needle = args.contains.casefold()
+        selected.extend(i for i, video in enumerate(videos) if needle in str(video.get("video_name") or "").casefold())
+    if not selected:
+        selected = [i for i, video in enumerate(videos) if _exercise_key(video.get("exercise") or video.get("video_name")) in {"codman", "pulley"}]
+    selected = sorted(set(i for i in selected if 0 <= i < len(videos)))
+
+    results = []
+    for idx in selected:
+        result = update_video(idx, videos[idx], render=args.render, limit=args.limit)
+        print(json.dumps(result, ensure_ascii=False), flush=True)
+        results.append(result)
+    _save_data("video_list", videos)
+    print(json.dumps({"updated_videos": len(selected), "results": results}, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()

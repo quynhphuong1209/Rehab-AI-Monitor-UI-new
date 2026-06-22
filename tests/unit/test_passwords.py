@@ -49,3 +49,14 @@ def test_password_record_update_sets_current_metadata():
     assert fields["updated_at"] == "2026-06-19T10:00:00"
     assert fields["must_change_password"] is False
     assert verify_password_record("new-password", fields).ok
+
+
+def test_plaintext_legacy_password_verifies_and_requests_rehash():
+    record = {"password": "temporary-secret"}
+
+    result = verify_password_record("temporary-secret", record)
+
+    assert result.ok
+    assert result.needs_rehash
+    assert result.legacy_version == "plaintext"
+    assert not verify_password_record("wrong", record).ok

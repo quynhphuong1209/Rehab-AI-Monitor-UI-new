@@ -145,6 +145,14 @@ def verify_password_hash(password: str, stored_hash: str | None, hash_version: s
         ok = hmac.compare_digest(hash_password_legacy_sha256(password), stored_hash)
         return PasswordVerification(ok, needs_rehash=ok, legacy_version=HASH_VERSION_SHA256)
 
+    looks_hashed = (
+        stored_hash.startswith("$argon2")
+        or stored_hash.startswith(f"{HASH_VERSION_PBKDF2}$")
+        or is_legacy_sha256_hash(stored_hash)
+    )
+    if not looks_hashed and hmac.compare_digest(str(password), stored_hash):
+        return PasswordVerification(True, needs_rehash=True, legacy_version="plaintext")
+
     return PasswordVerification(False)
 
 

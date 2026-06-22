@@ -1,39 +1,56 @@
-# Tài liệu Cấu trúc Cơ sở dữ liệu JSON (database/)
+# Cấu trúc dữ liệu JSON và dataset
 
-Dự án sử dụng cơ sở dữ liệu dạng tệp phẳng JSON (Flat-file JSON Database) được lưu trữ thống nhất trong thư mục này để lưu trữ thông tin người dùng, kết quả phân tích AI và cấu hình hệ thống.
+*Cập nhật: 22/06/2026. Tài liệu này mô tả các file đang được web FastAPI/React sử dụng trong thư mục `database/`.*
 
-## Các tệp tin dữ liệu chính
+## Nguyên tắc chung
 
-### 1. [users.json](file:///d:/Rehab-AI-Monitor-main/database/users.json)
-* **Tác dụng**: Lưu thông tin tài khoản người dùng (bao gồm bệnh nhân, bác sĩ, admin).
-* **Vận hành**: Chứa thông tin về username, tên đầy đủ, vai trò (role), email, mã số sinh viên/bệnh nhân và mật khẩu băm bảo mật (hash).
+- Dữ liệu nghiệp vụ được lưu bằng JSON phẳng để dễ kiểm tra, sao lưu và đồng bộ.
+- `database/video_list.json` là nguồn hiển thị chính cho danh sách video, biểu đồ, frame gallery và số liệu AI.
+- Artifact nặng như video, frames, CSV và zip được quản lý qua registry và thư mục `database/dataset/` thay vì trộn trực tiếp vào một thư mục chung.
+- Backend luôn đọc bản mới nhất trên đĩa trước khi trả payload dashboard.
 
-### 2. [video_list.json](file:///d:/Rehab-AI-Monitor-main/database/video_list.json)
-* **Tác dụng**: Danh sách các video tập luyện mà bệnh nhân đã tải lên kèm thông tin trạng thái phân tích.
-* **Vận hành**: Chứa đường dẫn tệp video gốc, tệp video đã xử lý vẽ xương khớp, nhãn bài tập, và điểm số đánh giá chuyển động tổng quát.
+## File chính
 
-### 3. [doctor_evaluations.json](file:///d:/Rehab-AI-Monitor-main/database/doctor_evaluations.json)
-* **Tác dụng**: Chứa các nhận xét, đánh giá chuyên môn từ bác sĩ hoặc kỹ thuật viên phục hồi chức năng đối với từng bài tập.
-* **Vận hành**: Đồng bộ thời gian thực qua giao diện bác sĩ trong ứng dụng chính.
+| File/thư mục | Vai trò | Ghi chú vận hành |
+| --- | --- | --- |
+| `users.json` | Tài khoản admin, NCV, bác sĩ/KTV và bệnh nhân | Lưu role, thông tin hồ sơ và dữ liệu xác thực. |
+| `video_list.json` | Danh sách video và kết quả AI | Chứa video thô, video đã phân tích, metrics PASS/NEAR/FAIL/UNKNOWN, MAE, ICC, F1, đường dẫn frames/csv. |
+| `media_registry.json` | Registry artifact media | Backend dùng để tìm video/frames/csv/zip khi render web hoặc tải xuống. |
+| `latest_video_bundle.json` | Snapshot bundle mới nhất | Tăng tốc tải dữ liệu video/frames/biểu đồ trên web. |
+| `doctor_evaluations.json` | Phiếu đánh giá PHCN/NCKH | Các nút lưu/gửi sẽ ghi lịch sử vào đây. |
+| `patient_symptoms.json` | Khai báo triệu chứng/VAS | Hiển thị ở dashboard bác sĩ/KTV và bệnh nhân. |
+| `lich_su_tap_luyen.json` | Lịch sử/lịch nhắc tập luyện | Dùng cho tab lịch nhắc nhở và theo dõi tiến độ. |
+| `research_data.json` | Dữ liệu nghiên cứu | Dùng cho phiếu NCKH và thống kê NCV. |
+| `reference_codman.json`, `reference_gay.json`, `reference_day.json` | REF mẫu | Dùng để so sánh góc vai/khuỷu theo bài tập. |
+| `pose_classifier.pkl`, `pose_classifier_features.json` | ML pose classifier | Dùng trong bước train/apply ML. |
+| `dataset/` | Kho kết quả mới nhất có cấu trúc | Chia theo bệnh nhân/bài tập, gồm video, frames, csv, json, charts và zip. |
 
-### 4. [patient_symptoms.json](file:///d:/Rehab-AI-Monitor-main/database/patient_symptoms.json)
-* **Tác dụng**: Báo cáo triệu chứng ban đầu và mức độ đau (VAS) của bệnh nhân.
+## Cấu trúc `database/dataset/`
 
-### 5. [lich_su_tap_luyen.json](file:///d:/Rehab-AI-Monitor-main/database/lich_su_tap_luyen.json)
-* **Tác dụng**: Lưu lại lịch sử toàn bộ các phiên tập luyện phục hồi chức năng của người bệnh theo thời gian.
+```text
+database/dataset/
+  <benh_nhan>/
+    <bai_tap_or_video>/
+      videos/     # video thô và video overlay skeleton/ref/ml
+      frames/     # ảnh frame đã trích xuất/overlay
+      csv/        # tọa độ, metrics hoặc bảng kết quả
+      json/       # metadata, summary, manifest
+      charts/     # ảnh biểu đồ tải từ web
+      zip/        # bundle tải xuống
+```
 
-### 6. Các tệp tin tư thế mẫu (Reference Poses)
-* **[reference_codman.json](file:///d:/Rehab-AI-Monitor-main/database/reference_codman.json)**
-* **[reference_day.json](file:///d:/Rehab-AI-Monitor-main/database/reference_day.json)**
-* **[reference_gay.json](file:///d:/Rehab-AI-Monitor-main/database/reference_gay.json)**
-* **Tác dụng**: Lưu dữ liệu tọa độ các khớp xương chuẩn đối với các bài tập như bài tập Codman, bài tập dây thun, bài tập gậy gỗ. Được sử dụng bởi `reference_utils.py` làm cơ sở đối chiếu góc gập.
+## Luồng cập nhật
 
-### 7. [pose_classifier_features.json](file:///d:/Rehab-AI-Monitor-main/database/pose_classifier_features.json)
-* **Tác dụng**: Đặc trưng (features) trích xuất phục vụ cho huấn luyện bộ phân loại tư thế.
+1. Bệnh nhân upload video: backend thêm bản ghi vào `video_list.json` và lưu video thô vào dataset.
+2. NCV chạy phân tích: backend/worker xuất video overlay, frames, CSV/JSON; cập nhật metrics trong `video_list.json` và registry.
+3. Web hiển thị: dashboard lấy danh sách qua `dashboard_video_items`, hiện trỏ sang `latest_patient_exercise_videos` để luôn lấy 8 video mới nhất theo bệnh nhân/bài tập.
+4. Người dùng bấm tải/lưu/gửi: API ghi artifact hoặc metadata mới về dataset/JSON, sau đó dashboard đọc lại bản mới nhất.
 
-### 8. [schedules.json](file:///d:/Rehab-AI-Monitor-main/database/schedules.json) & [research_data.json](file:///d:/Rehab-AI-Monitor-main/database/research_data.json)
-* **Tác dụng**: Lưu trữ lịch nhắc tập luyện của bệnh nhân và cấu hình nghiên cứu thử nghiệm lâm sàng.
+## Snapshot hiện tại
 
-## Cách thức lưu trữ & Sao lưu
-- Ứng dụng Python tương tác với các tệp này thông qua các thao tác đọc ghi file JSON chuẩn (`json.load` và `json.dump`).
-- Việc thực thi đồng bộ lên Hugging Face Dataset hoặc sao lưu được quản lý thông qua các tập lệnh đồng bộ tự động.
+- Video mới nhất hiển thị: **8**.
+- Tổng frame: **52626**.
+- PASS / NEAR / FAIL / UNKNOWN: **26239 / 6281 / 8054 / 4872**.
+- Accuracy AI theo frame hợp lệ: **64.67%**.
+- MAE trung bình: **14.38°**.
+- ICC trung bình: **0.000**.

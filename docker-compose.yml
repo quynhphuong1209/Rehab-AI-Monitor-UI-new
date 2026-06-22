@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rehab-ai-backend
+    environment:
+      REHAB_REPO_ROOT: /app
+      REHAB_DATABASE_DIR: /app/database
+      REHAB_DATASET_DIR: /app/database/dataset
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./database:/app/database
+      - ./patient_uploads:/app/patient_uploads
+      - ./processed_results:/app/processed_results
+      - ./video_list.json:/app/video_list.json
+      - ./doctor_evaluations.json:/app/doctor_evaluations.json
+      - ./patient_symptoms.json:/app/patient_symptoms.json
+      - ./research_data.json:/app/research_data.json
+      - ./lich_su_tap_luyen.json:/app/lich_su_tap_luyen.json
+      - ./schedules.json:/app/schedules.json
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: rehab-ai-web
+    environment:
+      VITE_API_BASE_URL: http://127.0.0.1:8001
+    ports:
+      - "5174:5174"
+    depends_on:
+      - backend
+    restart: unless-stopped

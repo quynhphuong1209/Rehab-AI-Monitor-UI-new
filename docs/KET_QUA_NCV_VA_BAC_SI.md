@@ -1,236 +1,65 @@
-# 🧬 BÁO CÁO TỔNG HỢP KẾT QUẢ AI & ĐÁNH GIÁ LÂM SÀNG CỦA BÁC SĨ (PHCN & NCV)
-*Cập nhật kết quả mới nhất: 11/06/2026 (dữ liệu AI chạy lại ngày 04–05/06/2026; đánh giá lâm sàng và phiếu NCKH ngày 08/06/2026)*
+# Báo cáo số liệu local mới nhất - Rehab AI Monitor
 
-Tài liệu này tổng hợp toàn bộ dữ liệu chạy thử nghiệm của mô hình AI, kết quả thu thập NCKH từ Nghiên cứu viên (NCV) và các đánh giá lâm sàng từ Chuyên gia (Bác sĩ/Kỹ thuật viên PHCN) tại Bệnh viện Đa khoa Phạm Ngọc Thạch. Dữ liệu được đồng bộ trực tiếp từ hệ thống Cloud.
+*Cập nhật: 22/06/2026 (2026-06-22T19:31:03+07:00). Nguồn dữ liệu: `database/video_list.json`, chọn bằng backend `latest_patient_exercise_videos(..., limit=8)`. Đây là 8 video mới nhất theo từng bệnh nhân và từng bài tập đang hiển thị trên web local.*
 
----
+## Tóm tắt nhanh
 
-## 📊 THỐNG KÊ TỔNG QUAN HỆ THỐNG
-- **Tổng số bệnh nhân tham gia:** 4 bệnh nhân (100% nữ, tuổi 39–71, trung bình ≈ 55,5 tuổi)
-- **Chẩn đoán chung:** Viêm quanh khớp vai (ICD-10: M75); mức đau VAS 6–8/10
-- **Tổng số video bài tập:** 8 video (4 video Bài tập con lắc Codman + 4 video Bài tập với gậy), quay bằng điện thoại, góc chính diện, khoảng cách 2,5–4 m
-- **Tổng số khung hình AI đã phân tích (lần chạy mới nhất):** ≈ 21.000 khung hình (góc vai và khuỷu tay, 30 fps)
-- **Tổng số bản ghi đánh giá PHCN:**
-  - 🤖 **Do AI tự động phân tích (NCV):** 8/8 video đã có kết quả AI
-  - 🩺 **Do Bác sĩ / KTV đánh giá độc lập:** 8/8 video (doctor1, ngày 08/06/2026)
-- **Tổng số phiếu NCKH (NCV thu thập):** 8 phiếu khảo sát đã hoàn thành (08/06/2026)
+- Số bệnh nhân trong bộ 8 video mới nhất: **4**.
+- Tổng video hiển thị: **8** gồm **4 Codman** và **4 bài tập với gậy**.
+- Tổng frame video: **52626**; frame hợp lệ/đã chấm: **40574**.
+- PASS / NEAR / FAIL / UNKNOWN: **26239 / 6281 / 8054 / 4872**.
+- Accuracy AI theo frame hợp lệ: **64.67%**.
+- MAE trung bình: **14.38°**; ICC trung bình: **0.000**; F1-score trung bình: **0.828**.
 
-### Tóm tắt đối chiếu AI – Bác sĩ (kết quả mới nhất)
-| Bệnh nhân | Bài tập | ACC AI (±30°) | Kết luận AI | Kết luận Bác sĩ | Lỗi bác sĩ ghi nhận |
-| --- | --- | --- | --- | --- | --- |
-| Hoàng Hạnh Nguyên | Codman | 94,8% | Đúng | Gần đúng | Sai tư thế thân người |
-| Nguyễn Thị Nga | Codman | 64,0% | Gần đúng | Gần đúng | Sai tư thế thân người |
-| Vũ Thị Hòa | Codman | 100,0% | Đúng | Sai | Sai tư thế thân người |
-| Cao Thị Thường | Codman | 34,3% | Sai | Gần đúng | Sai tư thế thân người |
-| Hoàng Hạnh Nguyên | Với gậy | 48,3% | Sai | Gần đúng | Vị trí tay chưa đúng |
-| Nguyễn Thị Nga | Với gậy | 32,7% | Sai | Gần đúng | Sai tư thế thân người |
-| Vũ Thị Hòa | Với gậy | 18,8% | Sai | Gần đúng | Biên độ chưa đạt |
-| Cao Thị Thường | Với gậy | 38,5% | Sai | Sai | Vị trí tay chưa đúng |
+## Bảng 8 video mới nhất trên web
 
-**Nhận xét chính:**
-- Bài tập con lắc Codman: tỷ lệ khung hình đúng ở ngưỡng ±30° đạt 34,3–100% (trung bình ≈ 73,3%); ở ngưỡng ±45° đạt 78,7–99,9% (3 video phân tích 3 giai đoạn); ở ngưỡng chuẩn xác ±15° chỉ đạt 28,8–41,9%, phản ánh khớp vai còn cứng/lệch biên độ. Video Codman của BN Cao Thị Thường (71 tuổi) đạt thấp nhất (34,3%) chủ yếu do sai góc vai (vai đúng chỉ 48,1% so với khuỷu đúng 78,4%), hệ thống cảnh báo lặp lại "khuỷu tay gập quá mức".
-- Bài tập với gậy: độ chính xác thấp hơn rõ rệt (18,8–48,3%, trung bình ≈ 34,6%), thống nhất với việc bác sĩ ghi nhận lỗi kỹ thuật ở cả 4/4 bệnh nhân.
-- AI phát hiện tốt sai lệch biên độ góc vai/khuỷu, nhưng **chưa phát hiện được lỗi bù trừ tư thế thân người** (gập thân chưa song song mặt sàn, xoay thân, chân trước chân sau) — đây là lỗi bác sĩ ghi nhận nhiều nhất (5/8 video).
+| Bệnh nhân | Bài tập | Video | Tổng frame | Frame hợp lệ | PASS | NEAR | FAIL | UNKNOWN | Accuracy | MAE | ICC | F1-score | Kết luận |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Cao Thị Thường | Codman | 042541_Cao Thị Thường -  Codman.mp4 | 2763 | 2763 | 2321 | 186 | 256 | 0 | 84% | 9.882 | 0 | 0.913 | Đúng |
+| Cao Thị Thường | Bài tập với gậy | 042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4 | 10771 | 3591 | 1914 | 815 | 862 | 0 | 53.30% | 22.585 | 0 | 0.695 | Gần đúng |
+| Hoàng Hạnh Nguyên | Codman | Hoàng Hạnh Nguyên - Codman.mp4 | 3348 | 3338 | 3058 | 132 | 148 | 10 | 91.61% | 4.668 | 0 | 0.956 | Đúng |
+| Hoàng Hạnh Nguyên | Bài tập với gậy | Hoàng Hạnh Nguyên - Bài tập với gậy.mp4 | 11774 | 11010 | 5951 | 1947 | 3112 | 764 | 54.05% | 25.558 | 0 | 0.702 | Gần đúng |
+| Nguyễn Thị Nga | Codman | 162458_Nguyễn Thị Nga - Codman.mp4 | 2628 | 2628 | 2540 | 53 | 35 | 0 | 96.65% | 3.972 | 0 | 0.983 | Đúng |
+| Nguyễn Thị Nga | Bài tập với gậy | Nguyễn Thị Nga - Bài tập với gậy.mp4 | 9069 | 9069 | 5071 | 2382 | 1616 | 0 | 55.92% | 22.331 | 0 | 0.717 | Gần đúng |
+| Vũ Thị Hòa | Codman | 165504_Vũ Thị Hoà - Codman.mp4 | 2740 | 2740 | 2740 | 0 | 0 | 0 | 100% | 2.881 | 0 | 1 | Đúng |
+| Vũ Thị Hòa | Bài tập với gậy | Vũ Thị Hoà - Bài tập với gậy.mp4 | 9533 | 5435 | 2644 | 766 | 2025 | 4098 | 48.65% | 23.199 | 0 | 0.655 | Sai |
 
----
+## Giai đoạn Codman
 
-## 👤 BỆNH NHÂN 1: Cao Thị Thường
-- **Mã BN:** 26001385 | **Tuổi:** 71 | **Giới:** Nữ | **VAS:** 6/10
-- **Triệu chứng khai báo:** Đau khớp vai (P) nhiều tháng, đau xuất hiện tự nhiên, tăng khi vận động, đau nhức nhiều về đêm, chưa điều trị gì. Tiền sử: đau dạ dày.
-- **Tổng số video bài tập đã nộp:** 2
+Chỉ bài tập **Codman** hiển thị và lưu theo G1/G2/G3. Bài tập với gậy dùng đánh giá tổng thể theo cùng video, không hiển thị thẻ giai đoạn ở đầu ảnh/video.
 
-### 🎬 Video 1: Cao Thị Thường - Bài tập với gậy.mov
-- **Tên bài tập:** `Bài tập với gậy (Pulley Exercise)`
+| Bệnh nhân | Giai đoạn | Sai số | Tổng frame | PASS | NEAR | FAIL | UNKNOWN | Accuracy | MAE | ICC |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Nguyễn Thị Nga | G1 - Khởi đầu | ±45° | 738 | 712 | 26 | 0 | 0 | 78.70% | 12.903 | 0.722 |
+| Nguyễn Thị Nga | G2 - Hồi phục | ±30° | 1031 | 955 | 73 | 3 | 0 | 64% | 9.059 | 0.799 |
+| Nguyễn Thị Nga | G3 - Chuẩn xác | ±15° | 859 | 417 | 100 | 342 | 0 | 28.80% | 13.689 | 0.706 |
+| Vũ Thị Hòa | G1 - Khởi đầu | ±45° | 797 | 796 | 1 | 0 | 0 | 99.90% | 11.398 | 0.752 |
+| Vũ Thị Hòa | G2 - Hồi phục | ±30° | 1135 | 1135 | 0 | 0 | 0 | 100% | 10.900 | 0.762 |
+| Vũ Thị Hòa | G3 - Chuẩn xác | ±15° | 808 | 255 | 254 | 299 | 0 | 31.60% | 13.495 | 0.710 |
 
-#### 🤖 Chỉ số Phân tích AI (mới nhất 04/06/2026 — Phân tích Tổng quan):
-| Chỉ số | Giá trị |
-| --- | --- |
-| Độ chính xác (ACC) | 38,5% (2076/5386 khung hình đúng) |
-| ACC mô hình ML | 37,8% |
-| Kết luận AI | Sai — Cần chuyên gia y tế hướng dẫn |
+## Cách vận hành dữ liệu hiện tại
 
-#### 🩺 Đánh giá lâm sàng từ Chuyên gia PHCN (doctor1, 08/06/2026):
-- **Kết quả:** `Sai` | **Lỗi:** Vị trí tay chưa đúng
-- **Nhận xét:** Cử động gập khớp vai cánh tay cần duỗi thẳng; cử động duỗi khớp vai cánh tay cần để xoay trong; cử động xoay trong/xoay ngoài cánh tay để áp sát thân mình.
-- **Kế hoạch:** Tiếp tục
+- Bệnh nhân upload video: backend lưu video thô vào registry/dataset và thêm bản ghi vào `database/video_list.json` để NCV, bác sĩ/KTV và bệnh nhân đều thấy cùng danh sách.
+- NCV chạy phân tích: luồng xử lý gồm mở/transcode video, MediaPipe skeleton, so sánh REF đúng/sai/gần đúng, train/apply ML, xuất video/frames/CSV/JSON, sau đó cập nhật `video_list.json` và thư mục `database/dataset`.
+- Bác sĩ/KTV: xem video thô và video đã phân tích nếu NCV đã gửi; hoàn thành phiếu PHCN/NCKH rồi lưu/gửi cho NCV và bệnh nhân.
+- Bệnh nhân: xem kết quả video/frames/biểu đồ đã được gửi, khai triệu chứng và theo dõi lịch nhắc.
+- Tất cả bảng danh sách trên giao diện đăng nhập hiện lấy từ cùng hàm `dashboard_video_items`, hàm này đã trỏ sang `latest_patient_exercise_videos` để tránh hiển bản cũ.
 
-#### 📄 Kết quả phiếu NCKH thu thập được:
-✅ Đã hoàn thành (08/06/2026). Chẩn đoán: Viêm quanh khớp vai (P), M75; vai tổn thương: phải; thời gian ≥ 3 tháng; mức đau trung bình (4–6); tập cả hai vai; quay điện thoại chính diện, cách 4 m.
+## File dữ liệu chính
 
----
+- `database/video_list.json`: nguồn chính cho danh sách video, metrics, frame gallery, đường dẫn video/frames/csv và trạng thái phân tích.
+- `database/media_registry.json`: registry media/artifact đã sinh ra, giúp backend tìm lại file video, frames và CSV.
+- `database/latest_video_bundle.json`: snapshot bundle mới nhất để web tải nhanh dữ liệu hiển thị.
+- `database/doctor_evaluations.json`: phiếu đánh giá PHCN và nhận xét bác sĩ/KTV.
+- `database/patient_symptoms.json`: khai báo triệu chứng/VAS của bệnh nhân.
+- `database/lich_su_tap_luyen.json`: lịch sử tập luyện và lịch nhắc.
+- `database/research_data.json`: dữ liệu phiếu NCKH.
+- `database/reference_codman.json`, `database/reference_gay.json`, `database/reference_day.json`: dữ liệu REF mẫu.
+- `database/pose_classifier.pkl`, `database/pose_classifier_features.json`: mô hình và đặc trưng ML.
+- `database/dataset/`: nơi backend tự đồng bộ kết quả mới nhất theo từng bệnh nhân, chia `videos/`, `frames/`, `csv/`, `json/`, `charts/`, `zip/`.
 
-### 🎬 Video 2: Cao Thị Thường - Codman.mov
-- **Tên bài tập:** `Bài tập con lắc Codman`
+## Ghi chú đồng bộ
 
-#### 🤖 Chỉ số Phân tích AI (chạy 04/06, đồng bộ lại 10/06/2026 — Giai đoạn 2: Hồi phục, sai số ±30°):
-| Chỉ số | Giá trị |
-| --- | --- |
-| Độ chính xác (ACC) | 34,3% (949/2763 khung hình đúng) |
-| Tỷ lệ gần đúng | 25,7% (709/2763 khung hình) |
-| Tỷ lệ vai đúng / khuỷu đúng | 48,1% / 78,4% |
-| Góc vai trung bình (chuẩn) | 84,7° (56,5°) — min 2,3° / max 179,8° |
-| Góc khuỷu trung bình (chuẩn) | 153,6° (171,5°) — min 13,0° / max 180,0° |
-| MAE tổng | 24,4° |
-| Precision / Recall / F1-Score | 0,44 / 0,41 / 0,42 |
-| ICC | 0,50 |
-| Cảnh báo hệ thống | "ELBOW TOO BENT" (khuỷu tay gập quá mức, lặp lại nhiều lần) |
-
-- **Kết luận AI:** `Sai` — Cần rèn luyện thêm để giảm sai số.
-
-#### 🩺 Đánh giá lâm sàng từ Chuyên gia PHCN (doctor1, 08/06/2026):
-- **Kết quả:** `Gần đúng` | **Lỗi:** Sai tư thế thân người
-- **Nhận xét:** Cử động dang áp khớp vai, hai chân đứng rộng ngang vai, không đứng chân trước chân sau.
-- **Kế hoạch:** Tiếp tục
-
-#### 📄 Kết quả phiếu NCKH thu thập được:
-✅ Đã hoàn thành (08/06/2026). Tập vai phải; quay điện thoại chính diện, cách 3 m.
-
----
-
-## 👤 BỆNH NHÂN 2: Hoàng Hạnh Nguyên
-- **Mã BN:** 25009284 | **Tuổi:** 39 | **Giới:** Nữ | **VAS:** 6/10
-- **Triệu chứng khai báo:** Đau khớp vai (P) nhiều tháng, đau xuất hiện tự nhiên, vận động khớp vai (P) đau tăng, đau nhức nhiều về đêm, chưa điều trị gì. Tiền sử bản thân và gia đình khỏe mạnh.
-- **Tổng số video bài tập đã nộp:** 2
-
-### 🎬 Video 1: Hoàng Hạnh Nguyên - Bài tập với gậy.mp4
-- **Tên bài tập:** `Bài tập với gậy (Pulley Exercise)`
-
-#### 🤖 Chỉ số Phân tích AI (mới nhất 05/06/2026 — Phân tích Tổng quan):
-| Chỉ số | Giá trị |
-| --- | --- |
-| Độ chính xác (ACC) | 48,3% (749/1550 khung hình đúng) |
-| ACC mô hình ML | 6,2% |
-| Kết luận AI | Sai — Cần chuyên gia y tế hướng dẫn |
-
-*(Lần chạy 3 giai đoạn trước đó 02/06: GĐ1 ±45°: 26,2% | GĐ2 ±30°: 19,5% | GĐ3 ±15°: 3,2%)*
-
-#### 🩺 Đánh giá lâm sàng từ Chuyên gia PHCN (doctor1, 08/06/2026):
-- **Kết quả:** `Gần đúng` | **Lỗi:** Vị trí tay chưa đúng
-- **Nhận xét:** Cử động xoay trong, xoay ngoài cánh tay cần áp sát vào thân mình.
-- **Kế hoạch:** Tiếp tục
-
-#### 📄 Kết quả phiếu NCKH thu thập được:
-✅ Đã hoàn thành (08/06/2026). Chẩn đoán: Viêm quanh khớp vai (P), M75; thời gian ≥ 3 tháng; mức đau trung bình (4–6); tập cả hai vai; quay điện thoại chính diện, cách 3,5 m.
-
----
-
-### 🎬 Video 2: Hoàng Hạnh Nguyên - Codman.mp4
-- **Tên bài tập:** `Bài tập con lắc Codman`
-
-#### 🤖 Chỉ số Phân tích AI (mới nhất 04/06/2026 — Ngưỡng sai số động, 3 giai đoạn):
-| Giai đoạn phân tích | Độ chính xác (ACC) | ACC mô hình ML | Ngưỡng sai số | Khung hình đúng |
-| --- | --- | --- | --- | --- |
-| GĐ 1: Khởi đầu | 97,6% | 85,8% | $\pm 45^\circ$ | 491/503 |
-| GĐ 2: Hồi phục | 94,8% | 78,1% | $\pm 30^\circ$ | 639/674 |
-| GĐ 3: Chuẩn xác | 41,9% | 32,4% | $\pm 15^\circ$ | 205/489 |
-
-- **Kết luận AI:** `Đúng` — Phù hợp tập luyện ở giai đoạn 3.
-
-#### 🩺 Đánh giá lâm sàng từ Chuyên gia PHCN (doctor1, 08/06/2026):
-- **Kết quả:** `Gần đúng` | **Lỗi:** Sai tư thế thân người
-- **Nhận xét:** Cần gập thân người song song với mặt sàn, tay còn lại nên bám vào ghế hoặc vật cố định phía trước để đảm bảo đúng tư thế và tạo điểm tựa cho người bệnh.
-- **Kế hoạch:** Tiếp tục
-
-#### 📄 Kết quả phiếu NCKH thu thập được:
-✅ Đã hoàn thành (08/06/2026). Tập vai trái; quay điện thoại chính diện, cách 3 m.
-
----
-
-## 👤 BỆNH NHÂN 3: Nguyễn Thị Nga
-- **Mã BN:** 25007938 | **Tuổi:** 55 | **Giới:** Nữ | **VAS:** 8/10
-- **Triệu chứng khai báo:** Đau khớp vai (P) vài tháng, đã điều trị VLTL – đông y, hiện đau tăng; đau điểm bám gân cơ trên gai khớp vai (P); Jobe test (+), Speed test (–). Tiền sử: viêm dạ dày.
-- **Tổng số video bài tập đã nộp:** 2
-
-### 🎬 Video 1: Nguyễn Thị Nga - Bài tập với gậy.mp4
-- **Tên bài tập:** `Bài tập với gậy (Pulley Exercise)`
-
-#### 🤖 Chỉ số Phân tích AI (mới nhất 04/06/2026 — Phân tích Tổng quan):
-| Chỉ số | Giá trị |
-| --- | --- |
-| Độ chính xác (ACC) | 32,7% (1485/4535 khung hình đúng) |
-| ACC mô hình ML | 32,0% |
-| Kết luận AI | Sai — Cần chuyên gia y tế hướng dẫn |
-
-#### 🩺 Đánh giá lâm sàng từ Chuyên gia PHCN (doctor1, 08/06/2026):
-- **Kết quả:** `Gần đúng` | **Lỗi:** Sai tư thế thân người
-- **Nhận xét:** Cử động gập vai thì cánh tay thẳng; động tác dang áp khớp vai chỉ dang đến 90°, không xoay thân mình; cử động xoay trong/xoay ngoài thì cánh tay cần áp sát thân mình.
-- **Kế hoạch:** Tiếp tục
-
-#### 📄 Kết quả phiếu NCKH thu thập được:
-✅ Đã hoàn thành (08/06/2026). Chẩn đoán: Viêm quanh khớp vai (P), M75; thời gian ≥ 3 tháng; mức đau nặng (7–10); tập cả hai vai; quay điện thoại chính diện, cách 2,5 m.
-
----
-
-### 🎬 Video 2: Nguyễn Thị Nga - Codman.mp4
-- **Tên bài tập:** `Bài tập con lắc Codman`
-
-#### 🤖 Chỉ số Phân tích AI (03/06/2026 — Ngưỡng sai số động, 3 giai đoạn):
-| Giai đoạn phân tích | Độ chính xác (ACC) | ACC mô hình ML | Ngưỡng sai số | Khung hình đúng |
-| --- | --- | --- | --- | --- |
-| GĐ 1: Khởi đầu | 78,7% | 91,6% | $\pm 45^\circ$ | 581/738 |
-| GĐ 2: Hồi phục | 64,0% | 94,2% | $\pm 30^\circ$ | 701/1096 |
-| GĐ 3: Chuẩn xác | 28,8% | 47,6% | $\pm 15^\circ$ | 229/794 |
-
-- **Kết luận AI:** `Gần đúng` — Phù hợp tập luyện ở giai đoạn 2.
-
-#### 🩺 Đánh giá lâm sàng từ Chuyên gia PHCN (doctor1, 08/06/2026):
-- **Kết quả:** `Gần đúng` | **Lỗi:** Sai tư thế thân người
-- **Nhận xét:** Gập thân người song song mặt sàn, tay còn lại bám vào ghế/vật cố định để tạo điểm tựa; cử động dang áp vai thì hai chân nên dang rộng bằng vai, không đứng chân trước chân sau.
-- **Kế hoạch:** Tiếp tục
-
-#### 📄 Kết quả phiếu NCKH thu thập được:
-✅ Đã hoàn thành (08/06/2026). Tập vai phải; quay điện thoại chính diện, cách 2,5 m.
-
----
-
-## 👤 BỆNH NHÂN 4: Vũ Thị Hòa
-- **Mã BN:** 26002558 | **Tuổi:** 57 | **Giới:** Nữ | **VAS:** 6/10
-- **Triệu chứng khai báo:** Đau khớp vai hai bên vài tháng, gần đây đau tăng, hạn chế vận động; đau điểm bám gân cơ nhị đầu, gân cơ trên gai hai bên; tê bì dọc cánh tay hai bên; hạn chế xoay trong, xoay ngoài khớp vai (P). Tiền sử bình thường.
-- **Tổng số video bài tập đã nộp:** 2
-
-### 🎬 Video 1: Vũ Thị Hoà - Bài tập với gậy.mp4
-- **Tên bài tập:** `Bài tập với gậy (Pulley Exercise)`
-
-#### 🤖 Chỉ số Phân tích AI (03/06/2026 — Ngưỡng sai số động, 3 giai đoạn):
-| Giai đoạn phân tích | Độ chính xác (ACC) | Ngưỡng sai số | Khung hình đúng |
-| --- | --- | --- | --- |
-| GĐ 1: Khởi đầu | 14,1% | $\pm 45^\circ$ | 420/2977 |
-| GĐ 2: Hồi phục | 18,8% | $\pm 30^\circ$ | 691/3677 |
-| GĐ 3: Chuẩn xác | 7,5% | $\pm 15^\circ$ | 190/2520 |
-
-- **ACC mô hình ML:** 14,2% | **Kết luận AI:** `Sai` — Phù hợp tập luyện ở giai đoạn 1.
-
-#### 🩺 Đánh giá lâm sàng từ Chuyên gia PHCN (doctor1, 08/06/2026):
-- **Kết quả:** `Gần đúng` | **Lỗi:** Biên độ chưa đạt
-- **Nhận xét:** Cử động gập vai cánh tay cần duỗi thẳng hơn; cử động dang áp khớp vai thì không xoay thân mình; cử động xoay trong/xoay ngoài cánh tay cần áp sát thân mình hơn.
-- **Kế hoạch:** Tiếp tục
-
-#### 📄 Kết quả phiếu NCKH thu thập được:
-✅ Đã hoàn thành (08/06/2026). Chẩn đoán: Viêm quanh khớp vai, M75; tổn thương cả hai vai; thời gian 1–3 tháng; mức đau trung bình (4–6); tập cả hai vai; quay điện thoại chính diện, cách 3,5 m.
-
----
-
-### 🎬 Video 2: Vũ Thị Hoà - Codman.mp4
-- **Tên bài tập:** `Bài tập con lắc Codman`
-
-#### 🤖 Chỉ số Phân tích AI (mới nhất 04/06/2026 — Ngưỡng sai số động, 3 giai đoạn):
-| Giai đoạn phân tích | Độ chính xác (ACC) | ACC mô hình ML | Ngưỡng sai số | Khung hình đúng |
-| --- | --- | --- | --- | --- |
-| GĐ 1: Khởi đầu | 99,9% | 94,2% | $\pm 45^\circ$ | 796/797 |
-| GĐ 2: Hồi phục | 100,0% | 99,6% | $\pm 30^\circ$ | 1135/1135 |
-| GĐ 3: Chuẩn xác | 31,6% | 38,4% | $\pm 15^\circ$ | 255/808 |
-
-- **Kết luận AI:** `Đúng` — Phù hợp tập luyện ở giai đoạn 3.
-
-#### 🩺 Đánh giá lâm sàng từ Chuyên gia PHCN (doctor1, 08/06/2026):
-- **Kết quả:** `Sai` | **Lỗi:** Sai tư thế thân người
-- **Nhận xét:** Thân người cần gập song song với sàn nhà; tay còn lại bám vào ghế hoặc vật cố định để tạo điểm tựa và giữ tư thế ổn định; cử động dang áp thì hai chân dang rộng bằng vai.
-- **Kế hoạch:** Tiếp tục
-- ⚠️ *Trường hợp bất đồng AI – Bác sĩ điển hình: góc vai/khuỷu đạt chuẩn (ACC ±30° = 100%) nhưng bác sĩ kết luận Sai do lỗi bù trừ tư thế thân người mà AI hiện chưa giám sát.*
-
-#### 📄 Kết quả phiếu NCKH thu thập được:
-✅ Đã hoàn thành (08/06/2026). Tập vai phải; quay điện thoại chính diện, cách 3 m.
-
----
-
-© 2025-2026 Nhóm Nghiên cứu Rehab AI Monitor. Trường Đại học Y tế Công cộng (HUPH).
+- Khi local hoặc server tạo bản kết quả mới, API export/save sẽ ghi lại metadata và đồng bộ artifact về `database/dataset/<benh_nhan>/<bai_tap>/...`.
+- Nút tải trên web lấy file qua backend để người dùng tải xuống máy hiện tại; nếu chạy server công khai thì file tải xuống máy người dùng truy cập.
+- Nếu chỉ số nghiên cứu thay đổi sau khi chạy lại, cập nhật lại `video_list.json` trước rồi tạo lại báo cáo này để số liệu khớp biểu đồ, video và frame gallery.
