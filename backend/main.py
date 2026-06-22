@@ -758,10 +758,14 @@ def _issue_token(username: str, record: dict[str, Any]) -> dict[str, Any]:
     return {"token": token, "user": user}
 
 
-async def current_session(authorization: str | None = Header(default=None)) -> dict[str, Any]:
-    if not authorization or not authorization.lower().startswith("bearer "):
+async def current_session(
+    authorization: str | None = Header(default=None),
+    x_rehab_authorization: str | None = Header(default=None, alias="X-Rehab-Authorization"),
+) -> dict[str, Any]:
+    session_authorization = x_rehab_authorization or authorization
+    if not session_authorization or not session_authorization.lower().startswith("bearer "):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Thiếu token đăng nhập.")
-    token = authorization.split(" ", 1)[1].strip()
+    token = session_authorization.split(" ", 1)[1].strip()
     if token in TOKEN_REVOKED:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Phiên đăng nhập không hợp lệ.")
     session = TOKEN_STORE.get(token) or _session_from_signed_token(token)
