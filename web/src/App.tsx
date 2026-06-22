@@ -5475,10 +5475,14 @@ function Shell({
 }) {
   const nav = roleTabs(payload.user.role_key, payload.metrics.videos > 0);
   const [active, setActive] = useState<ViewKey>(() => defaultTabForRole(payload.user.role_key));
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isCompactSidebar, setIsCompactSidebar] = useState(() => (typeof window === "undefined" ? false : window.matchMedia("(max-width: 1040px)").matches));
+  const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window === "undefined" ? true : !window.matchMedia("(max-width: 1040px)").matches));
   const [isViewPending, startViewTransition] = useTransition();
   const selectView = (view: ViewKey) => {
     startViewTransition(() => setActive(view));
+    if (isCompactSidebar) {
+      setSidebarOpen(false);
+    }
   };
 
   useEffect(() => {
@@ -5487,9 +5491,26 @@ function Shell({
     }
   }, [active, nav, payload.user.role_key]);
 
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1040px)");
+    const syncSidebarMode = () => {
+      const compact = media.matches;
+      setIsCompactSidebar(compact);
+      setSidebarOpen(compact ? false : true);
+    };
+    syncSidebarMode();
+    media.addEventListener("change", syncSidebarMode);
+    return () => media.removeEventListener("change", syncSidebarMode);
+  }, []);
+
   return (
-    <main className={`app-shell ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
-      {sidebarOpen ? <SidebarInfo payload={payload} nav={nav} active={active} onSelect={selectView} onCollapse={() => setSidebarOpen(false)} /> : null}
+    <main className={`app-shell ${sidebarOpen ? "sidebar-is-open" : "sidebar-collapsed"}`}>
+      {sidebarOpen ? (
+        <>
+          <button className="sidebar-backdrop" type="button" aria-label="Đóng menu" onClick={() => setSidebarOpen(false)} />
+          <SidebarInfo payload={payload} nav={nav} active={active} onSelect={selectView} onCollapse={() => setSidebarOpen(false)} />
+        </>
+      ) : null}
       <section className={`main-area ${isViewPending ? "view-pending" : ""}`}>
         <header className="topbar">
           <div className="topbar-brand">
