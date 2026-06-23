@@ -96,6 +96,9 @@ MEDIA_REGISTRY_SAVE_INTERVAL_SECONDS = 5.0
 ZIP_MEMBER_CACHE: dict[str, tuple[float, int, dict[str, str]]] = {}
 VIDEO_FRAME_COUNT_CACHE: dict[str, tuple[float, int, int]] = {}
 VIDEO_ROTATION_CACHE: dict[str, tuple[float, int, int]] = {}
+VIDEO_PORTRAIT_CACHE: dict[str, tuple[float, int, bool]] = {}
+FRAME_RECORDS_CACHE: dict[str, tuple[float, int, list[dict[str, Any]]]] = {}
+ANALYSIS_ROWS_CACHE: dict[tuple[str, int], tuple[float, int, list[dict[str, Any]]]] = {}
 MEDIA_TTL_SECONDS = int(os.environ.get("REHAB_MEDIA_TTL_SECONDS", str(30 * 24 * 60 * 60)))
 ANALYSIS_RUNNING: dict[str, Any] = {}
 ANALYSIS_START_LOCK = threading.Lock()
@@ -999,6 +1002,35 @@ def _resolve_video_source_path(raw_path: Any, *, min_size: int = 1024) -> Path |
     return existing
 
 
+def _resolve_readable_video_sibling(path: Path | None) -> Path | None:
+    if not path or not path.is_file() or _video_frame_count(path) > 0:
+        return path
+    candidates: list[Path] = []
+    stem = path.stem
+    for old, new in (("_ftmp", "_f"), ("ftmp", "f"), ("_tmp", "")):
+        if old in stem:
+            candidates.append(path.with_name(stem.replace(old, new) + path.suffix))
+    match = re.search(r"_(\d{6})_", stem)
+    if match:
+        candidates.extend(
+            candidate
+            for candidate in path.parent.glob(f"*{match.group(1)}*{path.suffix}")
+            if candidate.name != path.name and "ftmp" not in _search_text(candidate.stem)
+        )
+    seen: set[Path] = set()
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve()
+        except Exception:
+            resolved = candidate
+        if resolved in seen or not resolved.is_file():
+            continue
+        seen.add(resolved)
+        if resolved.suffix.lower() in VIDEO_SOURCE_EXTENSIONS and _video_frame_count(resolved) > 0:
+            return resolved
+    return path
+
+
 def _register_media(path: Path | None, meta_extra: dict[str, Any] | None = None) -> str | None:
     if not path or not path.is_file():
         return None
@@ -1093,9 +1125,78 @@ def _pose_landmarks(frame: dict[str, Any]) -> list[tuple[int, float, float, floa
     return landmarks
 
 
+def _is_portrait_video(path: Path | None) -> bool:
+    if not path or not path.is_file() or _video_frame_count(path) <= 0:
+        return False
+    try:
+        resolved = path.resolve()
+        stat = resolved.stat()
+        cache_key = str(resolved)
+        cached = VIDEO_PORTRAIT_CACHE.get(cache_key)
+        if cached and cached[0] == stat.st_mtime and cached[1] == stat.st_size:
+            return cached[2]
+    except Exception:
+        resolved = path
+        stat = None
+        cache_key = str(path)
+        cached = VIDEO_PORTRAIT_CACHE.get(cache_key)
+        if cached:
+            return cached[2]
+    try:
+        import cv2  # type: ignore[import-not-found]
+
+        cap = cv2.VideoCapture(str(resolved))
+        _disable_capture_autorotate(cap)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
+        cap.release()
+        rotation = _video_rotation_degrees(resolved)
+        if rotation in {90, 270}:
+            width, height = height, width
+        portrait = height >= width
+        if stat is not None:
+            VIDEO_PORTRAIT_CACHE[cache_key] = (stat.st_mtime, stat.st_size, portrait)
+        return portrait
+    except Exception:
+        return False
+
+
+def _pose_video_context_priority(path: Path | None) -> tuple[int, str]:
+    base_score, text = _video_context_priority(path)
+    name_text = _search_text(path.name if path else "")
+    clean_source_bonus = -180 if any(token in text for token in ("patient_upload", "patient uploads", "patient uploads", "raw_upload", "raw upload")) else 0
+    if any(token in name_text for token in ("patient_upload", "patient uploads", "raw_upload", "raw upload")):
+        clean_source_bonus -= 120
+    overlay_penalty = 160 if any(token in name_text for token in ("pose", "skeleton", "overlay", "sound", "audio")) else 0
+    processed_penalty = 60 if name_text.startswith("processed") else 0
+    return (clean_source_bonus + overlay_penalty + processed_penalty + base_score, text)
+
+
+def _raw_upload_candidates_for_video(video: dict[str, Any]) -> list[Path]:
+    tokens: set[str] = set()
+    for key in ("video_path", "processed_path", "audio_video_path", "frames_zip", "frames_zip_path", "all_frames_data_path", "df_path"):
+        for match in re.findall(r"\d{6,}", _clean_text(video.get(key))):
+            tokens.add(match[:6])
+    output: list[Path] = []
+    seen: set[Path] = set()
+    for token in sorted(tokens):
+        for root in (REPO_ROOT / "processed_results").glob("_hf_check_*"):
+            for candidate in list(root.rglob(f"raw_upload_{token}.mp4")) + list(root.rglob(f"*{token}*.mp4")):
+                try:
+                    resolved = candidate.resolve()
+                except Exception:
+                    resolved = candidate
+                if resolved in seen or not resolved.is_file():
+                    continue
+                seen.add(resolved)
+                if _video_frame_count(resolved) > 0:
+                    output.append(resolved)
+    return sorted(output, key=_pose_video_context_priority)
+
+
 def _register_video_pose_frame_candidates(paths: list[Path | None], frame_index: Any, frame: dict[str, Any]) -> str | None:
     landmarks = _pose_landmarks(frame)
-    candidates = sorted((path for path in paths if path and path.is_file()), key=_video_context_priority)
+    candidates = sorted((path for path in paths if path and path.is_file()), key=_pose_video_context_priority)
     if not candidates:
         return None
     try:
@@ -1114,9 +1215,12 @@ def _register_video_pose_frame_candidates(paths: list[Path | None], frame_index:
                 "status": frame.get("status") or frame.get("phase_status"),
                 "ml": frame.get("ml_label_text") or frame.get("ml_label"),
                 "score": frame.get("ml_score") or frame.get("ml_confidence"),
-                "orient": "pose_auto_upright_clean_ref_v3",
+                "orient": "raw_first_redetect_current_frame_v13",
                 "threshold": frame.get("threshold") or frame.get("phase_threshold"),
-                "pts": [(frame.get(f"pt{idx}_x"), frame.get(f"pt{idx}_y")) for idx in range(0, 33, 4)],
+                "pts": [
+                    (frame.get(f"pt{idx}_x"), frame.get(f"pt{idx}_y"), frame.get(f"pt{idx}_vis"))
+                    for idx in range(33)
+                ],
             },
             ensure_ascii=False,
             sort_keys=True,
@@ -1134,6 +1238,7 @@ def _register_video_pose_frame_candidates(paths: list[Path | None], frame_index:
             "data_frame_index": index,
             "landmarks": landmarks,
             "frame_data": dict(frame),
+            "render_overlay": True,
             "expires_at": datetime.now(timezone.utc).timestamp() + MEDIA_TTL_SECONDS,
         },
     )
@@ -1211,14 +1316,101 @@ def _rotate_pose_frame_upright(image: Any, frame: dict[str, Any], rotation: str)
     return rotated, transformed
 
 
+def _pose_head_to_feet_upside_down(frame: dict[str, Any], width: int, height: int) -> bool:
+    points = _pose_points_for_frame(frame, width, height)
+    visible = {idx: point for idx, point in points.items() if point[2] >= 0.08}
+    head_points = [
+        visible[idx]
+        for idx in (0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12)
+        if idx in visible
+    ]
+    lower_points = [
+        visible[idx]
+        for idx in (23, 24, 25, 26, 27, 28, 29, 30, 31, 32)
+        if idx in visible
+    ]
+    if len(head_points) < 2 or len(lower_points) < 2:
+        return False
+    head_y = sum(point[1] for point in head_points) / len(head_points)
+    lower_y = sum(point[1] for point in lower_points) / len(lower_points)
+    return head_y > lower_y + height * 0.06
+
+
+def _pose_shape_mismatches_frame(image: Any, frame: dict[str, Any], exercise: Any = None) -> bool:
+    if _frame_exercise_key(frame, exercise) not in {"codman", "pulley"} or not _has_complete_pose(frame):
+        return False
+    try:
+        height, width = image.shape[:2]
+    except Exception:
+        return False
+    points = _pose_points_for_frame(frame, width, height)
+    visible = [point for point in points.values() if point[2] >= 0.08]
+    if len(visible) < 12:
+        return True
+    xs = [point[0] for point in visible]
+    ys = [point[1] for point in visible]
+    pose_width = max(xs) - min(xs)
+    pose_height = max(ys) - min(ys)
+    if width <= height and pose_width > pose_height * 1.15:
+        return True
+    if height < width and pose_height > pose_width * 1.15:
+        return True
+    return False
+
+
+def _rotate_pose_frame_180(image: Any, frame: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
+    import cv2  # type: ignore[import-not-found]
+
+    old_h, old_w = image.shape[:2]
+    rotated = cv2.rotate(image, cv2.ROTATE_180)
+    transformed = dict(frame)
+    for idx in range(33):
+        x = _to_float(frame.get(f"pt{idx}_x"))
+        y = _to_float(frame.get(f"pt{idx}_y"))
+        if x is None or y is None:
+            continue
+        px = x * old_w if x <= 1.5 else x
+        py = y * old_h if y <= 1.5 else y
+        transformed[f"pt{idx}_x"] = max(0.0, min(1.0, (old_w - 1 - px) / max(1, old_w)))
+        transformed[f"pt{idx}_y"] = max(0.0, min(1.0, (old_h - 1 - py) / max(1, old_h)))
+    transformed["auto_oriented"] = True
+    transformed["auto_orientation"] = "rotate_180_head_to_feet"
+    transformed = _recompute_pose_angles_for_frame(
+        transformed,
+        rotated.shape,
+        transformed.get("exercise") or transformed.get("exercise_key"),
+    )
+    return rotated, transformed
+
+
 def _auto_orient_pose_preview(image: Any, frame: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
-    rotation = _pose_sideways_rotation(image, frame)
-    if not rotation:
+    return image, frame
+
+
+def _force_portrait_pose_frame(image: Any, frame: dict[str, Any], exercise: Any = None) -> tuple[Any, dict[str, Any]]:
+    if _frame_exercise_key(frame, exercise) not in {"codman", "pulley"}:
         return image, frame
     try:
-        return _rotate_pose_frame_upright(image, frame, rotation)
+        height, width = image.shape[:2]
     except Exception:
         return image, frame
+    output_image = image
+    output_frame = frame
+    if width > height:
+        rotation = _pose_sideways_rotation(output_image, output_frame) or "clockwise"
+        try:
+            output_image, output_frame = _rotate_pose_frame_upright(output_image, output_frame, rotation)
+            output_frame["forced_portrait"] = True
+        except Exception:
+            return image, frame
+    try:
+        out_height, out_width = output_image.shape[:2]
+        if _pose_head_to_feet_upside_down(output_frame, out_width, out_height):
+            output_image, output_frame = _rotate_pose_frame_180(output_image, output_frame)
+            output_frame["forced_head_to_feet"] = True
+    except Exception:
+        return output_image, output_frame
+    return output_image, output_frame
 
 
 def _video_codec(path: Path | None) -> str:
@@ -1322,6 +1514,86 @@ def _apply_video_orientation(frame: Any, source: Path | None) -> Any:
     return frame
 
 
+def _frame_has_analysis_overlay(image: Any) -> bool:
+    try:
+        height, width = image.shape[:2]
+        if height < 40 or width < 40:
+            return False
+        header = image[: max(24, min(height, int(height * 0.22))), :]
+        green = (header[:, :, 1] > 170) & (header[:, :, 0] < 90) & (header[:, :, 2] < 120)
+        orange = (header[:, :, 2] > 140) & (header[:, :, 1] > 70) & (header[:, :, 1] < 180) & (header[:, :, 0] < 80)
+        red = (header[:, :, 2] > 150) & (header[:, :, 1] < 90) & (header[:, :, 0] < 90)
+        dark = (header[:, :, 0] < 35) & (header[:, :, 1] < 35) & (header[:, :, 2] < 35)
+        color_count = int(green.sum() + orange.sum() + red.sum())
+        dark_count = int(dark.sum())
+        header_area = max(1, header.shape[0] * header.shape[1])
+        return color_count >= max(80, int(header_area * 0.0015)) and dark_count >= int(header_area * 0.08)
+    except Exception:
+        return False
+
+
+def _remove_legacy_analysis_overlay(image: Any) -> Any:
+    try:
+        import cv2  # type: ignore[import-not-found]
+        import numpy as np  # type: ignore[import-not-found]
+    except Exception:
+        return image
+    try:
+        height, width = image.shape[:2]
+        if height < 80 or width < 80:
+            return image
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        b, g, r = cv2.split(image)
+        colored_mask = (
+            ((g > 135) & (r < 120) & (b < 130))
+            | ((r > 135) & (g > 55) & (g < 210) & (b < 110))
+            | ((r > 145) & (g < 120) & (b < 120))
+        ).astype("uint8") * 255
+        dark = ((b < 48) & (g < 48) & (r < 48)).astype("uint8") * 255
+        dark = cv2.morphologyEx(dark, cv2.MORPH_CLOSE, np.ones((9, 9), dtype="uint8"))
+        contours, _ = cv2.findContours(dark, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        panel_mask = np.zeros((height, width), dtype="uint8")
+        min_area = max(220, int(width * height * 0.004))
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            area = w * h
+            if area < min_area:
+                continue
+            touches_header = y <= int(height * 0.22)
+            touches_side = x <= int(width * 0.08) or x + w >= int(width * 0.92)
+            panel_shape = w >= width * 0.12 and h >= height * 0.045
+            if panel_shape and (touches_header or touches_side):
+                pad = max(3, int(min(width, height) * 0.01))
+                cv2.rectangle(
+                    panel_mask,
+                    (max(0, x - pad), max(0, y - pad)),
+                    (min(width - 1, x + w + pad), min(height - 1, y + h + pad)),
+                    255,
+                    -1,
+                )
+        header_mask = np.zeros((height, width), dtype="uint8")
+        header_mask[: max(1, int(height * 0.18)), :] = 255
+        edge_mask = np.zeros((height, width), dtype="uint8")
+        edge = max(10, int(width * 0.08))
+        edge_mask[:, :edge] = 255
+        edge_mask[:, width - edge :] = 255
+        color_cleanup = cv2.bitwise_or(
+            cv2.bitwise_and(colored_mask, header_mask),
+            cv2.bitwise_and(colored_mask, edge_mask),
+        )
+        # Old skeleton lines can cross the patient. Mask only very saturated
+        # green/orange strokes; the newly drawn pose is added after cleanup.
+        saturated_overlay = (((hsv[:, :, 1] > 110) & (hsv[:, :, 2] > 130))).astype("uint8") * 255
+        mask = cv2.bitwise_or(panel_mask, color_cleanup)
+        mask = cv2.bitwise_or(mask, cv2.bitwise_and(saturated_overlay, colored_mask))
+        mask = cv2.dilate(mask, np.ones((3, 3), dtype="uint8"), iterations=1)
+        if int(mask.sum()) < 255 * 20:
+            return image
+        return cv2.inpaint(image, mask, 3, cv2.INPAINT_TELEA)
+    except Exception:
+        return image
+
+
 def _disable_capture_autorotate(cap: Any) -> None:
     try:
         import cv2  # type: ignore[import-not-found]
@@ -1386,6 +1658,25 @@ def _video_frame_count(path: Path | None) -> int:
     if stat is not None:
         VIDEO_FRAME_COUNT_CACHE[cache_key] = (stat.st_mtime, stat.st_size, count)
     return count
+
+
+def _video_frame_size(path: Path | None) -> tuple[int, int]:
+    if not path or not path.is_file():
+        return (0, 0)
+    try:
+        import cv2  # type: ignore[import-not-found]
+
+        cap = cv2.VideoCapture(str(path))
+        _disable_capture_autorotate(cap)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
+        cap.release()
+        rotation = _video_rotation_degrees(path)
+        if rotation in {90, 270}:
+            width, height = height, width
+        return (width, height)
+    except Exception:
+        return (0, 0)
 
 
 def _resolve_playback_video_path(preferred: Path | None, raw: Path | None = None) -> tuple[Path | None, str]:
@@ -1505,12 +1796,18 @@ def _video_pose_frame_data_for_payload(paths: list[Path | None], frame_index: An
     exercise_key = _frame_exercise_key(output)
     if exercise_key not in {"codman", "pulley"}:
         return output
+    source_has_legacy_overlay = _frame_has_analysis_overlay(image)
+    image, output = _force_portrait_pose_frame(image, output, exercise_key)
+    if source_has_legacy_overlay or _frame_has_analysis_overlay(image):
+        image = _remove_legacy_analysis_overlay(image)
     try:
-        needs_redetect = not _has_complete_pose(output)
-        if needs_redetect:
-            output = _frame_with_detected_pose(image, output, force_redetect=True)
-        else:
-            output = _frame_with_detected_pose(image, output, force_redetect=False)
+        output = _redetect_or_keep_oriented_pose_for_preview_frame(
+            image,
+            output,
+            exercise_key,
+            allow_oriented_metadata_fallback=source_has_legacy_overlay,
+        )
+        image, output = _force_portrait_pose_frame(image, output, exercise_key)
         _, output = _auto_orient_pose_preview(image, output)
         output = _apply_youtube_reference_to_frame(
             output,
@@ -1522,7 +1819,38 @@ def _video_pose_frame_data_for_payload(paths: list[Path | None], frame_index: An
     return output
 
 
+def _video_needs_head_to_feet_flip(frame: dict[str, Any] | None, exercise: Any = None) -> bool:
+    if not isinstance(frame, dict):
+        return False
+    frame = _frame_with_exercise_context(frame, exercise or frame.get("exercise") or frame.get("exercise_key"))
+    if _frame_exercise_key(frame, exercise) not in {"codman", "pulley"} or not _has_complete_pose(frame):
+        return False
+    return _pose_head_to_feet_upside_down(frame, 1000, 1000)
+
+
+def _is_cao_thi_thuong_pulley_video(video: dict[str, Any] | None) -> bool:
+    if not isinstance(video, dict):
+        return False
+    patient_text = _search_text(
+        " ".join(
+            _clean_text(video.get(key))
+            for key in ("username", "patient_username", "full_name", "patient_name")
+        )
+    )
+    if not ("cao" in patient_text and "thi" in patient_text and "thuong" in patient_text):
+        return False
+    combined = _search_text(
+        " ".join(
+            _clean_text(video.get(key))
+            for key in ("exercise", "exercise_name", "video_name", "video_path")
+        )
+    )
+    return _frame_exercise_key(video, video.get("exercise")) == "pulley" or "pulley" in combined or "bai tap voi gay" in combined
+
+
 def _needs_video_pose_frame_preference(video: dict[str, Any]) -> bool:
+    if _is_cao_thi_thuong_pulley_video(video):
+        return False
     if _frame_exercise_key(video, video.get("exercise")) in {"codman", "pulley"}:
         return True
     return _to_bool(video.get("force_video_pose_frames") or video.get("_force_video_pose_frames"))
@@ -1562,19 +1890,25 @@ def _has_complete_pose(frame: Any) -> bool:
 def _frame_should_be_unknown(frame: dict[str, Any], exercise: Any = None) -> bool:
     if _to_bool(frame.get("filtered_stranger")):
         return True
+    exercise_key = _frame_exercise_key(frame, exercise)
+    if exercise_key in {"codman", "pulley"}:
+        if not _has_complete_pose(frame):
+            return True
+        if exercise_key == "pulley":
+            left_shoulder, left_elbow = _side_angle_values(frame, "left")
+            right_shoulder, right_elbow = _side_angle_values(frame, "right")
+            if any(value is None for value in (left_shoulder, left_elbow, right_shoulder, right_elbow)):
+                return True
+        else:
+            shoulder, elbow = _frame_angle_values(frame, exercise)
+            if shoulder is None or elbow is None:
+                return True
     status_text = _clean_text(frame.get("status") or frame.get("phase_status")).upper()
     if status_text == "UNKNOWN":
         reason = _search_text(frame.get("stranger_reason"))
         if reason in {"multiple_people", "pulley_multiple_people", "codman_helper_overlap", "incomplete_pose_33", "unknown_pose"}:
             return True
         if not _has_complete_pose(frame):
-            return True
-    if _frame_exercise_key(frame, exercise) in {"codman", "pulley"} and not _has_complete_pose(frame):
-        scored_status = status_text in {"PASS", "NEAR", "FAIL"}
-        shoulder = _first_float(frame.get("goc_vai"), frame.get("right_shoulder_angle"), frame.get("left_shoulder_angle"))
-        elbow = _first_float(frame.get("goc_khuyu"), frame.get("right_elbow_angle"), frame.get("left_elbow_angle"))
-        shoulder_ref, elbow_ref = _frame_ref_values(frame)
-        if not (scored_status and shoulder is not None and elbow is not None and (shoulder_ref is not None or elbow_ref is not None)):
             return True
     return False
 
@@ -2010,6 +2344,68 @@ def _frame_with_detected_pose(
     return merged
 
 
+def _frame_without_pose_measurements(frame: dict[str, Any]) -> dict[str, Any]:
+    output = dict(frame)
+    for idx in range(33):
+        for suffix in ("x", "y", "z", "vis", "visibility"):
+            output.pop(f"pt{idx}_{suffix}", None)
+    for key in (
+        "goc_vai",
+        "goc_khuyu",
+        "shoulder_angle",
+        "elbow_angle",
+        "goc_vai_trai",
+        "goc_khuyu_trai",
+        "goc_vai_phai",
+        "goc_khuyu_phai",
+        "left_shoulder_angle",
+        "left_elbow_angle",
+        "right_shoulder_angle",
+        "right_elbow_angle",
+        "shoulder_delta",
+        "elbow_delta",
+    ):
+        output.pop(key, None)
+    output["pose_redetected_from_frame"] = True
+    return output
+
+
+def _redetect_pose_for_preview_frame(
+    image: Any,
+    frame: dict[str, Any],
+    exercise: Any = None,
+    pose_context: Any = None,
+) -> dict[str, Any]:
+    base = _frame_without_pose_measurements(_frame_with_exercise_context(frame, exercise or frame.get("exercise") or frame.get("exercise_key")))
+    detected = _frame_with_detected_pose(image, base, pose_context=pose_context, force_redetect=True)
+    return detected if isinstance(detected, dict) else base
+
+
+def _redetect_or_keep_oriented_pose_for_preview_frame(
+    image: Any,
+    frame: dict[str, Any],
+    exercise: Any = None,
+    pose_context: Any = None,
+    *,
+    allow_oriented_metadata_fallback: bool = False,
+) -> dict[str, Any]:
+    exercise_key = _frame_exercise_key(frame, exercise)
+    detected = _redetect_pose_for_preview_frame(image, frame, exercise_key, pose_context=pose_context)
+    if _has_complete_pose(detected) and not _to_bool(detected.get("filtered_stranger")) and not _pose_shape_mismatches_frame(image, detected, exercise_key):
+        return detected
+    if allow_oriented_metadata_fallback and _has_complete_pose(frame):
+        fallback = _recompute_pose_angles_for_frame(
+            frame,
+            image.shape,
+            frame.get("exercise") or frame.get("exercise_key") or exercise_key,
+        )
+        fallback["pose_fallback_from_oriented_metadata"] = True
+        fallback["filtered_stranger"] = False
+        fallback["stranger_reason"] = None
+        return fallback
+    return detected
+
+
 def _side_angle_values(frame: dict[str, Any], side: str) -> tuple[float | None, float | None]:
     if side == "left":
         return _first_float(frame.get("goc_vai_trai"), frame.get("left_shoulder_angle")), _first_float(
@@ -2128,6 +2524,111 @@ def _draw_angle_arc(cv2: Any, image: Any, p1: tuple[int, int], p2: tuple[int, in
     cv2.ellipse(image, p2, (radius, radius), 0, start, end, color, max(2, radius // 16), cv2.LINE_AA)
 
 
+def _draw_pose_info_panel(
+    cv2: Any,
+    image: Any,
+    frame: dict[str, Any],
+    frame_index: int,
+    *,
+    threshold: float,
+    pose_points: int,
+    pose_ok: bool,
+    is_codman: bool,
+    shoulder_ref: float | None,
+    elbow_ref: float | None,
+    left_shoulder: float | None,
+    left_elbow: float | None,
+    right_shoulder: float | None,
+    right_elbow: float | None,
+    left_shoulder_ref: float | None,
+    left_elbow_ref: float | None,
+    right_shoulder_ref: float | None,
+    right_elbow_ref: float | None,
+    rule_label: str,
+) -> None:
+    height, width = image.shape[:2]
+    scale = max(0.55, min(1.75, width / 720.0))
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    thickness = max(1, int(2 * scale))
+    thin = max(1, int(1 * scale))
+    panel_x = max(6, int(10 * scale))
+    panel_y = max(34, int(42 * scale))
+    panel_w = min(width - panel_x - 6, int((560 if is_codman else 455) * scale))
+    panel_h = min(height - panel_y - 6, int((154 if is_codman else 132) * scale))
+    if panel_w < int(150 * scale) or panel_h < int(70 * scale):
+        return
+
+    cv2.rectangle(image, (panel_x, panel_y), (panel_x + panel_w, panel_y + panel_h), (0, 0, 0), -1)
+
+    def fmt(value: float | None, ref: float | None = None) -> str:
+        left = "N/A" if value is None else str(int(round(value)))
+        if ref is None:
+            return left
+        return f"{left}/{int(round(ref))}"
+
+    time_sec = _first_float(frame.get("timestamp_seconds"))
+    if time_sec is None:
+        time_sec = max(0, frame_index - 1) / 30.0
+    phase_key = _clean_text(frame.get("phase")) or ("overview" if not is_codman else "g1")
+    phase_label = {
+        "g1": "G1 +/-45",
+        "g2": "G2 +/-30",
+        "g3": "G3 +/-15",
+        "overview": "REF +/-30",
+        "all": "REF",
+    }.get(phase_key, f"REF +/-{int(threshold)}")
+    title_color = (0, 255, 255)
+    ok_color = (0, 255, 80) if pose_ok else (0, 60, 255)
+    lines: list[tuple[str, tuple[int, int, int], float]] = [
+        (f"FRAME #{frame_index}", title_color, 0.52 if is_codman else 0.50),
+        (f"TIME: {int(time_sec // 60):02d}:{int(time_sec % 60):02d}", (0, 255, 255) if is_codman else (210, 210, 210), 0.38),
+        (f"POSE: {pose_points}/33 {'OK' if pose_ok else 'NO SCORE'}", ok_color, 0.38),
+    ]
+    if is_codman:
+        lines.extend(
+            [
+                (f"CODMAN: {phase_label}", (230, 230, 230), 0.36),
+                (
+                    f"RIGHT: SH {fmt(right_shoulder, right_shoulder_ref)}   EL {fmt(right_elbow, right_elbow_ref)}",
+                    _angle_color(right_shoulder, right_shoulder_ref, threshold),
+                    0.48,
+                ),
+                (f"REF compare: {rule_label} | threshold +/-{int(threshold)} deg", _rule_color_for_label(rule_label), 0.34),
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                (f"STICK/PULLEY: REF +/-{int(threshold)}", (230, 230, 230), 0.36),
+                (
+                    f"LEFT : SH {fmt(left_shoulder, left_shoulder_ref)}   EL {fmt(left_elbow, left_elbow_ref)}",
+                    _angle_color(left_shoulder, left_shoulder_ref, threshold),
+                    0.39,
+                ),
+                (
+                    f"RIGHT: SH {fmt(right_shoulder, right_shoulder_ref)}   EL {fmt(right_elbow, right_elbow_ref)}",
+                    _angle_color(right_shoulder, right_shoulder_ref, threshold),
+                    0.39,
+                ),
+            ]
+        )
+    y = panel_y + int(20 * scale)
+    for text, color, font_scale in lines:
+        if y > panel_y + panel_h - int(7 * scale):
+            break
+        cv2.putText(
+            image,
+            text,
+            (panel_x + int(8 * scale), y),
+            font,
+            font_scale * scale,
+            color,
+            thickness if font_scale >= 0.42 else thin,
+            cv2.LINE_AA,
+        )
+        y += int((18 if font_scale >= 0.42 else 16) * scale)
+
+
 def _draw_pose_analysis_overlay(image: Any, frame: dict[str, Any], frame_index: int, *, threshold: float = 30.0) -> Any:
     try:
         import cv2  # type: ignore[import-not-found]
@@ -2223,14 +2724,6 @@ def _draw_pose_analysis_overlay(image: Any, frame: dict[str, Any], frame_index: 
                 )
 
     header_h = max(26, int(34 * scale))
-    cv2.rectangle(image, (0, 0), (width, header_h), (8, 8, 8), -1)
-    cv2.rectangle(
-        image,
-        (max(0, width - int(260 * scale)), 0),
-        (width, min(height, header_h + int(52 * scale))),
-        (8, 8, 8),
-        -1,
-    )
     cv2.putText(image, f"Frame #{frame_index}", (max(8, width // 2 - int(52 * scale)), int(23 * scale)), font, 0.58 * scale, (245, 245, 245), thickness, cv2.LINE_AA)
 
     rule_label = "NO POSE" if not pose_ok else _rule_label_for_frame(frame, threshold, exercise=exercise_key)
@@ -2241,6 +2734,28 @@ def _draw_pose_analysis_overlay(image: Any, frame: dict[str, Any], frame_index: 
     ml_text = f"ML: {ml_label} {ml_confidence:.0f}%" if ml_confidence is not None else f"ML: {ml_label}"
     (ml_w, _), _ = cv2.getTextSize(ml_text, font, max(0.45, 0.56 * scale), thickness)
     _draw_badge(cv2, image, ml_text, _rule_color_for_label("PASS" if ml_label == "DUNG" else "NEARLY" if "GAN" in ml_label else "FAIL"), x=max(6, width - ml_w - int(42 * scale)), y=max(6, int(8 * scale)), scale=scale)
+
+    _draw_pose_info_panel(
+        cv2,
+        image,
+        frame,
+        frame_index,
+        threshold=threshold,
+        pose_points=len(points),
+        pose_ok=pose_ok,
+        is_codman=is_codman,
+        shoulder_ref=shoulder_ref,
+        elbow_ref=elbow_ref,
+        left_shoulder=left_shoulder,
+        left_elbow=left_elbow,
+        right_shoulder=right_shoulder,
+        right_elbow=right_elbow,
+        left_shoulder_ref=left_shoulder_ref,
+        left_elbow_ref=left_elbow_ref,
+        right_shoulder_ref=right_shoulder_ref,
+        right_elbow_ref=right_elbow_ref,
+        rule_label=rule_label,
+    )
 
     if not pose_ok:
         warn_text = "KHONG NHAN DANG - LAN NGUOI KHAC" if is_filtered_stranger else "KHONG NHAN DANG DU 33 DIEM"
@@ -2262,87 +2777,6 @@ def _draw_pose_analysis_overlay(image: Any, frame: dict[str, Any], frame_index: 
             cv2.LINE_AA,
         )
 
-    box_x, box_y = max(8, int(14 * scale)), max(46, int(50 * scale))
-    box_w = min(width - box_x - 8, int((380 if is_codman else 470) * scale))
-    box_h = min(height - box_y - 8, int((196 if is_codman else 220) * scale))
-    roi = image[box_y : box_y + box_h, box_x : box_x + box_w]
-    if roi.size:
-        cv2.rectangle(image, (box_x, box_y), (box_x + box_w, box_y + box_h), (20, 20, 35), -1)
-        cv2.rectangle(image, (box_x, box_y), (box_x + box_w, box_y + box_h), (220, 220, 235), thin)
-        time_sec = _first_float(frame.get("timestamp_seconds"))
-        if time_sec is None:
-            time_sec = max(0, frame_index - 1) / 30.0
-        time_text = f"{int(time_sec // 60):02d}:{int(time_sec % 60):02d}"
-        phase_key = _clean_text(frame.get("phase")) or ("overview" if exercise_key == "pulley" else "g1")
-        phase_label = {
-            "g1": "G1 - Khoi dau",
-            "g2": "G2 - Hoi phuc",
-            "g3": "G3 - Chuan xac",
-            "overview": "Tong quan",
-            "all": "Tat ca",
-        }.get(phase_key, "Giai doan")
-        lines = [
-            ("FRAME #{}".format(frame_index), (255, 255, 0), 0.64),
-            (f"TIME: {time_text}", (190, 190, 190), 0.48),
-            (("POSE: 33/33 OK" if pose_ok else f"POSE: {len(points)}/33 - KHONG NHAN DANG"), (0, 255, 80) if pose_ok else (0, 60, 255), 0.43),
-        ]
-        if is_codman:
-            lines.extend([(f"CODMAN: {phase_label} | REF +/-{int(threshold)}", (210, 210, 210), 0.4)])
-            if pose_ok:
-                lines.extend(
-                    [
-                        ("RIGHT ARM: SHOULDER / ELBOW", (210, 210, 210), 0.43),
-                        (
-                            f"{int(round(right_shoulder or 0))}/{int(round(right_shoulder_ref or shoulder_ref))}      {int(round(right_elbow or 0))}/{int(round(right_elbow_ref or elbow_ref))}",
-                            _angle_color(right_shoulder, right_shoulder_ref, threshold),
-                            0.62,
-                        ),
-                    ]
-                )
-            else:
-                reason = "LAN NGUOI KHAC" if is_filtered_stranger else "THIEU 33 DIEM"
-                lines.extend(
-                    [
-                        ("RIGHT ARM: KHONG CHAM DIEM", (0, 60, 255), 0.43),
-                        (f"LY DO: {reason}", (0, 60, 255), 0.48),
-                    ]
-                )
-            lines.append(("G1 +/-45 | G2 +/-30 | G3 +/-15", (0, 255, 80), 0.38))
-        else:
-            lines.extend(
-                [
-                    ("PULLEY/STICK: BOTH SIDES | REF +/-30", (210, 210, 210), 0.4),
-                    ("LEFT: SHOULDER / ELBOW", (210, 210, 210), 0.43),
-                    (
-                        f"SH {int(round(left_shoulder or 0))}/{int(round(left_shoulder_ref or shoulder_ref))} deg   EL {int(round(left_elbow or 0))}/{int(round(left_elbow_ref or elbow_ref))} deg",
-                        _angle_color(left_shoulder, left_shoulder_ref, threshold),
-                        0.62,
-                    ),
-                    ("RIGHT: SHOULDER / ELBOW", (210, 210, 210), 0.43),
-                    (
-                        f"SH {int(round(right_shoulder or 0))}/{int(round(right_shoulder_ref or shoulder_ref))} deg   EL {int(round(right_elbow or 0))}/{int(round(right_elbow_ref or elbow_ref))} deg",
-                        _angle_color(right_shoulder, right_shoulder_ref, threshold),
-                        0.62,
-                    ),
-                ]
-            )
-        y = box_y + int(24 * scale)
-        for text, color, font_scale in lines:
-            if y > box_y + box_h - int(8 * scale):
-                break
-            cv2.putText(image, text, (box_x + int(12 * scale), y), font, font_scale * scale, color, thickness if font_scale >= 0.6 else thin, cv2.LINE_AA)
-            y += int((24 if font_scale >= 0.6 else 22) * scale)
-        cv2.line(image, (box_x + int(8 * scale), min(box_y + box_h - int(36 * scale), y)), (box_x + box_w - int(8 * scale), min(box_y + box_h - int(36 * scale), y)), (80, 80, 100), thin)
-        cv2.putText(
-            image,
-            f"REF compare: {rule_label}  |  threshold +/-{int(threshold)} deg",
-            (box_x + int(12 * scale), box_y + box_h - int(14 * scale)),
-            font,
-            0.38 * scale,
-            rule_color,
-            thin,
-            cv2.LINE_AA,
-        )
     return image
 
 
@@ -2981,6 +3415,11 @@ def _analysis_metrics(records: list[dict[str, Any]], total_frames: int, elapsed:
             mae_values.append(shoulder_delta)
         if elbow_delta is not None:
             mae_values.append(elbow_delta)
+    mae_tong = round(sum(mae_values) / len(mae_values), 3) if mae_values else 0.0
+    scored_total = pass_count + near_count + fail_count
+    precision = pass_count / max(1, pass_count + fail_count) if scored_total else 0.0
+    recall = pass_count / max(1, scored_total) if scored_total else 0.0
+    f1_score = (2 * precision * recall / max(0.0001, precision + recall)) if scored_total else 0.0
     return {
         "do_chinh_xac": round(accuracy, 2),
         "ty_le_tong_the": round(accuracy, 2),
@@ -3101,6 +3540,7 @@ def _render_analysis_artifacts_from_records(
             pass
     cap = cv2.VideoCapture(str(source))
     _disable_capture_autorotate(cap)
+    source_frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
     writer: Any = None
     writer_size: tuple[int, int] | None = None
     if not cap.isOpened():
@@ -3131,24 +3571,39 @@ def _render_analysis_artifacts_from_records(
                 if not isinstance(record, dict):
                     continue
                 frame_number = _frame_number_key(record.get("frame") or record.get("index") or record.get("frame_number")) or position + 1
+                source_frame_number = frame_number
+                if source_frame_count and (source_frame_number > source_frame_count or len(records) == source_frame_count):
+                    source_frame_number = position + 1
                 if frame_number != last_frame_number + 1:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, frame_number - 1))
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, source_frame_number - 1))
                 ok, frame = cap.read()
                 if not ok or frame is None:
                     continue
                 frame = _apply_video_orientation(frame, source)
-                last_frame_number = frame_number
+                source_has_legacy_overlay = _frame_has_analysis_overlay(frame)
+                last_frame_number = source_frame_number
                 frame_data = _frame_with_exercise_context(record, exercise)
                 if _frame_exercise_key(frame_data, exercise) in {"codman", "pulley"}:
-                    # Rendering must not re-score an already analyzed frame. The
-                    # analysis pass is the source of truth for UNKNOWN/person
-                    # filtering; otherwise a coarse detector can overwrite all
-                    # repaired REF/ML labels while merely rebuilding artifacts.
+                    frame, frame_data = _force_portrait_pose_frame(frame, frame_data, exercise)
+                    if source_has_legacy_overlay or _frame_has_analysis_overlay(frame):
+                        frame = _remove_legacy_analysis_overlay(frame)
                     if pose_context is not None:
-                        frame_data = _frame_with_detected_pose(frame, frame_data, pose_context=pose_context, force_redetect=True)
+                        frame_data = _redetect_or_keep_oriented_pose_for_preview_frame(
+                            frame,
+                            frame_data,
+                            exercise,
+                            pose_context=pose_context,
+                            allow_oriented_metadata_fallback=source_has_legacy_overlay,
+                        )
                         if not _to_bool(frame_data.get("filtered_stranger")):
                             frame_data = _apply_people_filter_to_record(frame, frame_data, exercise)
-                    frame, frame_data = _auto_orient_pose_preview(frame, frame_data)
+                    elif _has_complete_pose(frame_data):
+                        frame_data = _recompute_pose_angles_for_frame(
+                            frame_data,
+                            frame.shape,
+                            frame_data.get("exercise") or frame_data.get("exercise_key") or exercise,
+                        )
+                    frame, frame_data = _force_portrait_pose_frame(frame, frame_data, exercise)
                     records[position] = frame_data
                 if writer is None:
                     frame_h, frame_w = frame.shape[:2]
@@ -3305,7 +3760,12 @@ def _ensure_sound_playback_video(
 
     source_stem = _processed_stem(source_video) or source_video.stem
     output = source_video.with_name(f"{source_stem}_sound.mp4")
-    if output.is_file() and _video_frame_count(output) > 0 and _audio_codec(output):
+    if (
+        output.is_file()
+        and _video_frame_count(output) == _video_frame_count(source_video)
+        and _video_frame_size(output) == _video_frame_size(source_video)
+        and _audio_codec(output)
+    ):
         return output, {"audio_status": "sound_cached", "audio_video_path": _relative_repo_path(output)}
 
     contextual_records = [_frame_with_exercise_context(record, exercise) for record in frame_records if isinstance(record, dict)]
@@ -3433,6 +3893,8 @@ def _run_lightweight_pose_analysis_impl(video: dict[str, Any], video_index: int,
         width, height = height, width
     if width <= 0 or height <= 0:
         width, height = 720, 1280
+    if (is_codman_exercise or is_pulley_exercise) and width > height:
+        width, height = height, width
     target_width = min(width, requested_resize_width)
     target_width = max(2, target_width - (target_width % 2))
     target_height = max(2, int(round(height * (target_width / max(1, width)))))
@@ -3469,6 +3931,8 @@ def _run_lightweight_pose_analysis_impl(video: dict[str, Any], video_index: int,
             frame_number += 1
             if (frame_number - 1) % skip != 0:
                 continue
+            if is_codman_exercise or is_pulley_exercise:
+                frame, _ = _force_portrait_pose_frame(frame, {"exercise": exercise}, exercise)
             if resize_to_output:
                 interpolation = cv2.INTER_AREA if target_width < width else cv2.INTER_LINEAR
                 frame = cv2.resize(frame, (target_width, target_height), interpolation=interpolation)
@@ -3481,7 +3945,18 @@ def _run_lightweight_pose_analysis_impl(video: dict[str, Any], video_index: int,
                     detected = _mediapipe_pose_frame_data(frame, exercise, pose_context=pose) or {}
             except Exception:
                 detected = {}
+            if (is_codman_exercise or is_pulley_exercise) and not detected:
+                try:
+                    flipped_frame, _ = _rotate_pose_frame_180(frame, {"exercise": exercise})
+                    flipped_detected = _mediapipe_pose_frame_data(flipped_frame, exercise, pose_context=pose) or {}
+                    if flipped_detected:
+                        frame = flipped_frame
+                        detected = flipped_detected
+                except Exception:
+                    pass
             record = _pose_record_from_image(frame, frame_number, timestamp_seconds, exercise, detected)
+            if is_codman_exercise or is_pulley_exercise:
+                frame, record = _force_portrait_pose_frame(frame, record, exercise)
             record = _apply_people_filter_to_record(frame, record, exercise)
             phase, _, threshold = _phase_for_position(len(records), max(1, total_frames // skip), exercise)
             record["phase"] = phase
@@ -3833,6 +4308,67 @@ def _numeric_reference_poses(exercise: Any) -> list[tuple[dict[str, Any], float 
     return output
 
 
+MOTION_SUBTYPE_TYPES = {
+    "codman": {
+        "1": {"sagittal", "pendulum"},
+        "2": {"frontal", "lateral"},
+        "3": {"circular", "xoay", "rotation", "pendulum"},
+    },
+    "pulley": {
+        "1": {"flexion", "raise", "nang"},
+        "2": {"external_rotation", "external", "xoay_ngoai"},
+        "3": {"internal_rotation", "internal", "xoay_trong"},
+    },
+}
+
+
+def _reference_motion_subtype_from_type(exercise_key: str, motion_type: Any) -> str | None:
+    text = _search_text(motion_type).replace("-", "_")
+    if not text:
+        return None
+    for subtype, names in MOTION_SUBTYPE_TYPES.get(exercise_key, {}).items():
+        if text in names:
+            return subtype
+    return None
+
+
+def _frame_reference_motion_subtype(
+    frame: dict[str, Any],
+    exercise: Any,
+    *,
+    shoulder: float | None,
+    elbow: float | None,
+    left_shoulder: float | None,
+    left_elbow: float | None,
+    right_shoulder: float | None,
+    right_elbow: float | None,
+) -> str | None:
+    exercise_key = _frame_exercise_key(frame, exercise)
+    explicit = _clean_text(frame.get("motion_subtype") or frame.get("youtube_ref_exercise_id"))
+    explicit_subtype = explicit if explicit in {"1", "2", "3"} else _reference_motion_subtype_from_type(exercise_key, frame.get("motion_type"))
+    detected = detect_motion_subtype(
+        _reference_name_for_exercise(exercise),
+        shoulder,
+        elbow,
+        vai_trai=left_shoulder,
+        vai_phai=right_shoulder,
+        khuyu_trai=left_elbow,
+        khuyu_phai=right_elbow,
+    )
+    if exercise_key == "pulley":
+        return detected or explicit_subtype
+    return explicit_subtype or detected
+
+
+def _reference_matches_motion_subtype(ref: dict[str, Any], exercise_key: str, subtype: str | None) -> bool:
+    if not subtype:
+        return True
+    if _clean_text(ref.get("exercise_id")) == subtype:
+        return True
+    motion_type = _search_text(ref.get("motion_type")).replace("-", "_")
+    return motion_type in MOTION_SUBTYPE_TYPES.get(exercise_key, {}).get(subtype, set())
+
+
 def _frame_ref_side_values(frame: dict[str, Any], side: str) -> tuple[float | None, float | None]:
     eval_info = _safe_nested_dict(frame.get("eval_info"))
     if side == "left":
@@ -3889,9 +4425,20 @@ def _match_youtube_reference_for_frame(frame: dict[str, Any], exercise: Any) -> 
     right_shoulder, right_elbow = _side_angle_values(frame, "right")
     if shoulder is None:
         return None
+    motion_subtype = _frame_reference_motion_subtype(
+        frame,
+        exercise,
+        shoulder=shoulder,
+        elbow=elbow,
+        left_shoulder=left_shoulder,
+        left_elbow=left_elbow,
+        right_shoulder=right_shoulder,
+        right_elbow=right_elbow,
+    )
     ref_name = _reference_name_for_exercise(exercise)
     cache_key = (
         ref_name,
+        motion_subtype,
         round(float(shoulder), 1),
         round(float(elbow or 170), 1),
         round(float(left_shoulder), 1) if left_shoulder is not None else None,
@@ -3904,6 +4451,13 @@ def _match_youtube_reference_for_frame(frame: dict[str, Any], exercise: Any) -> 
         return dict(cached) if isinstance(cached, dict) else None
     matched: dict[str, Any] | None = None
     best_score = float("inf")
+    scoped_refs = [
+        item
+        for item in refs
+        if _reference_matches_motion_subtype(item[0], exercise_key, motion_subtype)
+    ]
+    if len(scoped_refs) >= 3:
+        refs = scoped_refs
     for ref, ref_shoulder, ref_elbow, ref_left_shoulder, ref_left_elbow, ref_right_shoulder, ref_right_elbow in refs:
         if exercise_key == "pulley":
             left_score = 0.0
@@ -4510,8 +5064,22 @@ def _generate_pose_frame_zip_from_video(
                 if frame is None:
                     continue
                 frame = _apply_video_orientation(frame, source_video)
+                source_has_legacy_overlay = _frame_has_analysis_overlay(frame)
                 last_frame = frame
-                frame_data = _frame_with_detected_pose(frame, _frame_with_exercise_context(record, video.get("exercise")))
+                base_frame_data = _frame_with_exercise_context(record, video.get("exercise"))
+                frame, base_frame_data = _force_portrait_pose_frame(frame, base_frame_data, video.get("exercise"))
+                if source_has_legacy_overlay or _frame_has_analysis_overlay(frame):
+                    frame = _remove_legacy_analysis_overlay(frame)
+                if _frame_exercise_key(base_frame_data, video.get("exercise")) in {"codman", "pulley"}:
+                    frame_data = _redetect_or_keep_oriented_pose_for_preview_frame(
+                        frame,
+                        base_frame_data,
+                        video.get("exercise"),
+                        allow_oriented_metadata_fallback=source_has_legacy_overlay,
+                    )
+                else:
+                    frame_data = _frame_with_detected_pose(frame, base_frame_data)
+                frame, frame_data = _force_portrait_pose_frame(frame, frame_data, video.get("exercise"))
                 display_index = record_pos + 1
                 _, _, threshold = _phase_for_position(record_pos, total, video.get("exercise"), phase_bounds)
                 threshold = _to_float(frame_data.get("threshold") or frame_data.get("phase_threshold")) or float(threshold)
@@ -5347,7 +5915,7 @@ def _apply_phase_thresholds_to_records(
 
 
 def _frame_status(frame: dict[str, Any]) -> str:
-    status_text = _search_text(frame.get("status") or frame.get("quality") or frame.get("result"))
+    status_text = _search_text(frame.get("phase_status") or frame.get("status") or frame.get("quality") or frame.get("result"))
     if _to_bool(frame.get("gan_dung")):
         return "NEAR"
     if _to_bool(frame.get("dung")):
@@ -5538,7 +6106,7 @@ def _phase_status_for_frame(
             )
     shoulder, elbow = _frame_angle_values(frame, exercise)
     if shoulder is None or elbow is None or shoulder_ref is None or elbow_ref is None:
-        return _frame_status(frame) or "UNKNOWN"
+        return "UNKNOWN"
     shoulder_delta = abs(shoulder - shoulder_ref)
     elbow_delta = abs(elbow - elbow_ref)
     if shoulder_delta <= threshold and elbow_delta <= threshold:
@@ -5566,6 +6134,18 @@ def _frame_ml_label(frame: dict[str, Any]) -> str:
         value = _clean_text(ml.get(key))
         if value:
             return value
+    return ""
+
+
+def _display_label_from_status(status_text: str) -> str:
+    if status_text == "PASS":
+        return "Dung"
+    if status_text == "NEAR":
+        return "Gan dung"
+    if status_text == "FAIL":
+        return "Sai"
+    if status_text == "UNKNOWN":
+        return "UNKNOWN"
     return ""
 
 
@@ -5649,6 +6229,7 @@ def _enrich_frame_payload(
         left_shoulder_ref = left_elbow_ref = right_shoulder_ref = right_elbow_ref = None
         shoulder_delta = elbow_delta = None
         ml_probs = {"pass": None, "near": None, "fail": None}
+    display_ml_label = "UNKNOWN" if status_text == "UNKNOWN" else (_frame_ml_label(frame) or _display_label_from_status(phase_status or status_text))
     return {
         "index": frame_index,
         "timestamp": frame.get("timestamp") or "",
@@ -5671,7 +6252,7 @@ def _enrich_frame_payload(
         "right_elbow_ref": right_elbow_ref if right_elbow_ref is not None else elbow_ref,
         "shoulder_delta": shoulder_delta,
         "elbow_delta": elbow_delta,
-        "ml_label": "UNKNOWN" if status_text == "UNKNOWN" else _frame_ml_label(frame),
+        "ml_label": display_ml_label,
         "ml_confidence": None if status_text == "UNKNOWN" else _frame_ml_confidence(frame),
         "ml_prob_pass": ml_probs["pass"],
         "ml_prob_near": ml_probs["near"],
@@ -5679,6 +6260,8 @@ def _enrich_frame_payload(
         "image_url": image_url,
         "source": source,
         "exercise_key": exercise_key,
+        "pose_points": len(_pose_landmarks(frame)),
+        "pose_complete": _has_complete_pose(frame),
         "filtered_stranger": _to_bool(frame.get("filtered_stranger")),
         "stranger_reason": frame.get("stranger_reason"),
         "ref_source": frame.get("ref_source"),
@@ -5800,6 +6383,15 @@ def _read_frame_records(path: Path | None) -> list[dict[str, Any]]:
     if not path or not path.is_file():
         return []
     try:
+        resolved = str(path.resolve())
+        stat = path.stat()
+        cached = FRAME_RECORDS_CACHE.get(resolved)
+        if cached and cached[0] == stat.st_mtime and cached[1] == stat.st_size:
+            return cached[2]
+    except Exception:
+        resolved = str(path)
+        stat = None
+    try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return []
@@ -5809,7 +6401,10 @@ def _read_frame_records(path: Path | None) -> list[dict[str, Any]]:
         frames = data
     if not isinstance(frames, list):
         return []
-    return [frame for frame in frames if isinstance(frame, dict)]
+    records = [frame for frame in frames if isinstance(frame, dict)]
+    if stat is not None:
+        FRAME_RECORDS_CACHE[resolved] = (stat.st_mtime, stat.st_size, records)
+    return records
 
 
 def _frame_records_from_csv(path: Path | None) -> list[dict[str, Any]]:
@@ -6117,29 +6712,32 @@ def _read_frame_payload(
         frame_index = frame.get("index") or frame.get("frame") or absolute_idx + 1
         frame_number = _frame_number_key(frame_index) or absolute_idx + 1
         frame_is_pose_exercise = _frame_exercise_key(frame, exercise) in {"codman", "pulley"}
-        frame_media_meta = {"kind": "artifact_frame", "frame_data": dict(frame), "data_frame_index": max(0, int(frame_number or 1) - 1)}
+        frame_media_meta = {
+            "kind": "artifact_frame",
+            "frame_data": dict(frame),
+            "data_frame_index": max(0, int(frame_number or 1) - 1),
+            "patch_badges": False,
+        }
         token = None
         source = "artifact"
-        frame_path = _resolve_existing_path(frame.get("frame_path") or frame.get("image_path") or frame.get("path"))
-        if frame_path:
-            frame_media_meta["data_frame_index"] = max(0, int(frame_number or 1) - 1)
-        else:
-            frame_path = dir_lookup.get(_artifact_lookup_key(dir_lookup, absolute_idx, int(frame_number)))
-        token = _register_media(frame_path, frame_media_meta)
-        source = "artifact" if token else source
-        if not token:
-            zip_member = zip_lookup.get(_artifact_lookup_key(zip_lookup, absolute_idx, int(frame_number)))
-            token = _register_zip_media(frame_zip, zip_member, frame_media_meta) if zip_member else None
-            source = "artifact_zip" if token else source
-        if not token and video_pose_mode and frame_is_pose_exercise:
-            frame = _video_pose_frame_data_for_payload(video_paths, frame_index, frame, exercise)
-            frame_media_meta["frame_data"] = dict(frame)
+        prefer_clean_pose_frame = bool(video_pose_mode and frame_is_pose_exercise and not _is_cao_thi_thuong_pulley_video(frame))
+        if prefer_clean_pose_frame:
             token = _register_video_pose_frame_candidates(video_paths, frame_index, frame)
             if token:
                 source = "video_pose_preview"
+        if not token and not prefer_clean_pose_frame:
+            frame_path = _resolve_existing_path(frame.get("frame_path") or frame.get("image_path") or frame.get("path"))
+            if frame_path:
+                frame_media_meta["data_frame_index"] = max(0, int(frame_number or 1) - 1)
+            else:
+                frame_path = dir_lookup.get(_artifact_lookup_key(dir_lookup, absolute_idx, int(frame_number)))
+            token = _register_media(frame_path, frame_media_meta)
+            source = "artifact" if token else source
+            if not token:
+                zip_member = zip_lookup.get(_artifact_lookup_key(zip_lookup, absolute_idx, int(frame_number)))
+                token = _register_zip_media(frame_zip, zip_member, frame_media_meta) if zip_member else None
+                source = "artifact_zip" if token else source
         if not token and prefer_video_pose_frames:
-            frame = _video_pose_frame_data_for_payload(video_paths, frame_index, frame, exercise)
-            frame_media_meta["frame_data"] = dict(frame)
             token = _register_video_pose_frame_candidates(video_paths, frame_index, frame)
             if token:
                 source = "video_pose_preview"
@@ -6308,7 +6906,7 @@ def _frame_dir_for_video(video: dict[str, Any], processed_path: Path | None) -> 
 def _frame_zip_for_video(video: dict[str, Any], processed_path: Path | None) -> Path | None:
     stem = _processed_stem(processed_path)
     candidates: list[Path] = []
-    for raw in (video.get("all_frames_zip"), video.get("frames_zip")):
+    for raw in (video.get("all_frames_zip"), video.get("frames_zip"), video.get("frames_zip_path")):
         path = _resolve_existing_path(raw)
         if path and path.is_file():
             candidates.append(path)
@@ -6452,6 +7050,16 @@ def _sample_rows(rows: list[dict[str, Any]], limit: int = 180) -> list[dict[str,
 def _read_analysis_rows(path: Path | None, *, limit: int = 12000) -> list[dict[str, Any]]:
     if not path or not path.is_file():
         return []
+    try:
+        resolved = str(path.resolve())
+        stat = path.stat()
+        cache_key = (resolved, int(limit))
+        cached = ANALYSIS_ROWS_CACHE.get(cache_key)
+        if cached and cached[0] == stat.st_mtime and cached[1] == stat.st_size:
+            return cached[2]
+    except Exception:
+        cache_key = (str(path), int(limit))
+        stat = None
     rows: list[dict[str, Any]] = []
     try:
         with path.open("r", encoding="utf-8-sig", newline="") as handle:
@@ -6461,6 +7069,8 @@ def _read_analysis_rows(path: Path | None, *, limit: int = 12000) -> list[dict[s
                 rows.append(row)
     except Exception:
         return []
+    if stat is not None:
+        ANALYSIS_ROWS_CACHE[cache_key] = (stat.st_mtime, stat.st_size, rows)
     return rows
 
 
@@ -6512,9 +7122,6 @@ def _histogram(values: list[float], *, bins: int = 18) -> list[dict[str, float]]
 def _status_for_row(row: dict[str, Any], exercise: Any = None) -> str:
     if _to_bool(row.get("filtered_stranger")):
         return "UNKNOWN"
-    stored_status = _stored_frame_status(row)
-    if stored_status:
-        return stored_status
     row = _fill_missing_reference_values(_frame_with_exercise_context(row, exercise), exercise or row.get("exercise"))
     threshold = _to_float(row.get("threshold") or row.get("phase_threshold"))
     fallback_refs = _default_refs_for_exercise(exercise or row.get("exercise") or row.get("exercise_key"))
@@ -6524,6 +7131,9 @@ def _status_for_row(row: dict[str, Any], exercise: Any = None) -> str:
     recomputed = _phase_status_for_frame(row, threshold, fallback_refs, exercise)
     if recomputed:
         return recomputed
+    stored_status = _stored_frame_status(row)
+    if stored_status:
+        return stored_status
     if _to_bool(row.get("dung")):
         return "PASS"
     if _to_bool(row.get("gan_dung")):
@@ -6541,15 +7151,14 @@ def _status_for_row(row: dict[str, Any], exercise: Any = None) -> str:
 def _status_for_contextual_row(row: dict[str, Any], exercise: Any = None) -> str:
     if _to_bool(row.get("filtered_stranger")):
         return "UNKNOWN"
-    stored_status = _stored_frame_status(row)
-    if stored_status:
-        return stored_status
     threshold = _to_float(row.get("threshold") or row.get("phase_threshold"))
     if threshold is None:
         phase_key = _clean_text(row.get("phase"))
         threshold = 30 if _frame_exercise_key(row, exercise) == "pulley" else PHASE_THRESHOLDS.get(phase_key, 45)
     status_text = _phase_status_for_frame(row, threshold, _default_refs_for_exercise(exercise or row.get("exercise") or row.get("exercise_key")), exercise)
-    return status_text or _frame_status(row) or "FAIL"
+    if status_text:
+        return status_text
+    return _stored_frame_status(row) or _frame_status(row) or "FAIL"
 
 
 def _boxplot(rows: list[dict[str, Any]], key: str) -> list[dict[str, Any]]:
@@ -6950,6 +7559,46 @@ def _mae_inverse_score(mae_value: Any) -> float:
     # but scale over the practical 0-60 degree range used by the saved artifacts.
     mae = _to_float(mae_value) or 0.0
     return max(0.0, min(1.0, 1.0 - (mae / 60.0)))
+
+
+def _chart_payload_from_metrics(video: dict[str, Any]) -> dict[str, Any]:
+    metrics = _chart_metrics(video, None, [])
+    accuracy = float(metrics.get("accuracy") or _to_float(video.get("accuracy")) or 0.0)
+    points = [{"x": 1, "y": accuracy}] if accuracy else []
+    phase_pies = _phase_distribution_from_metrics(video, metrics, video.get("exercise"))
+    radar_values = {
+        "accuracy": max(0.0, min(1.0, accuracy / 100)),
+        "f1_score": max(0.0, min(1.0, float(metrics.get("f1_score") or 0))),
+        "mae_inverse": _mae_inverse_score(metrics.get("mae")),
+        "icc": max(0.0, min(1.0, float(metrics.get("icc") or 0))),
+        "precision": max(0.0, min(1.0, float(metrics.get("precision") or 0))),
+        "recall": max(0.0, min(1.0, float(metrics.get("recall") or 0))),
+    }
+    return {
+        "points": points,
+        "series": {"shoulder": [], "elbow": [], "shoulder_ref": [], "elbow_ref": []},
+        "histograms": {"shoulder": [], "elbow": []},
+        "boxplots": {"shoulder": None, "elbow": None},
+        "phase_boxplots": [],
+        "pie": [
+            {"label": "PASS", "value": metrics["pass_frames"]},
+            {"label": "NEAR", "value": metrics["near_frames"]},
+            {"label": "FAIL", "value": metrics["fail_frames"]},
+            {"label": "UNKNOWN", "value": metrics["unknown_frames"]},
+        ],
+        "phase_pies": phase_pies,
+        "phase_metrics": [],
+        "radar": {
+            "labels": ["Accuracy", "F1-score", "MAE inverse", "ICC", "Precision", "Recall"],
+            "values": list(radar_values.values()),
+            "targets": [0.9, 0.85, 0.65, 0.75, 0.85, 0.85],
+        },
+        "research_metrics": metrics,
+        "phases": [],
+        "phase_ranges": [],
+        "source": "metrics",
+        "row_count": 0,
+    }
 
 
 def _read_chart_payload(path: Path | None, video: dict[str, Any], latest_evaluation: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -7458,6 +8107,7 @@ def _video_detail(
     frame_limit: int = 48,
     frame_phase: str = "all",
     frame_status: str = "ALL",
+    include_chart: bool = True,
 ) -> dict[str, Any]:
     if user["role_key"] == "patient" and not _matches_current_patient(video, user):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Không có quyền xem video này.")
@@ -7472,8 +8122,14 @@ def _video_detail(
     audio_video_path = _resolve_video_source_path(video.get("audio_video_path"))
     processed_video_path = _resolve_video_source_path(video.get("processed_path"))
     raw_video_path = _resolve_video_source_path(video.get("video_path"))
+    use_original_pulley_artifacts = _is_cao_thi_thuong_pulley_video(video)
+    if use_original_pulley_artifacts:
+        raw_video_path = _resolve_readable_video_sibling(raw_video_path)
     pose_playback_path = _pose_playback_video_path(processed_video_path or _resolve_existing_path(video.get("processed_path")))
-    video_path = audio_video_path or (processed_video_path if _audio_codec(processed_video_path) else (pose_playback_path or processed_video_path or raw_video_path))
+    if use_original_pulley_artifacts:
+        video_path = raw_video_path if _video_frame_count(raw_video_path) > 0 else (processed_video_path or audio_video_path)
+    else:
+        video_path = audio_video_path or (processed_video_path if _audio_codec(processed_video_path) else (pose_playback_path or processed_video_path or raw_video_path))
     playback_video_path, playback_status = _resolve_playback_video_path(video_path, raw_video_path)
     if playback_video_path and pose_playback_path and playback_video_path == pose_playback_path:
         playback_status = "pose_h264"
@@ -7489,9 +8145,12 @@ def _video_detail(
     frame_playback_path = playback_video_path if playback_status != "rebuilt_from_frames" else None
     prefer_video_pose_frames = _needs_video_pose_frame_preference(video)
     pose_exercise = _frame_exercise_key(video, video.get("exercise")) in {"codman", "pulley"}
-    if prefer_video_pose_frames:
+    raw_pose_candidates = _raw_upload_candidates_for_video(video) if pose_exercise else []
+    if use_original_pulley_artifacts:
+        frame_video_paths = [candidate for candidate in (processed_video_path, frame_playback_path, raw_video_path) if candidate]
+    elif prefer_video_pose_frames:
         if pose_exercise:
-            frame_video_paths = [candidate for candidate in (raw_video_path, frame_playback_path, processed_video_path) if candidate]
+            frame_video_paths = [candidate for candidate in (*raw_pose_candidates, raw_video_path, frame_playback_path, processed_video_path) if candidate]
         else:
             frame_video_paths = [candidate for candidate in (frame_playback_path, processed_video_path, raw_video_path) if candidate]
     else:
@@ -7511,9 +8170,10 @@ def _video_detail(
     elif csv_frame_records:
         frame_records = csv_frame_records
     media_token = _register_media(playback_video_path)
+    display_rotation = 180 if any(_video_needs_head_to_feet_flip(record, video.get("exercise")) for record in frame_records[: min(12, len(frame_records))]) else 0
     if prefer_video_pose_frames and frame_records and any(_frame_ml_label(frame) for frame in frame_records[: min(20, len(frame_records))]):
         if pose_exercise:
-            frame_video_paths = [candidate for candidate in (raw_video_path, frame_playback_path, processed_video_path) if candidate]
+            frame_video_paths = [candidate for candidate in (*raw_pose_candidates, raw_video_path, frame_playback_path, processed_video_path) if candidate]
         else:
             frame_video_paths = [candidate for candidate in (frame_playback_path, processed_video_path, raw_video_path) if candidate]
         preview_token = None
@@ -7531,7 +8191,7 @@ def _video_detail(
         frame_dir=frame_dir,
         frame_zip=frame_zip,
         phase_bounds=phase_bounds,
-        processed_frame_path=frame_playback_path or processed_video_path,
+        processed_frame_path=processed_video_path if use_original_pulley_artifacts else (frame_playback_path or processed_video_path),
         prefer_video_pose_frames=prefer_video_pose_frames,
         allow_video_pose_frames=prefer_video_pose_frames,
     )
@@ -7568,7 +8228,7 @@ def _video_detail(
             fallback_refs=fallback_refs,
             phase_bounds=phase_bounds,
         )
-    chart = _read_chart_payload(df_path, video, latest_evaluation)
+    chart = _read_chart_payload(df_path, video, latest_evaluation) if include_chart else _chart_payload_from_metrics(video)
     return {
         "id": idx,
         "video": video,
@@ -7581,6 +8241,7 @@ def _video_detail(
             "raw_video_path": str(raw_video_path or ""),
             "playback_status": playback_status,
             "playback_codec": _video_codec(playback_video_path),
+            "display_rotation": display_rotation,
             "frame_data_exists": bool(frame_path),
             "frame_preview_exists": bool(frames),
             "df_exists": bool(df_path),
@@ -7764,6 +8425,7 @@ async def video_detail(
     frame_limit: int = 48,
     frame_phase: str = "all",
     frame_status: str = "ALL",
+    include_chart: bool = True,
     session: dict[str, Any] = Depends(current_session),
 ) -> dict[str, Any]:
     videos = _load_data("video_list")
@@ -7781,6 +8443,7 @@ async def video_detail(
         frame_limit=frame_limit,
         frame_phase=frame_phase,
         frame_status=frame_status,
+        include_chart=include_chart,
     )
 
 
@@ -8178,6 +8841,7 @@ async def media(token: str):
             ok = False
             frame = None
             paths = meta.get("paths") if isinstance(meta.get("paths"), list) else [meta.get("path")]
+            source_has_legacy_overlay = False
             for candidate_raw in paths:
                 candidate = Path(str(candidate_raw or ""))
                 if not candidate.is_file():
@@ -8189,38 +8853,47 @@ async def media(token: str):
                 cap.release()
                 if ok and frame is not None:
                     frame = _apply_video_orientation(frame, candidate)
+                    source_has_legacy_overlay = _frame_has_analysis_overlay(frame)
                     break
             if not ok or frame is None:
                 raise RuntimeError("frame read failed")
             if meta.get("kind") == "video_pose_frame":
                 frame_data = meta.get("frame_data") if isinstance(meta.get("frame_data"), dict) else {}
                 frame_data = _frame_with_exercise_context(frame_data, frame_data.get("exercise") or frame_data.get("exercise_key"))
-                needs_upright_redetect = False
-                try:
-                    frame_h, frame_w = frame.shape[:2]
-                    needs_upright_redetect = frame_w > frame_h * 1.12
-                except Exception:
-                    needs_upright_redetect = False
-                if _frame_exercise_key(frame_data) in {"codman", "pulley"} and (needs_upright_redetect or not _has_complete_pose(frame_data)):
-                    frame_data = _frame_with_detected_pose(frame, frame_data, force_redetect=True)
-                elif not _has_complete_pose(frame_data):
-                    frame_data = _frame_with_detected_pose(frame, frame_data)
-                frame, frame_data = _auto_orient_pose_preview(frame, frame_data)
-                if _frame_exercise_key(frame_data) in {"codman", "pulley"}:
-                    frame_data = _apply_youtube_reference_to_frame(
-                        frame_data,
-                        frame_data.get("exercise") or frame_data.get("exercise_key"),
-                        overwrite=frame_data.get("ref_source") != "youtube_mediapipe",
-                    )
-                display_index = int(meta.get("data_frame_index") if meta.get("data_frame_index") is not None else meta.get("frame_index") or 0) + 1
-                threshold = _to_float(frame_data.get("threshold") or frame_data.get("phase_threshold")) or 30.0
-                frame = _draw_pose_analysis_overlay(frame, frame_data, display_index, threshold=threshold)
+                exercise_key = _frame_exercise_key(frame_data)
+                frame, frame_data = _force_portrait_pose_frame(frame, frame_data, frame_data.get("exercise") or frame_data.get("exercise_key"))
+                if source_has_legacy_overlay or _frame_has_analysis_overlay(frame):
+                    frame = _remove_legacy_analysis_overlay(frame)
+                render_overlay = _to_bool(meta.get("render_overlay", True))
+                if render_overlay:
+                    if exercise_key in {"codman", "pulley"}:
+                        # These media previews are drawn on a freshly-read video frame.
+                        # Do not reuse landmarks from old/rotated artifacts; stale 33/33
+                        # points can draw a sideways skeleton over an upright patient.
+                        frame_data = _redetect_or_keep_oriented_pose_for_preview_frame(
+                            frame,
+                            frame_data,
+                            exercise_key,
+                            allow_oriented_metadata_fallback=source_has_legacy_overlay,
+                        )
+                    elif not _has_complete_pose(frame_data):
+                        frame_data = _frame_with_detected_pose(frame, frame_data)
+                    frame, frame_data = _force_portrait_pose_frame(frame, frame_data, exercise_key or frame_data.get("exercise") or frame_data.get("exercise_key"))
+                    if exercise_key in {"codman", "pulley"}:
+                        frame_data = _apply_youtube_reference_to_frame(
+                            frame_data,
+                            frame_data.get("exercise") or frame_data.get("exercise_key"),
+                            overwrite=frame_data.get("ref_source") != "youtube_mediapipe",
+                        )
+                    display_index = int(meta.get("data_frame_index") if meta.get("data_frame_index") is not None else meta.get("frame_index") or 0) + 1
+                    threshold = _to_float(frame_data.get("threshold") or frame_data.get("phase_threshold")) or 30.0
+                    frame = _draw_pose_analysis_overlay(frame, frame_data, display_index, threshold=threshold)
             ok, encoded = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 82])
             if not ok:
                 raise RuntimeError("frame encode failed")
         except Exception:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Không tạo được frame preview từ video.")
-        return Response(content=encoded.tobytes(), media_type="image/jpeg")
+        return Response(content=encoded.tobytes(), media_type="image/jpeg", headers={"Cache-Control": "public, max-age=604800, immutable"})
     member = _clean_text(meta.get("member"))
     if member:
         try:
@@ -8235,21 +8908,21 @@ async def media(token: str):
             ".png": "image/png",
             ".webp": "image/webp",
         }.get(suffix, "application/octet-stream")
-        if meta.get("kind") == "artifact_frame" and media_type.startswith("image/"):
+        if meta.get("kind") == "artifact_frame" and media_type.startswith("image/") and _to_bool(meta.get("patch_badges")):
             patched, patched_type = _patch_artifact_frame_badges(content, meta)
             if patched_type:
-                return Response(content=patched, media_type=patched_type)
-        return Response(content=content, media_type=media_type)
+                return Response(content=patched, media_type=patched_type, headers={"Cache-Control": "public, max-age=604800, immutable"})
+        return Response(content=content, media_type=media_type, headers={"Cache-Control": "public, max-age=604800, immutable"})
     download_name = _clean_text(meta.get("download_name"))
-    if meta.get("kind") == "artifact_frame" and path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}:
+    if meta.get("kind") == "artifact_frame" and path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"} and _to_bool(meta.get("patch_badges")):
         try:
             content = path.read_bytes()
             patched, patched_type = _patch_artifact_frame_badges(content, meta)
             if patched_type:
-                return Response(content=patched, media_type=patched_type)
+                return Response(content=patched, media_type=patched_type, headers={"Cache-Control": "public, max-age=604800, immutable"})
         except Exception:
             pass
-    return FileResponse(path, filename=download_name or None)
+    return FileResponse(path, filename=download_name or None, headers={"Cache-Control": "public, max-age=604800, immutable"})
 
 
 @app.get("/admin/users")

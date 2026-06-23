@@ -74,6 +74,7 @@ export type VideoDetailPayload = {
     preview_image_url?: string;
     playback_status?: string;
     playback_codec?: string;
+    display_rotation?: number;
     file_exists: boolean;
     video_path: string;
     frame_data_exists: boolean;
@@ -114,6 +115,8 @@ export type VideoDetailPayload = {
     image_url: string;
     source?: string;
     exercise_key?: string;
+    pose_points?: number | string | null;
+    pose_complete?: boolean;
     filtered_stranger?: boolean;
     stranger_reason?: string;
     ref_source?: string;

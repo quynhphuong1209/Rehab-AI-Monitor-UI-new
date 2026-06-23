@@ -194,6 +194,14 @@ function asText(value: unknown) {
   return String(value);
 }
 
+function foldedText(value: unknown) {
+  return asText(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0111/g, "d");
+}
+
 function compactText(value: unknown, max = 110) {
   const text = asText(value);
   return text.length > max ? `${text.slice(0, max)}...` : text;
@@ -2667,10 +2675,11 @@ function VideoResultWorkspace({
   const [zoomFrame, setZoomFrame] = useState<VideoDetailPayload["frames"][number] | null>(null);
   const [framePhase, setFramePhase] = useState("all");
   const [frameStatus, setFrameStatus] = useState("ALL");
-  const frameLimit = 48;
+  const frameLimit = 16;
   const videos = payload.videos?.length ? payload.videos : payload.latest_evaluated_videos;
   const detailCache = useRef(new Map<string, VideoDetailPayload>());
   const effectiveFrameLimit = resultSubtab === "media" ? frameLimit : 1;
+  const includeChart = resultSubtab === "charts";
 
   useEffect(() => {
     if (!videos.length) {
@@ -2680,7 +2689,7 @@ function VideoResultWorkspace({
     const nextId = Math.min(selectedId, videos.length - 1);
     const selectedVideo = videos[nextId] || {};
     const detailId = selectedVideo._detail_id ?? nextId;
-    const cacheKey = `${detailId}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}`;
+    const cacheKey = `${detailId}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`;
     const cached = detailCache.current.get(cacheKey);
     if (cached) {
       setDetail(cached);
@@ -2693,7 +2702,7 @@ function VideoResultWorkspace({
     setMessage("");
     setMediaIssue("");
     api
-      .videoDetail(token, String(detailId), frameOffset, effectiveFrameLimit, framePhase, frameStatus)
+      .videoDetail(token, String(detailId), frameOffset, effectiveFrameLimit, framePhase, frameStatus, includeChart)
       .then((data) => {
         detailCache.current.set(cacheKey, data);
         setDetail(data);
@@ -2703,7 +2712,7 @@ function VideoResultWorkspace({
         setMessage(error instanceof ApiError ? error.message : "Không thể tải chi tiết video.");
       })
       .finally(() => setLoading(false));
-  }, [selectedId, token, videos.length, frameOffset, framePhase, frameStatus, effectiveFrameLimit]);
+  }, [selectedId, token, videos.length, frameOffset, framePhase, frameStatus, effectiveFrameLimit, includeChart]);
 
   useEffect(() => {
     setFrameOffset(0);
@@ -2717,10 +2726,10 @@ function VideoResultWorkspace({
     if (!videos.length) return;
     setLoading(true);
     api
-      .videoDetail(token, String(detailId), frameOffset, effectiveFrameLimit, framePhase, frameStatus)
+      .videoDetail(token, String(detailId), frameOffset, effectiveFrameLimit, framePhase, frameStatus, includeChart)
       .then((data) => {
         detailCache.current.clear();
-        detailCache.current.set(`${detailId}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}`, data);
+        detailCache.current.set(`${detailId}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`, data);
         setDetail(data);
       })
       .catch((error) => setMessage(error instanceof ApiError ? error.message : "Không thể tải chi tiết video."))
@@ -2903,6 +2912,8 @@ function VideoResultWorkspace({
                         mediaKey={String(detail.media.video_path || detail.media.video_url || detail.video.video_name || "")}
                         poster={previewImage ? mediaUrl(previewImage) : undefined}
                         src={mediaUrl(detail.media.video_url)}
+                        portrait={["codman", "pulley"].includes(detailExerciseKey(detail))}
+                        displayRotation={Number(detail.media.display_rotation || 0)}
                         onPhaseChange={(value) => {
                           setFrameOffset(0);
                           setFramePhase(value);
@@ -2916,7 +2927,7 @@ function VideoResultWorkspace({
                         </a>
                       ) : null}
                       {(mediaIssue || playbackUnverified) && previewImage ? (
-                        <img className="video-fallback-frame" src={mediaUrl(previewImage)} alt="Video preview frame" />
+                        <img className="video-fallback-frame" src={mediaUrl(previewImage)} alt="Video preview frame" loading="lazy" decoding="async" />
                       ) : null}
                     </>
                   ) : previewImage ? (
@@ -2925,7 +2936,7 @@ function VideoResultWorkspace({
                     <div className="empty-state">Chưa tìm thấy file video local để phát.</div>
                   )}
                   {(playbackBlocked || playbackUnverified || !detail.media.video_url) && previewImage ? (
-                    <img className="video-fallback-frame" src={mediaUrl(previewImage)} alt="Video preview frame" />
+                    <img className="video-fallback-frame" src={mediaUrl(previewImage)} alt="Video preview frame" loading="lazy" decoding="async" />
                   ) : null}
                   <ArtifactExportPanel token={token} identifier={String(selectedVideo._detail_id ?? selectedId)} detail={detail} onSaved={reloadDetail} />
                 </section>
@@ -3027,7 +3038,10 @@ function VideoResultWorkspace({
 
 function statusClass(status: unknown) {
   const text = asText(status).toLowerCase();
-  if (text.includes("unknown") || text.includes("no pose") || text.includes("khong")) return "unknown";
+  const plain = foldedText(status);
+  if (plain.includes("near") || plain.includes("gan")) return "near";
+  if (plain.includes("unknown") || plain.includes("no pose") || plain.includes("khong")) return "unknown";
+  if (plain.includes("pass") || plain.includes("dung")) return "pass";
   if (text.includes("pass") || text.includes("đúng") || text.includes("dung")) return "pass";
   if (text.includes("near") || text.includes("gần") || text.includes("gan")) return "near";
   if (text.includes("fail") || text.includes("sai")) return "fail";
@@ -3043,10 +3057,10 @@ function confidenceText(value: unknown) {
 function mlDisplayLabel(frame: VideoDetailPayload["frames"][number]) {
   if (isUnknownFrame(frame)) return "UNKNOWN";
   const label = asText(frame.ml_label);
-  const normalized = label.toLowerCase();
-  if (normalized === "2" || normalized.includes("dung") || normalized.includes("pass")) return "Dung";
-  if (normalized === "1" || normalized.includes("gan") || normalized.includes("near")) return "Gan dung";
-  if (normalized === "0" || normalized.includes("sai") || normalized.includes("fail")) return "Sai";
+  const plain = foldedText(label);
+  if (plain === "1" || plain.includes("gan") || plain.includes("near")) return "Gan dung";
+  if (plain === "2" || plain.includes("dung") || plain.includes("pass")) return "Dung";
+  if (plain === "0" || plain.includes("sai") || plain.includes("fail")) return "Sai";
   return label || "N/A";
 }
 
@@ -3078,6 +3092,8 @@ function FrameMetrics({ frame }: { frame: VideoDetailPayload["frames"][number] }
   const nearProb = confidenceText(frame.ml_prob_near);
   const hasSideAngles = frame.left_shoulder != null || frame.right_shoulder != null || frame.left_elbow != null || frame.right_elbow != null;
   const isCodman = String(frame.exercise_key || "").toLowerCase() === "codman";
+  const posePoints = Number(frame.pose_points ?? 0);
+  const poseText = Number.isFinite(posePoints) && posePoints > 0 ? `${posePoints}/33` : "N/A";
   const isFilteredStranger = isUnknownFrame(frame);
   if (isFilteredStranger) {
     const reason = asText(frame.stranger_reason).includes("helper") || asText(frame.stranger_reason).includes("people")
@@ -3137,6 +3153,10 @@ function FrameMetrics({ frame }: { frame: VideoDetailPayload["frames"][number] }
         </>
       )}
       <div className="metric-row">
+        <span>Pose</span>
+        <b>{poseText}{frame.pose_complete ? " OK" : ""}</b>
+      </div>
+      <div className="metric-row">
         <span>Model</span>
         <b>ML - {label}{confidence ? ` - tin cay ${confidence}` : ""}</b>
       </div>
@@ -3167,6 +3187,8 @@ function PhaseVideoPlayer({
   mediaKey,
   src,
   poster,
+  portrait = false,
+  displayRotation = 0,
   onPhaseChange,
   onError,
   onLoadedData,
@@ -3175,6 +3197,8 @@ function PhaseVideoPlayer({
   mediaKey?: string;
   src: string;
   poster?: string;
+  portrait?: boolean;
+  displayRotation?: number;
   onPhaseChange?: (phase: string) => void;
   onError?: () => void;
   onLoadedData?: () => void;
@@ -3242,7 +3266,7 @@ function PhaseVideoPlayer({
   };
 
   return (
-    <div className="phase-video-player">
+    <div className={`phase-video-player${portrait ? " portrait-video-player" : ""}${displayRotation === 180 ? " rotate-180-video-player" : ""}`}>
       {phaseGroups.length > 2 ? (
         <div className="video-phase-controls" aria-label="Chọn đoạn video theo giai đoạn Codman">
           {phaseGroups.map((group) => (
@@ -3257,7 +3281,7 @@ function PhaseVideoPlayer({
         ref={videoRef}
         controls
         playsInline
-        preload="metadata"
+        preload="auto"
         poster={poster}
         src={src}
         onLoadedMetadata={(event) => {
@@ -3396,7 +3420,7 @@ function FrameGallery({
               </div>
               {frame.image_url ? (
                 <button className="frame-zoom-btn" type="button" onClick={() => setZoomFrame(frame)}>
-                  <img src={mediaUrl(frame.image_url)} alt={`Frame ${frame.index}`} />
+                  <img src={mediaUrl(frame.image_url)} alt={`Frame ${frame.index}`} loading="lazy" decoding="async" />
                   {frame.source === "video_pose_preview" ? <span className="frame-source-chip">Video + skeleton</span> : null}
                   {frame.source === "video_processed" ? <span className="frame-source-chip">Video khung xương</span> : null}
                   {frame.source === "video_preview" ? <span className="frame-source-chip muted">Video preview</span> : null}
@@ -3427,9 +3451,9 @@ function FrameGallery({
               <strong>Frame #{zoomFrame.index} · {zoomFrame.phase_label || "Tổng quan"}</strong>
               <button type="button" onClick={() => setZoomFrame(null)}>Đóng</button>
             </div>
-            <img src={mediaUrl(zoomFrame.image_url)} alt={`Frame ${zoomFrame.index}`} />
+            <img src={mediaUrl(zoomFrame.image_url)} alt={`Frame ${zoomFrame.index}`} loading="eager" decoding="async" />
             <FrameMetrics frame={zoomFrame} />
-            <p>
+            <p className="frame-summary-legacy">
               {zoomFrame.phase_status || zoomFrame.status || "N/A"} · Vai {fmtNumber(zoomFrame.angle)}° / REF {fmtNumber(zoomFrame.shoulder_ref)}° · Khuỷu {fmtNumber(zoomFrame.elbow)}° / REF {fmtNumber(zoomFrame.elbow_ref)}°
             </p>
           </div>
@@ -4299,16 +4323,17 @@ function DoctorEvaluationWorkspace({
     specialist_comment: "",
     collector_confirmed: true,
   });
-  const frameLimit = 24;
+  const frameLimit = 16;
   const detailCache = useRef(new Map<string, VideoDetailPayload>());
   const effectiveFrameLimit = subtab === "media" ? frameLimit : 1;
+  const includeChart = subtab !== "media";
 
   useEffect(() => {
     if (!videos.length) {
       setDetail(null);
       return;
     }
-    const cacheKey = `${identifier}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}`;
+    const cacheKey = `${identifier}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`;
     const cached = detailCache.current.get(cacheKey);
     if (cached) {
       setDetail(cached);
@@ -4317,14 +4342,14 @@ function DoctorEvaluationWorkspace({
     }
     setLoadingDetail(true);
     api
-      .videoDetail(token, identifier, frameOffset, effectiveFrameLimit, framePhase, frameStatus)
+      .videoDetail(token, identifier, frameOffset, effectiveFrameLimit, framePhase, frameStatus, includeChart)
       .then((data) => {
         detailCache.current.set(cacheKey, data);
         setDetail(data);
       })
       .catch(() => setDetail(null))
       .finally(() => setLoadingDetail(false));
-  }, [identifier, token, videos.length, frameOffset, framePhase, frameStatus, effectiveFrameLimit]);
+  }, [identifier, token, videos.length, frameOffset, framePhase, frameStatus, effectiveFrameLimit, includeChart]);
 
   useEffect(() => {
     setFrameOffset(0);
@@ -4341,10 +4366,10 @@ function DoctorEvaluationWorkspace({
     if (!videos.length) return;
     setLoadingDetail(true);
     api
-      .videoDetail(token, identifier, frameOffset, effectiveFrameLimit, framePhase, frameStatus)
+      .videoDetail(token, identifier, frameOffset, effectiveFrameLimit, framePhase, frameStatus, includeChart)
       .then((data) => {
         detailCache.current.clear();
-        detailCache.current.set(`${identifier}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}`, data);
+        detailCache.current.set(`${identifier}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`, data);
         setDetail(data);
       })
       .catch(() => setDetail(null))
@@ -4483,6 +4508,8 @@ function DoctorEvaluationWorkspace({
                     detail={detail}
                     src={mediaUrl(detail.media.video_url)}
                     poster={detail.frames[0]?.image_url ? mediaUrl(detail.frames[0].image_url) : undefined}
+                    portrait={["codman", "pulley"].includes(detailExerciseKey(detail))}
+                    displayRotation={Number(detail.media.display_rotation || 0)}
                     onPhaseChange={(value) => {
                       setFrameOffset(0);
                       setFramePhase(value);
@@ -4497,7 +4524,7 @@ function DoctorEvaluationWorkspace({
                 {detail.media.raw_video_url ? (
                   <video
                     controls
-                    preload="metadata"
+                    preload="auto"
                     src={mediaUrl(detail.media.raw_video_url)}
                   />
                 ) : (
@@ -4696,7 +4723,7 @@ function DoctorEvaluationWorkspace({
                   showExportPanel={false}
                   onSaved={() => {
                     api
-                      .videoDetail(token, identifier, frameOffset, frameLimit, framePhase, frameStatus)
+                      .videoDetail(token, identifier, frameOffset, frameLimit, framePhase, frameStatus, includeChart)
                       .then((data) => setDetail(data))
                       .catch(() => undefined);
                   }}

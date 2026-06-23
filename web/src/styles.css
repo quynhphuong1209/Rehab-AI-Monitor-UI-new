@@ -2608,6 +2608,17 @@ textarea:focus {
   background: #020617;
 }
 
+.phase-video-player.portrait-video-player video {
+  width: min(100%, 560px);
+  aspect-ratio: 9 / 16;
+  justify-self: center;
+  object-fit: contain;
+}
+
+.phase-video-player.rotate-180-video-player video {
+  transform: rotate(180deg);
+}
+
 .video-phase-controls {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -4632,6 +4643,10 @@ textarea:focus {
 }
 
 .legacy-frame-meta {
+  display: none;
+}
+
+.frame-summary-legacy {
   display: none;
 }
 

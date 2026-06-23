@@ -14,17 +14,24 @@ from backend.main import (  # noqa: E402
     _apply_ml_to_records,
     _apply_people_filter_to_record,
     _apply_phase_thresholds_to_records,
+    _apply_video_orientation,
     _clean_text,
+    _disable_capture_autorotate,
     _ensure_sound_playback_video,
     _exercise_key,
+    _force_portrait_pose_frame,
     _frame_number_key,
     _frame_with_detected_pose,
     _load_data,
     _pose_landmarks,
+    _recompute_pose_angles_for_frame,
     _relative_repo_path,
     _render_analysis_artifacts_from_records,
     _resolve_existing_path,
+    _resolve_readable_video_sibling,
+    _resolve_video_source_path,
     _save_data,
+    _video_frame_count,
 )
 
 
@@ -57,9 +64,10 @@ def _load_records(path: Path) -> list[dict]:
 
 
 def _video_source(video: dict) -> Path | None:
-    for key in ("video_path", "raw_video_path", "processed_path"):
-        path = _resolve_existing_path(video.get(key))
-        if path and path.is_file():
+    for key in ("video_path", "raw_video_path", "processed_path", "audio_video_path"):
+        path = _resolve_video_source_path(video.get(key))
+        path = _resolve_readable_video_sibling(path)
+        if path and path.is_file() and _video_frame_count(path) > 0:
             return path
     return None
 
@@ -124,6 +132,7 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
     for pos, frame_no in enumerate(frame_targets):
         target_to_positions.setdefault(max(1, int(frame_no)), []).append(pos)
     cap = cv2.VideoCapture(str(source))
+    _disable_capture_autorotate(cap)
     pose = mp.solutions.pose.Pose(
         static_image_mode=exercise_key == "codman",
         model_complexity=2,
@@ -144,10 +153,23 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
                 if max_target and frame_no > max_target:
                     break
                 continue
+            frame = _apply_video_orientation(frame, source)
+            frame_h, frame_w = frame.shape[:2]
+            if frame_w > 720:
+                next_w = 720
+                next_h = max(2, int(round(frame_h * next_w / max(1, frame_w))))
+                next_h -= next_h % 2
+                frame = cv2.resize(frame, (next_w, max(2, next_h)), interpolation=cv2.INTER_AREA)
             for pos in positions:
                 if limit is not None and processed_positions >= limit:
                     break
                 row = records[pos]
+                row = {
+                    **row,
+                    "exercise": row.get("exercise") or exercise,
+                    "exercise_key": row.get("exercise_key") or exercise_key,
+                }
+                oriented_frame, oriented_row = _force_portrait_pose_frame(frame, row, exercise)
                 before = json.dumps(
                     {
                         "status": row.get("status"),
@@ -157,9 +179,12 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
                     },
                     sort_keys=True,
                 )
-                if len(_pose_landmarks(row)) < 33 or _clean_text(row.get("status")).upper() == "UNKNOWN":
-                    row = _frame_with_detected_pose(frame, row, pose_context=pose)
-                row = _apply_people_filter_to_record(frame, row, exercise)
+                if len(_pose_landmarks(oriented_row)) < 33 or _clean_text(oriented_row.get("status")).upper() == "UNKNOWN":
+                    oriented_row = _frame_with_detected_pose(oriented_frame, oriented_row, pose_context=pose, force_redetect=True)
+                elif exercise_key in {"codman", "pulley"}:
+                    oriented_row = _recompute_pose_angles_for_frame(oriented_row, oriented_frame.shape, exercise)
+                oriented_row = _apply_people_filter_to_record(oriented_frame, oriented_row, exercise)
+                _, row = _force_portrait_pose_frame(oriented_frame, oriented_row, exercise)
                 records[pos] = row
                 after = json.dumps(
                     {
@@ -210,7 +235,7 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
             on_progress=lambda done, total: print(f"[{idx}] render {done}/{total}", flush=True),
         )
         if rendered:
-            sound_path, sound_updates = _ensure_sound_playback_video(output_video, records, exercise, metrics=metrics)
+            sound_path, sound_updates = _ensure_sound_playback_video(output_video, records, exercise=exercise, metrics=metrics)
             if sound_path:
                 video["processed_path"] = _relative_repo_path(sound_path)
                 if sound_updates.get("audio_video_path"):

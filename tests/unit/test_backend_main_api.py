@@ -2,17 +2,23 @@ from __future__ import annotations
 
 import json
 
+import numpy as np
+
+import backend.main as backend_main
 from backend.main import (
     ROLE_ADMIN,
     ROLE_DOCTOR_KTV,
     ROLE_PATIENT,
     ROLE_RESEARCHER,
     EvaluationRequest,
+    _auto_orient_pose_preview,
     _evaluation_record_for_video,
+    _force_portrait_pose_frame,
     _frame_group_summary,
     _phase_for_position,
     _segment_bounds_from_angle_items,
     _resolve_playback_video_path,
+    _resolve_readable_video_sibling,
     _read_frame_payload,
     _read_frame_dir,
     _read_chart_payload,
@@ -22,6 +28,11 @@ from backend.main import (
     _scope_records,
     _merge_video_ai_evaluation_summaries,
     _match_evaluations_for_video,
+    _media_token_meta,
+    _match_youtube_reference_for_frame,
+    _needs_video_pose_frame_preference,
+    _phase_status_for_frame,
+    _pose_video_context_priority,
     _take_recent_evaluations,
     _video_detail,
     _hydrate_video_artifacts,
@@ -29,6 +40,18 @@ from backend.main import (
     canonical_role,
     role_key,
 )
+
+
+def complete_pose_record(**updates):
+    record = {
+        "shoulder_ref": 90,
+        "elbow_ref": 170,
+    }
+    for idx in range(33):
+        record[f"pt{idx}_x"] = 0.5
+        record[f"pt{idx}_y"] = 0.5
+    record.update(updates)
+    return record
 
 
 def test_role_key_accepts_vietnamese_and_short_aliases() -> None:
@@ -238,11 +261,11 @@ def test_frame_phase_groups_follow_app_py_thresholds() -> None:
     assert _phase_for_position(60, 90, "Bài tập với gậy (Pulley Exercise)") == ("overview", "Tổng quan", 30)
 
     frames = [
-        {"phase": "g1", "phase_status": "PASS"},
-        {"phase": "g2", "phase_status": "NEAR"},
-        {"phase": "g3", "phase_status": "FAIL"},
+        complete_pose_record(phase="g1", goc_vai=90, goc_khuyu=170),
+        complete_pose_record(phase="g2", goc_vai=125, goc_khuyu=170),
+        complete_pose_record(phase="g3", goc_vai=130, goc_khuyu=170),
     ]
-    groups = {item["key"]: item for item in _frame_group_summary(frames, 90, "Codman")}
+    groups = {item["key"]: item for item in _frame_group_summary(frames, len(frames), "Codman")}
 
     assert groups["g1"]["threshold"] == 45
     assert groups["g2"]["threshold"] == 30
@@ -318,10 +341,10 @@ def test_video_ai_evaluation_summaries_fill_missing_results_and_sort_recent_firs
 def test_read_frame_payload_filters_status_before_pagination(tmp_path) -> None:
     frame_path = tmp_path / "frames.json"
     frames = [
-        {"index": 1, "dung": True},
-        {"index": 2, "gan_dung": True},
-        {"index": 3, "dung": False, "gan_dung": False},
-        {"index": 4, "dung": True},
+        complete_pose_record(index=1, goc_vai=90, goc_khuyu=170),
+        complete_pose_record(index=2, goc_vai=125, goc_khuyu=170),
+        complete_pose_record(index=3, goc_vai=130, goc_khuyu=170),
+        complete_pose_record(index=4, goc_vai=90, goc_khuyu=170),
     ]
     frame_path.write_text(json.dumps(frames), encoding="utf-8")
 
@@ -338,9 +361,9 @@ def test_read_frame_payload_filters_status_before_pagination(tmp_path) -> None:
 def test_read_frame_payload_uses_reference_aliases_and_phase_status(tmp_path) -> None:
     frame_path = tmp_path / "frames.json"
     frames = [
-        {"index": 1, "goc_vai": 92, "goc_khuyu": 172, "vai_chuan": 90, "khuyu_chuan": 170},
-        {"index": 2, "goc_vai": 150, "goc_khuyu": 170, "vai_chuan": 90, "khuyu_chuan": 170},
-        {"index": 3, "goc_vai": 108, "goc_khuyu": 185, "vai_chuan": 90, "khuyu_chuan": 170},
+        complete_pose_record(index=1, goc_vai=92, goc_khuyu=172, vai_chuan=90, khuyu_chuan=170),
+        complete_pose_record(index=2, goc_vai=150, goc_khuyu=170, vai_chuan=90, khuyu_chuan=170),
+        complete_pose_record(index=3, goc_vai=108, goc_khuyu=185, vai_chuan=90, khuyu_chuan=170),
     ]
     frame_path.write_text(json.dumps(frames), encoding="utf-8")
 
@@ -359,6 +382,281 @@ def test_read_frame_payload_uses_reference_aliases_and_phase_status(tmp_path) ->
     assert fail_total == 1
     assert fail_frames[0]["index"] == 2
     assert fail_frames[0]["phase_status"] == "FAIL"
+
+
+def test_codman_payload_scores_right_shoulder_and_elbow_only(tmp_path) -> None:
+    frame_path = tmp_path / "frames.json"
+    frame_path.write_text(
+        json.dumps(
+            [
+                complete_pose_record(
+                    index=1,
+                    goc_vai_trai=10,
+                    goc_khuyu_trai=10,
+                    goc_vai_phai=91,
+                    goc_khuyu_phai=169,
+                    shoulder_ref=90,
+                    elbow_ref=170,
+                )
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    frames, total = _read_frame_payload(frame_path, limit=10, exercise="Codman")
+
+    assert total == 1
+    assert frames[0]["phase_status"] == "PASS"
+    assert frames[0]["angle"] == 91
+    assert frames[0]["elbow"] == 169
+    assert frames[0]["right_shoulder"] == 91
+    assert frames[0]["right_elbow"] == 169
+    assert frames[0]["pose_points"] == 33
+    assert frames[0]["pose_complete"] is True
+
+
+def test_pulley_payload_requires_both_sides_against_ref(tmp_path) -> None:
+    frame_path = tmp_path / "frames.json"
+    frame_path.write_text(
+        json.dumps(
+            [
+                complete_pose_record(
+                    index=1,
+                    goc_vai_trai=90,
+                    goc_khuyu_trai=170,
+                    goc_vai_phai=150,
+                    goc_khuyu_phai=170,
+                    shoulder_ref=90,
+                    elbow_ref=170,
+                )
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    frames, total = _read_frame_payload(frame_path, limit=10, exercise="Bai tap voi gay (Pulley Exercise)")
+
+    assert total == 1
+    assert frames[0]["phase_status"] == "FAIL"
+    assert frames[0]["left_shoulder"] == 90
+    assert frames[0]["right_shoulder"] == 150
+    assert frames[0]["shoulder_delta"] == 60
+
+
+def test_youtube_reference_match_stays_in_same_pulley_motion() -> None:
+    flexion = complete_pose_record(
+        goc_vai_trai=142,
+        goc_khuyu_trai=166,
+        goc_vai_phai=145,
+        goc_khuyu_phai=164,
+    )
+    external_rotation = complete_pose_record(
+        goc_vai_trai=54,
+        goc_khuyu_trai=95,
+        goc_vai_phai=57,
+        goc_khuyu_phai=98,
+    )
+    internal_rotation = complete_pose_record(
+        goc_vai_trai=38,
+        goc_khuyu_trai=138,
+        goc_vai_phai=42,
+        goc_khuyu_phai=136,
+    )
+
+    assert str(_match_youtube_reference_for_frame(flexion, "Bai tap voi gay (Pulley Exercise)")["exercise_id"]) == "1"
+    assert str(_match_youtube_reference_for_frame(external_rotation, "Bai tap voi gay (Pulley Exercise)")["exercise_id"]) == "2"
+    assert str(_match_youtube_reference_for_frame(internal_rotation, "Bai tap voi gay (Pulley Exercise)")["exercise_id"]) == "3"
+
+
+def test_codman_youtube_reference_respects_saved_motion_subtype() -> None:
+    frame = complete_pose_record(
+        goc_vai_phai=60,
+        goc_khuyu_phai=170,
+        motion_subtype="2",
+        motion_type="frontal",
+    )
+
+    matched = _match_youtube_reference_for_frame(frame, "Codman")
+
+    assert matched is not None
+    assert str(matched["exercise_id"]) == "2"
+
+
+def test_pose_preview_auto_orient_does_not_rotate_from_pose() -> None:
+    image = np.zeros((100, 300, 3), dtype=np.uint8)
+    frame = complete_pose_record()
+    for idx in range(33):
+        frame[f"pt{idx}_x"] = 0.2 if idx < 13 else 0.8
+        frame[f"pt{idx}_y"] = 0.48 if idx % 2 else 0.52
+        frame[f"pt{idx}_vis"] = 1.0
+
+    oriented_image, oriented_frame = _auto_orient_pose_preview(image, frame)
+
+    assert oriented_image is image
+    assert oriented_image.shape == (100, 300, 3)
+    assert oriented_frame is frame
+    assert "auto_orientation" not in oriented_frame
+
+
+def test_force_portrait_pose_frame_rotates_landscape_pulley() -> None:
+    image = np.zeros((100, 300, 3), dtype=np.uint8)
+    frame = complete_pose_record(exercise="Bai tap voi gay (Pulley Exercise)")
+    frame["pt0_x"] = 0.2
+    frame["pt0_y"] = 0.5
+    frame["pt23_x"] = 0.8
+    frame["pt23_y"] = 0.5
+
+    portrait, transformed = _force_portrait_pose_frame(image, frame, frame["exercise"])
+
+    assert portrait.shape[:2] == (300, 100)
+    assert transformed["forced_portrait"] is True
+    assert transformed["pt0_x"] != frame["pt0_x"]
+
+
+def test_force_portrait_pose_frame_flips_upside_down_pulley() -> None:
+    image = np.zeros((300, 100, 3), dtype=np.uint8)
+    frame = complete_pose_record(exercise="Bai tap voi gay (Pulley Exercise)")
+    for idx in range(33):
+        frame[f"pt{idx}_x"] = 0.5
+        frame[f"pt{idx}_y"] = 0.72
+        frame[f"pt{idx}_vis"] = 1.0
+    for idx in (0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12):
+        frame[f"pt{idx}_y"] = 0.82
+    for idx in (23, 24, 25, 26, 27, 28, 29, 30, 31, 32):
+        frame[f"pt{idx}_y"] = 0.18
+
+    portrait, transformed = _force_portrait_pose_frame(image, frame, frame["exercise"])
+
+    assert portrait.shape[:2] == (300, 100)
+    assert transformed["forced_head_to_feet"] is True
+    assert transformed["pt0_y"] < transformed["pt23_y"]
+
+
+def test_pose_video_context_prefers_clean_raw_to_avoid_double_overlay(monkeypatch, tmp_path) -> None:
+    raw_landscape = tmp_path / "patient_upload.mp4"
+    processed_portrait = tmp_path / "processed_result.mp4"
+    raw_landscape.write_bytes(b"raw")
+    processed_portrait.write_bytes(b"processed")
+
+    monkeypatch.setattr(backend_main, "_video_frame_count", lambda path: 1)
+    monkeypatch.setattr(backend_main, "_video_rotation_degrees", lambda path: 0)
+    monkeypatch.setattr(
+        backend_main,
+        "_is_portrait_video",
+        lambda path: path == processed_portrait,
+    )
+
+    ordered = sorted([raw_landscape, processed_portrait], key=_pose_video_context_priority)
+
+    assert ordered[0] == raw_landscape
+
+
+def test_cao_thi_thuong_pulley_prefers_original_artifact_frames(tmp_path) -> None:
+    import zipfile
+
+    frame_path = tmp_path / "frames.json"
+    zip_path = tmp_path / "frames.zip"
+    broken_video = tmp_path / "Cao Thị Thường_20260604_042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4"
+    broken_video.write_bytes(b"not-a-video")
+    frame_path.write_text(
+        json.dumps(
+            [
+                complete_pose_record(
+                    index=1,
+                    username="Cao Thị Thường",
+                    full_name="Cao Thị Thường",
+                    video_name="042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4",
+                    exercise="Bài tập với gậy (Pulley Exercise)",
+                    goc_vai_trai=90,
+                    goc_khuyu_trai=170,
+                    goc_vai_phai=92,
+                    goc_khuyu_phai=168,
+                )
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr("f_000001.jpg", b"jpeg-one")
+    video = {
+        "username": "Cao Thị Thường",
+        "full_name": "Cao Thị Thường",
+        "video_name": "042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4",
+        "exercise": "Bài tập với gậy (Pulley Exercise)",
+    }
+
+    prefer = _needs_video_pose_frame_preference(video)
+    frames, total = _read_frame_payload(
+        frame_path,
+        limit=10,
+        fallback_video_paths=[broken_video],
+        exercise=video["exercise"],
+        frame_zip=zip_path,
+        prefer_video_pose_frames=prefer,
+        allow_video_pose_frames=prefer,
+    )
+
+    assert prefer is False
+    assert total == 1
+    assert frames[0]["source"] == "artifact_zip"
+    assert frames[0]["source"] != "video_pose_preview"
+
+
+def test_video_pose_preview_payload_is_lazy(tmp_path, monkeypatch) -> None:
+    frame_path = tmp_path / "frames.json"
+    video_path = tmp_path / "patient_upload.mp4"
+    video_path.write_bytes(b"video")
+    frame_path.write_text(
+        json.dumps(
+            [
+                complete_pose_record(
+                    index=1,
+                    exercise="Bai tap voi gay (Pulley Exercise)",
+                    goc_vai_trai=90,
+                    goc_khuyu_trai=170,
+                    goc_vai_phai=92,
+                    goc_khuyu_phai=168,
+                )
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(backend_main, "_video_frame_count", lambda path: 10)
+
+    def fail_eager_render(*args, **kwargs):
+        raise AssertionError("payload should only register video pose media tokens")
+
+    monkeypatch.setattr(backend_main, "_video_pose_frame_data_for_payload", fail_eager_render)
+
+    frames, total = _read_frame_payload(
+        frame_path,
+        limit=1,
+        fallback_video_paths=[video_path],
+        exercise="Bai tap voi gay (Pulley Exercise)",
+        prefer_video_pose_frames=True,
+        allow_video_pose_frames=True,
+    )
+
+    assert total == 1
+    assert frames[0]["source"] == "video_pose_preview"
+    assert frames[0]["image_url"].startswith("/media/")
+
+
+def test_unreadable_ftmp_video_falls_back_to_readable_f_sibling(tmp_path, monkeypatch) -> None:
+    broken = tmp_path / "Cao Thị Thường_20260604_042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4"
+    sibling = tmp_path / "Cao Thị Thường_20260604_042916_Cao Thị Thường - Bài tập với gậy_f.mp4"
+    broken.write_bytes(b"broken")
+    sibling.write_bytes(b"readable")
+
+    def fake_frame_count(path):
+        return 10 if path == sibling else 0
+
+    monkeypatch.setattr(backend_main, "_video_frame_count", fake_frame_count)
+
+    assert _resolve_readable_video_sibling(broken) == sibling
 
 
 def test_read_chart_payload_uses_reference_aliases_and_frame_phase_ranges(tmp_path) -> None:
@@ -410,10 +708,10 @@ def test_read_frame_payload_pairs_metadata_with_zip_images(tmp_path) -> None:
     zip_path = tmp_path / "frames.zip"
     frame_path.write_text(
         json.dumps(
-            [
-                {"index": 1, "goc_vai": 92, "goc_khuyu": 172, "eval_info": {"shoulder_ref": 90, "elbow_ref": 170}},
-                {"index": 2, "goc_vai": 150, "goc_khuyu": 170, "eval_info": {"shoulder_ref": 90, "elbow_ref": 170}},
-            ]
+                [
+                    complete_pose_record(index=1, goc_vai=92, goc_khuyu=172, eval_info={"shoulder_ref": 90, "elbow_ref": 170}),
+                    complete_pose_record(index=2, goc_vai=150, goc_khuyu=170, eval_info={"shoulder_ref": 90, "elbow_ref": 170}),
+                ]
         ),
         encoding="utf-8",
     )
@@ -426,6 +724,8 @@ def test_read_frame_payload_pairs_metadata_with_zip_images(tmp_path) -> None:
     assert total == 2
     assert frames[0]["source"] == "artifact_zip"
     assert frames[0]["image_url"].startswith("/media/")
+    token = frames[0]["image_url"].rsplit("/", 1)[-1]
+    assert _media_token_meta(token)["patch_badges"] is False
     assert frames[0]["shoulder_ref"] == 90
     assert frames[0]["elbow_ref"] == 170
     assert frames[0]["phase_status"] == "PASS"
@@ -437,8 +737,8 @@ def test_frame_dir_fallback_keeps_reference_metadata(tmp_path) -> None:
     (frame_dir / "f_000001.jpg").write_bytes(b"jpeg-one")
     (frame_dir / "f_000002.jpg").write_bytes(b"jpeg-two")
     records = [
-        {"index": 1, "goc_vai": 92, "goc_khuyu": 172, "eval_info": {"shoulder_ref": 90, "elbow_ref": 170}},
-        {"index": 2, "goc_vai": 150, "goc_khuyu": 170, "eval_info": {"shoulder_ref": 90, "elbow_ref": 170}},
+        complete_pose_record(index=1, goc_vai=92, goc_khuyu=172, eval_info={"shoulder_ref": 90, "elbow_ref": 170}),
+        complete_pose_record(index=2, goc_vai=150, goc_khuyu=170, eval_info={"shoulder_ref": 90, "elbow_ref": 170}),
     ]
 
     frames, total = _read_frame_dir(frame_dir, limit=10, frame_records=records, exercise="Codman")
@@ -465,7 +765,7 @@ def test_resolve_playback_video_path_prefers_h264_sidecar(monkeypatch, tmp_path)
 
 
 def test_codman_pulley_require_complete_33_pose_for_scoring() -> None:
-    complete = {}
+    complete = complete_pose_record(goc_vai=90, goc_khuyu=170)
     for idx in range(33):
         complete[f"pt{idx}_x"] = 0.5
         complete[f"pt{idx}_y"] = 0.5
@@ -479,6 +779,82 @@ def test_codman_pulley_require_complete_33_pose_for_scoring() -> None:
     assert not _frame_should_be_unknown(complete, "Codman")
     assert _frame_should_be_unknown(partial, "Codman")
     assert _frame_should_be_unknown(partial, "Bài tập với gậy")
+
+
+def test_scored_pose_exercise_without_33_points_is_unknown_even_with_angles(tmp_path) -> None:
+    frame_path = tmp_path / "frames.json"
+    frame_path.write_text(
+        json.dumps(
+            [
+                {
+                    "index": 1,
+                    "goc_vai": 90,
+                    "goc_khuyu": 170,
+                    "goc_vai_phai": 90,
+                    "goc_khuyu_phai": 170,
+                    "shoulder_ref": 90,
+                    "elbow_ref": 170,
+                    "status": "PASS",
+                    "phase_status": "PASS",
+                    "dung": True,
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    frames, total = _read_frame_payload(frame_path, limit=10, exercise="Codman")
+
+    assert total == 1
+    assert frames[0]["phase_status"] == "UNKNOWN"
+    assert frames[0]["ml_label"] == "UNKNOWN"
+    assert frames[0]["angle"] is None
+
+
+def test_pose_exercise_missing_required_angles_is_unknown_even_with_old_status() -> None:
+    frame = complete_pose_record(status="FAIL", phase_status="FAIL")
+    for key in (
+        "goc_vai",
+        "goc_khuyu",
+        "shoulder_angle",
+        "elbow_angle",
+        "goc_vai_trai",
+        "goc_khuyu_trai",
+        "goc_vai_phai",
+        "goc_khuyu_phai",
+        "left_shoulder_angle",
+        "left_elbow_angle",
+        "right_shoulder_angle",
+        "right_elbow_angle",
+    ):
+        frame.pop(key, None)
+
+    assert _frame_should_be_unknown(frame, "Bài tập với gậy (Pulley Exercise)") is True
+    assert _phase_status_for_frame(frame, 30, (90, 160), "Bài tập với gậy (Pulley Exercise)") == "UNKNOWN"
+
+
+def test_frame_payload_falls_back_to_ref_status_label_when_ml_missing(tmp_path) -> None:
+    frame_path = tmp_path / "frames.json"
+    frame_path.write_text(
+        json.dumps(
+            [
+                complete_pose_record(
+                    index=1,
+                    goc_vai_phai=108,
+                    goc_khuyu_phai=185,
+                    shoulder_ref=90,
+                    elbow_ref=170,
+                )
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    frames, total = _read_frame_payload(frame_path, limit=10, exercise="Codman")
+
+    assert total == 1
+    assert frames[0]["phase_status"] == "NEAR"
+    assert frames[0]["ml_label"] == "Gan dung"
 
 
 def test_multiple_people_unknown_stays_locked() -> None:

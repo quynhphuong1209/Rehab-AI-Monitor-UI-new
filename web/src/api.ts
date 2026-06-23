@@ -139,12 +139,13 @@ export const api = {
   dashboard(token: string) {
     return request<DashboardPayload>("/dashboard", { token });
   },
-  videoDetail(token: string, identifier: string | number, frameOffset = 0, frameLimit = 48, framePhase = "all", frameStatus = "ALL") {
+  videoDetail(token: string, identifier: string | number, frameOffset = 0, frameLimit = 48, framePhase = "all", frameStatus = "ALL", includeChart = true) {
     const params = new URLSearchParams({
       frame_offset: String(frameOffset),
       frame_limit: String(frameLimit),
       frame_phase: framePhase,
       frame_status: frameStatus,
+      include_chart: String(includeChart),
     });
     return request<VideoDetailPayload>(`/videos/${encodeURIComponent(String(identifier))}/detail?${params.toString()}`, { token });
   },
