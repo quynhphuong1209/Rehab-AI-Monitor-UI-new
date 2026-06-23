@@ -20,10 +20,10 @@
     "accuracy": 54.0,
     "time": "10:05 - 22/06/2026",
     "video_path": ".\\patient_uploads\\Hoàng Hạnh Nguyên_20260529_104723_Hoàng Hạnh Nguyên - Bài tập với gậy_f.mp4",
-    "processed_path": null,
+    "processed_path": "processed_results/processed_6e69538ddf_live_sound.mp4",
     "status": "Đã phân tích",
-    "df_path": null,
-    "all_frames_data_path": null,
+    "df_path": "processed_results/processed_6e69538ddf_data.csv",
+    "all_frames_data_path": "processed_results/f_6e69538ddf.json",
     "detail_id": 1,
     "patient_username": "Hoàng Hạnh Nguyên",
     "artifact_updated_at": "2026-06-21 22:00:26",
@@ -132,8 +132,11 @@
     "has_video_file": true,
     "has_frames": true,
     "has_chart": true,
-    "latest_bundle_updated_at": "2026-06-22T04:34:05.049584+00:00",
-    "video_time": "10:47 - 29/05/2026"
+    "latest_bundle_updated_at": "2026-06-23T00:28:07.789215+00:00",
+    "video_time": "10:05 - 22/06/2026",
+    "audio_video_path": "processed_results/processed_6e69538ddf_live_sound.mp4",
+    "frames_zip_path": "processed_results/processed_6e69538ddf_frames.zip",
+    "frames_zip": "processed_results/processed_6e69538ddf_frames.zip"
   },
   {
     "username": "Nguyễn Thị Nga",
@@ -169,10 +172,10 @@
     "accuracy": 48.6,
     "time": "10:05 - 22/06/2026",
     "video_path": "/data/patient_uploads/Vũ Thị Hòa_20260602_124226_Vũ Thị Hoà - Bài tập với gậy.mp4",
-    "processed_path": "/data/processed_results/processed_1781489158.mp4",
+    "processed_path": "processed_results/processed_1781489158_pose_h264.mp4",
     "status": "Đã phân tích",
-    "df_path": "/data/processed_results/processed_1781489158_data.csv",
-    "all_frames_data_path": "/data/processed_results/f_1781489158.json",
+    "df_path": "processed_results/processed_1781489158_data.csv",
+    "all_frames_data_path": "processed_results/f_1781489158.json",
     "metrics": {
       "do_chinh_xac": 48.65,
       "ty_le_gan_dung": 14.09,
@@ -2186,10 +2189,10 @@
       "ml_confidence_tb": 83.38,
       "metrics_refreshed_at": "2026-06-22T03:05:11.201316+00:00"
     },
-    "frames_zip": "/data/processed_results/processed_1781489158_frames.zip",
+    "frames_zip": "processed_results/processed_1781489158_frames.zip",
     "sai_so": 30,
     "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)",
-    "frames_zip_path": "/data/processed_results/processed_1781489158_frames.zip",
+    "frames_zip_path": "processed_results/processed_1781489158_frames.zip",
     "detail_id": 4,
     "patient_username": "Vũ Thị Hòa",
     "artifact_updated_at": "2026-06-21 22:01:04",
@@ -2209,13 +2212,7 @@
         "size": 33276914,
         "updated_at": "2026-06-20T19:09:46.842005+00:00"
       },
-      "pose_video_path": {
-        "path": "processed_results/processed_1781489158_pose_h264.mp4",
-        "exists": true,
-        "resolved_path": "processed_results/processed_1781489158_pose_h264.mp4",
-        "size": 33276914,
-        "updated_at": "2026-06-20T19:09:46.842005+00:00"
-      },
+      "pose_video_path": null,
       "df_path": {
         "path": "processed_results/processed_1781489158_data.csv",
         "exists": true,
@@ -2231,39 +2228,25 @@
         "updated_at": "2026-06-21T15:01:04.958877+00:00"
       },
       "frames_zip": {
-        "path": "processed_results/exports/processed_1781489158_export_frames_all.zip",
+        "path": "processed_results/processed_1781489158_frames.zip",
         "exists": true,
-        "resolved_path": "processed_results/exports/processed_1781489158_export_frames_all.zip",
-        "size": 901807088,
-        "updated_at": "2026-06-20T19:25:04.481306+00:00"
+        "resolved_path": "processed_results/processed_1781489158_frames.zip",
+        "size": 94001768,
+        "updated_at": "2026-06-16T08:36:30.348419+00:00"
       },
       "frames_zip_path": {
-        "path": "processed_results/exports/processed_1781489158_export_frames_all.zip",
+        "path": "processed_results/processed_1781489158_frames.zip",
         "exists": true,
-        "resolved_path": "processed_results/exports/processed_1781489158_export_frames_all.zip",
-        "size": 901807088,
-        "updated_at": "2026-06-20T19:25:04.481306+00:00"
-      },
-      "export_video_all": {
-        "path": "processed_results/exports/processed_1781489158_export_all.mp4",
-        "exists": true,
-        "resolved_path": "processed_results/exports/processed_1781489158_export_all.mp4",
-        "size": 33276914,
-        "updated_at": "2026-06-20T19:09:46.842005+00:00"
-      },
-      "export_frames_all": {
-        "path": "processed_results/exports/processed_1781489158_export_frames_all.zip",
-        "exists": true,
-        "resolved_path": "processed_results/exports/processed_1781489158_export_frames_all.zip",
-        "size": 901807088,
-        "updated_at": "2026-06-20T19:25:04.481306+00:00"
+        "resolved_path": "processed_results/processed_1781489158_frames.zip",
+        "size": 94001768,
+        "updated_at": "2026-06-16T08:36:30.348419+00:00"
       }
     },
     "has_video_file": true,
     "has_frames": true,
     "has_chart": true,
-    "latest_bundle_updated_at": "2026-06-22T04:34:05.049584+00:00",
-    "video_time": "09:56 - 15/06/2026"
+    "latest_bundle_updated_at": "2026-06-23T00:28:07.789215+00:00",
+    "video_time": "10:05 - 22/06/2026"
   },
   {
     "username": "Cao Thị Thường",
@@ -2286,10 +2269,10 @@
     "accuracy": 55.9,
     "time": "10:05 - 22/06/2026",
     "video_path": "/data/patient_uploads/Nguyễn Thị Nga_20260602_122457_Nguyễn Thị Nga - Bài tập với gậy.mp4",
-    "processed_path": "/data/processed_results/processed_1781460259_f.mp4",
+    "processed_path": "processed_results/processed_1781460259_f.mp4",
     "status": "Đã phân tích",
-    "df_path": "/data/processed_results/processed_1781460259_f_data.csv",
-    "all_frames_data_path": "/data/processed_results/f_1781460259.json",
+    "df_path": "processed_results/processed_1781460259_f_data.csv",
+    "all_frames_data_path": "processed_results/f_1781460259.json",
     "metrics": {
       "do_chinh_xac": 55.92,
       "ty_le_gan_dung": 26.27,
@@ -4852,8 +4835,8 @@
     },
     "sai_so": 30,
     "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)",
-    "frames_zip": "/data/processed_results/processed_1781460259_frames.zip",
-    "frames_zip_path": "/data/processed_results/processed_1781460259_frames.zip",
+    "frames_zip": "processed_results/processed_1781460259_frames.zip",
+    "frames_zip_path": "processed_results/processed_1781460259_frames.zip",
     "detail_id": 6,
     "patient_username": "Nguyễn Thị Nga",
     "artifact_updated_at": "2026-06-21 22:02:02",
@@ -4867,7 +4850,7 @@
         "updated_at": "2026-06-20T17:35:34.870950+00:00"
       },
       "processed_path": {
-        "path": "/data/processed_results/processed_1781460259_f.mp4",
+        "path": "processed_results/processed_1781460259_f.mp4",
         "exists": true,
         "resolved_path": "processed_results/processed_1781460259_f.mp4",
         "size": 115504440,
@@ -4875,7 +4858,7 @@
       },
       "pose_video_path": null,
       "df_path": {
-        "path": "/data/processed_results/processed_1781460259_f_data.csv",
+        "path": "processed_results/processed_1781460259_f_data.csv",
         "exists": true,
         "resolved_path": "processed_results/processed_1781460259_f_data.csv",
         "size": 25227189,
@@ -4889,14 +4872,14 @@
         "updated_at": "2026-06-21T15:02:02.002210+00:00"
       },
       "frames_zip": {
-        "path": "/data/processed_results/processed_1781460259_frames.zip",
+        "path": "processed_results/processed_1781460259_frames.zip",
         "exists": true,
         "resolved_path": "processed_results/processed_1781460259_frames.zip",
         "size": 981535710,
         "updated_at": "2026-06-16T08:25:02.640619+00:00"
       },
       "frames_zip_path": {
-        "path": "/data/processed_results/processed_1781460259_frames.zip",
+        "path": "processed_results/processed_1781460259_frames.zip",
         "exists": true,
         "resolved_path": "processed_results/processed_1781460259_frames.zip",
         "size": 981535710,
@@ -4906,8 +4889,8 @@
     "has_video_file": true,
     "has_frames": true,
     "has_chart": true,
-    "latest_bundle_updated_at": "2026-06-22T04:34:05.049584+00:00",
-    "video_time": "06:14 - 15/06/2026"
+    "latest_bundle_updated_at": "2026-06-23T00:28:07.789215+00:00",
+    "video_time": "10:05 - 22/06/2026"
   },
   {
     "username": "Cao Thị Thường",
@@ -4928,12 +4911,12 @@
     "video_name": "165504_Vũ Thị Hoà - Codman.mp4",
     "exercise": "Bài tập con lắc Codman",
     "accuracy": 100.0,
-    "time": "11:34 - 22/06/2026",
+    "time": "07:28 - 23/06/2026",
     "video_path": ".\\patient_uploads\\Vũ Thị Hòa_20260602_165504_Vũ Thị Hoà - Codman.mp4",
-    "processed_path": "processed_results/processed_447b78322f_sound.mp4",
+    "processed_path": "processed_results/processed_447b78322f_live_sound.mp4",
     "status": "Đã phân tích",
-    "df_path": null,
-    "all_frames_data_path": null,
+    "df_path": "processed_results/processed_447b78322f_data.csv",
+    "all_frames_data_path": "processed_results/f_447b78322f.json",
     "detail_id": 8,
     "patient_username": "Vũ Thị Hòa",
     "artifact_updated_at": "2026-06-21 22:02:17",
@@ -5085,26 +5068,26 @@
         "updated_at": "2026-06-16T08:37:19.869660+00:00"
       },
       "processed_path": {
-        "path": "processed_results/processed_1780545822_f.mp4",
+        "path": "processed_results/processed_447b78322f_live_sound.mp4",
         "exists": true,
-        "resolved_path": "processed_results/processed_1780545822_f.mp4",
-        "size": 20011001,
-        "updated_at": "2026-06-16T05:23:53.360241+00:00"
+        "resolved_path": "processed_results/processed_447b78322f_live_sound.mp4",
+        "size": 17298952,
+        "updated_at": "2026-06-22T02:36:49.277339+00:00"
       },
       "pose_video_path": null,
       "df_path": {
-        "path": "processed_results/processed_1780545822_f_data.csv",
+        "path": "processed_results/processed_447b78322f_data.csv",
         "exists": true,
-        "resolved_path": "processed_results/processed_1780545822_f_data.csv",
-        "size": 7478944,
-        "updated_at": "2026-06-16T07:58:07.913249+00:00"
+        "resolved_path": "processed_results/processed_447b78322f_data.csv",
+        "size": 7588368,
+        "updated_at": "2026-06-21T07:39:48.314048+00:00"
       },
       "all_frames_data_path": {
-        "path": "processed_results/f_1780545822.json",
+        "path": "processed_results/f_447b78322f.json",
         "exists": true,
-        "resolved_path": "processed_results/f_1780545822.json",
-        "size": 3197190,
-        "updated_at": "2026-06-21T15:02:17.139253+00:00"
+        "resolved_path": "processed_results/f_447b78322f.json",
+        "size": 14274530,
+        "updated_at": "2026-06-21T14:48:05.917267+00:00"
       },
       "frames_zip": {
         "path": "processed_results/processed_447b78322f_frames.zip",
@@ -5113,14 +5096,22 @@
         "size": 303165491,
         "updated_at": "2026-06-21T07:39:42.038730+00:00"
       },
-      "frames_zip_path": null
+      "frames_zip_path": {
+        "path": "processed_results/processed_447b78322f_frames.zip",
+        "exists": true,
+        "resolved_path": "processed_results/processed_447b78322f_frames.zip",
+        "size": 303165491,
+        "updated_at": "2026-06-21T07:39:42.038730+00:00"
+      }
     },
     "has_video_file": true,
     "has_frames": true,
     "has_chart": true,
-    "audio_video_path": "processed_results/processed_447b78322f_sound.mp4",
-    "latest_bundle_updated_at": "2026-06-22T04:34:05.049584+00:00",
-    "video_time": "16:55 - 02/06/2026"
+    "audio_video_path": "processed_results/processed_447b78322f_live_sound.mp4",
+    "latest_bundle_updated_at": "2026-06-23T00:28:07.789215+00:00",
+    "video_time": "11:34 - 22/06/2026",
+    "frames_zip_path": "processed_results/processed_447b78322f_frames.zip",
+    "frames_zip": "processed_results/processed_447b78322f_frames.zip"
   },
   {
     "username": "Nguyễn Thị Nga",
@@ -5128,12 +5119,12 @@
     "video_name": "162458_Nguyễn Thị Nga - Codman.mp4",
     "exercise": "Bài tập con lắc Codman",
     "accuracy": 96.65,
-    "time": "11:34 - 22/06/2026",
+    "time": "07:28 - 23/06/2026",
     "video_path": ".\\patient_uploads\\Nguyễn Thị Nga_20260602_162458_Nguyễn Thị Nga - Codman.mp4",
-    "processed_path": null,
+    "processed_path": "processed_results/processed_9a675b0f3c_live_sound.mp4",
     "status": "Đã phân tích",
-    "df_path": null,
-    "all_frames_data_path": null,
+    "df_path": "processed_results/processed_9a675b0f3c_data.csv",
+    "all_frames_data_path": "processed_results/f_9a675b0f3c.json",
     "detail_id": 9,
     "patient_username": "Nguyễn Thị Nga",
     "artifact_updated_at": "2026-06-21 22:02:30",
@@ -5874,26 +5865,26 @@
         "updated_at": "2026-06-16T08:37:21.819447+00:00"
       },
       "processed_path": {
-        "path": "processed_results/processed_1780545425_f.mp4",
+        "path": "processed_results/processed_9a675b0f3c_live_sound.mp4",
         "exists": true,
-        "resolved_path": "processed_results/processed_1780545425_f.mp4",
-        "size": 19238800,
-        "updated_at": "2026-06-16T05:23:47.980339+00:00"
+        "resolved_path": "processed_results/processed_9a675b0f3c_live_sound.mp4",
+        "size": 17347735,
+        "updated_at": "2026-06-22T02:35:00.485245+00:00"
       },
       "pose_video_path": null,
       "df_path": {
-        "path": "processed_results/processed_1780545425_f_data.csv",
+        "path": "processed_results/processed_9a675b0f3c_data.csv",
         "exists": true,
-        "resolved_path": "processed_results/processed_1780545425_f_data.csv",
-        "size": 7145983,
-        "updated_at": "2026-06-16T07:57:46.778349+00:00"
+        "resolved_path": "processed_results/processed_9a675b0f3c_data.csv",
+        "size": 7270150,
+        "updated_at": "2026-06-21T07:18:06.287943+00:00"
       },
       "all_frames_data_path": {
-        "path": "processed_results/f_1780545425.json",
+        "path": "processed_results/f_9a675b0f3c.json",
         "exists": true,
-        "resolved_path": "processed_results/f_1780545425.json",
-        "size": 3066378,
-        "updated_at": "2026-06-21T15:02:30.702816+00:00"
+        "resolved_path": "processed_results/f_9a675b0f3c.json",
+        "size": 13664814,
+        "updated_at": "2026-06-21T14:47:53.015610+00:00"
       },
       "frames_zip": {
         "path": "processed_results/processed_9a675b0f3c_frames.zip",
@@ -5902,13 +5893,22 @@
         "size": 309522648,
         "updated_at": "2026-06-21T07:17:51.934188+00:00"
       },
-      "frames_zip_path": null
+      "frames_zip_path": {
+        "path": "processed_results/processed_9a675b0f3c_frames.zip",
+        "exists": true,
+        "resolved_path": "processed_results/processed_9a675b0f3c_frames.zip",
+        "size": 309522648,
+        "updated_at": "2026-06-21T07:17:51.934188+00:00"
+      }
     },
     "has_video_file": true,
     "has_frames": true,
     "has_chart": true,
-    "latest_bundle_updated_at": "2026-06-22T04:34:05.049584+00:00",
-    "video_time": "16:24 - 02/06/2026"
+    "latest_bundle_updated_at": "2026-06-23T00:28:07.789215+00:00",
+    "video_time": "11:34 - 22/06/2026",
+    "audio_video_path": "processed_results/processed_9a675b0f3c_live_sound.mp4",
+    "frames_zip_path": "processed_results/processed_9a675b0f3c_frames.zip",
+    "frames_zip": "processed_results/processed_9a675b0f3c_frames.zip"
   },
   {
     "username": "Cao Thị Thường",
@@ -5916,12 +5916,12 @@
     "video_name": "042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4",
     "exercise": "Bài tập với gậy (Pulley Exercise)",
     "accuracy": 53.3,
-    "time": "11:34 - 22/06/2026",
+    "time": "07:28 - 23/06/2026",
     "video_path": "/data/patient_uploads/Cao Thị Thường_20260604_042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4",
-    "processed_path": "/data/processed_results/processed_1781426834_f.mp4",
+    "processed_path": "processed_results/processed_1781426834_f.mp4",
     "status": "Đã phân tích",
-    "df_path": "/data/processed_results/processed_1781426834_f_data.csv",
-    "all_frames_data_path": "/data/processed_results/f_1781426834.json",
+    "df_path": "processed_results/processed_1781426834_f_data.csv",
+    "all_frames_data_path": "processed_results/f_1781426834.json",
     "metrics": {
       "do_chinh_xac": 53.3,
       "ty_le_gan_dung": 22.69,
@@ -7023,10 +7023,10 @@
       "ref_source": "youtube_mediapipe",
       "exercise_key": "pulley"
     },
-    "frames_zip": "/data/processed_results/processed_1781426834_frames.zip",
+    "frames_zip": null,
     "sai_so": 30,
     "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)",
-    "frames_zip_path": "/data/processed_results/processed_1781426834_frames.zip",
+    "frames_zip_path": null,
     "detail_id": 10,
     "patient_username": "Cao Thị Thường",
     "artifact_updated_at": "2026-06-21 22:02:47",
@@ -7037,10 +7037,10 @@
         "exists": true,
         "resolved_path": "patient_uploads/Cao Thị Thường_20260604_042916_Cao Thị Thường - Bài tập với gậy_ftmp.mp4",
         "size": 9961520,
-        "updated_at": "2026-06-22T04:34:08.014859+00:00"
+        "updated_at": "2026-06-23T00:28:10.791291+00:00"
       },
       "processed_path": {
-        "path": "/data/processed_results/processed_1781426834_f.mp4",
+        "path": "processed_results/processed_1781426834_f.mp4",
         "exists": true,
         "resolved_path": "processed_results/processed_1781426834_f.mp4",
         "size": 63736893,
@@ -7048,7 +7048,7 @@
       },
       "pose_video_path": null,
       "df_path": {
-        "path": "/data/processed_results/processed_1781426834_f_data.csv",
+        "path": "processed_results/processed_1781426834_f_data.csv",
         "exists": true,
         "resolved_path": "processed_results/processed_1781426834_f_data.csv",
         "size": 9971043,
@@ -7061,26 +7061,14 @@
         "size": 4949099,
         "updated_at": "2026-06-21T15:02:47.832846+00:00"
       },
-      "frames_zip": {
-        "path": "/data/processed_results/processed_1781426834_frames.zip",
-        "exists": true,
-        "resolved_path": "processed_results/processed_1781426834_frames.zip",
-        "size": 22,
-        "updated_at": "2026-06-16T08:08:10.071995+00:00"
-      },
-      "frames_zip_path": {
-        "path": "/data/processed_results/processed_1781426834_frames.zip",
-        "exists": true,
-        "resolved_path": "processed_results/processed_1781426834_frames.zip",
-        "size": 22,
-        "updated_at": "2026-06-16T08:08:10.071995+00:00"
-      }
+      "frames_zip": null,
+      "frames_zip_path": null
     },
     "has_video_file": true,
     "has_frames": true,
     "has_chart": true,
-    "latest_bundle_updated_at": "2026-06-22T04:34:05.049584+00:00",
-    "video_time": "18:27 - 14/06/2026"
+    "latest_bundle_updated_at": "2026-06-23T00:28:07.789215+00:00",
+    "video_time": "11:34 - 22/06/2026"
   },
   {
     "username": "Hoàng Hạnh Nguyên",
@@ -7088,9 +7076,9 @@
     "video_name": "160754_Hoàng Hạnh Nguyên - Codman.mp4",
     "exercise": "Bài tập con lắc Codman",
     "accuracy": 95.31,
-    "time": "11:34 - 22/06/2026",
+    "time": "07:28 - 23/06/2026",
     "video_path": "/data/patient_uploads/Hoàng Hạnh Nguyên_20260602_160754_Hoàng Hạnh Nguyên - Codman.mp4",
-    "processed_path": "/data/processed_results/processed_1781152702_f.mp4",
+    "processed_path": "processed_results/processed_1781152702_f.mp4",
     "metrics": {
       "do_chinh_xac": 95.31,
       "ty_le_gan_dung": 0.84,
@@ -7674,11 +7662,11 @@
       "ref_source": "youtube_mediapipe",
       "exercise_key": "codman"
     },
-    "df_path": "/data/processed_results/processed_1781152702_f_data.csv",
-    "all_frames_data_path": "/data/processed_results/f_1781152702.json",
-    "frames_zip": "/data/processed_results/processed_1781152702_frames.zip",
+    "df_path": "processed_results/processed_1781152702_f_data.csv",
+    "all_frames_data_path": "processed_results/f_1781152702.json",
+    "frames_zip": "processed_results/processed_1781152702_frames.zip",
     "status": "Đã phân tích",
-    "frames_zip_path": "/data/processed_results/processed_1781152702_frames.zip",
+    "frames_zip_path": "processed_results/processed_1781152702_frames.zip",
     "detail_id": 11,
     "patient_username": "Hoàng Hạnh Nguyên",
     "artifact_updated_at": "2026-06-21 22:03:01",
@@ -7692,7 +7680,7 @@
         "updated_at": "2026-06-20T17:28:31.449308+00:00"
       },
       "processed_path": {
-        "path": "/data/processed_results/processed_1781152702_f.mp4",
+        "path": "processed_results/processed_1781152702_f.mp4",
         "exists": true,
         "resolved_path": "processed_results/processed_1781152702_f.mp4",
         "size": 51719421,
@@ -7700,7 +7688,7 @@
       },
       "pose_video_path": null,
       "df_path": {
-        "path": "/data/processed_results/processed_1781152702_f_data.csv",
+        "path": "processed_results/processed_1781152702_f_data.csv",
         "exists": true,
         "resolved_path": "processed_results/processed_1781152702_f_data.csv",
         "size": 9223713,
@@ -7714,14 +7702,14 @@
         "updated_at": "2026-06-21T15:03:01.739475+00:00"
       },
       "frames_zip": {
-        "path": "/data/processed_results/processed_1781152702_frames.zip",
+        "path": "processed_results/processed_1781152702_frames.zip",
         "exists": true,
         "resolved_path": "processed_results/processed_1781152702_frames.zip",
         "size": 42533588,
         "updated_at": "2026-06-16T08:07:30.126360+00:00"
       },
       "frames_zip_path": {
-        "path": "/data/processed_results/processed_1781152702_frames.zip",
+        "path": "processed_results/processed_1781152702_frames.zip",
         "exists": true,
         "resolved_path": "processed_results/processed_1781152702_frames.zip",
         "size": 42533588,
@@ -7731,8 +7719,8 @@
     "has_video_file": true,
     "has_frames": true,
     "has_chart": true,
-    "latest_bundle_updated_at": "2026-06-22T04:34:05.049584+00:00",
-    "video_time": "16:47 - 14/06/2026"
+    "latest_bundle_updated_at": "2026-06-23T00:28:07.789215+00:00",
+    "video_time": "11:34 - 22/06/2026"
   },
   {
     "username": "Cao Thị Thường",
@@ -7740,9 +7728,9 @@
     "video_name": "042541_Cao Thị Thường -  Codman.mp4",
     "exercise": "Bài tập con lắc Codman",
     "accuracy": 84.0,
-    "time": "11:34 - 22/06/2026",
+    "time": "07:28 - 23/06/2026",
     "video_path": "/data/patient_uploads/Cao Thị Thường_20260604_042541_Cao Thị Thường -  Codman.mp4",
-    "processed_path": "/data/processed_results/processed_1781140111_f.mp4",
+    "processed_path": "processed_results/processed_1781140111_sound.mp4",
     "metrics": {
       "do_chinh_xac": 84.0,
       "ty_le_gan_dung": 6.73,
@@ -8497,11 +8485,11 @@
       "audio_path": "processed_results/processed_1781140111_f_audio.wav",
       "rendered_frames": 2763
     },
-    "df_path": "/data/processed_results/processed_1781140111_f_data.csv",
-    "all_frames_data_path": "/data/processed_results/f_1781140111.json",
-    "frames_zip": "/data/processed_results/processed_1781140111_frames.zip",
+    "df_path": "processed_results/processed_1781140111_f_data.csv",
+    "all_frames_data_path": "processed_results/f_1781140111.json",
+    "frames_zip": "processed_results/processed_1781140111_frames.zip",
     "status": "Đã phân tích",
-    "frames_zip_path": "/data/processed_results/processed_1781140111_frames.zip",
+    "frames_zip_path": "processed_results/processed_1781140111_frames.zip",
     "detail_id": 12,
     "patient_username": "Cao Thị Thường",
     "artifact_updated_at": "2026-06-21 22:03:15",
@@ -8554,8 +8542,9 @@
     "has_video_file": true,
     "has_frames": true,
     "has_chart": true,
-    "latest_bundle_updated_at": "2026-06-22T04:34:05.049584+00:00",
-    "video_time": "16:47 - 14/06/2026"
+    "latest_bundle_updated_at": "2026-06-23T00:28:07.789215+00:00",
+    "video_time": "11:34 - 22/06/2026",
+    "audio_video_path": "processed_results/processed_1781140111_sound.mp4"
   },
   {
     "username": "Nguyễn Thị Nga",
@@ -8565,7 +8554,7 @@
     "accuracy": 48.445767195767196,
     "time": "18:43 - 14/06/2026",
     "video_path": "/data/patient_uploads/Nguyễn Thị Nga_20260602_163003_Nguyễn Thị Nga - Bài tập với gậy_ftmp.mp4",
-    "processed_path": "/data/processed_results/processed_1781436697_f.mp4",
+    "processed_path": "processed_results/processed_1781436697_sound.mp4",
     "metrics": {
       "do_chinh_xac": 48.445767195767196,
       "ty_le_gan_dung": 20.60185185185185,
@@ -9544,12 +9533,13 @@
       "ml_frame_sai": 1544,
       "ml_tong_frame": 3024
     },
-    "df_path": "/data/processed_results/processed_1781436697_f_data.csv",
-    "all_frames_data_path": "/data/processed_results/f_1781436697.json",
-    "status": "Đã phân tích",
+    "df_path": "processed_results/processed_1781436697_f_data.csv",
+    "all_frames_data_path": "processed_results/f_1781436697.json",
+    "status": "?? ph?n t?ch",
     "sai_so": 30,
     "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)",
-    "frames_zip": "/data/processed_results/processed_1781436697_frames.zip",
-    "frames_zip_path": "/data/processed_results/processed_1781436697_frames.zip"
+    "frames_zip": "processed_results/processed_1781436697_frames.zip",
+    "frames_zip_path": "processed_results/processed_1781436697_frames.zip",
+    "audio_video_path": "processed_results/processed_1781436697_sound.mp4"
   }
 ]

@@ -208,5 +208,16 @@
     "full_name": "Cao Thị Thường",
     "role": "Bệnh nhân",
     "created_at": "2026-06-04T02:51:26.328515"
+  },
+  "hoxuanphu": {
+    "password": "$argon2id$v=19$m=65536,t=2,p=2$+m2Y33J6Eo7Npf1nR2sFfg$Ohyr+UfILeCdy5deYW7n4SJ7Rs5KtFBIFO7BQbokHMg",
+    "hash_version": "argon2",
+    "email": "hoxuanphu.stmn@gmail.com",
+    "full_name": "Xuân Phú Hồ",
+    "role": "Bệnh nhân",
+    "created_at": "2026-06-23T01:24:15.221760+00:00",
+    "updated_at": "2026-06-23T01:24:15.221760+00:00",
+    "must_change_password": false,
+    "active": true
   }
 }

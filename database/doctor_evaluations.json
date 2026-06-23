@@ -1,6 +1,6 @@
 [
   {
-    "id": "ai-summary-6cd25f5a3526f4e5",
+    "id": "ai-summary-5fd87b6593f2a936",
     "patient_username": "Vũ Thị Hòa",
     "full_name": "Vũ Thị Hòa",
     "doctor_username": "AI_Researcher",
@@ -16,14 +16,14 @@
     "comments": "BÁO CÁO PHÂN TÍCH AI (TỔNG QUAN):\n- Bài tập: Bài tập con lắc Codman\n- Độ chính xác: 100.0% | Đúng: 2740/2740 frames\n- Frame: Đúng 2740 | Gần đúng 0 | Sai 0 | Unknown 0 | Tổng 2740\n- MAE: 2.88°\n- F1-score: 1.000\n- AI đề xuất: Duy trì bài tập và theo dõi định kỳ.",
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập con lắc Codman: Đạt 100.0% - Duy trì bài tập và theo dõi định kỳ.",
-    "time": "11:34 - 22/06/2026",
-    "created_at": "2026-06-22T04:34:05.049584+00:00",
+    "time": "07:28 - 23/06/2026",
+    "created_at": "2026-06-23T00:28:07.789215+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Phân tích Tổng quan",
     "sai_so": 30
   },
   {
-    "id": "ai-summary-0677fe44362ded85",
+    "id": "ai-summary-23329c2167c1b0e6",
     "patient_username": "Nguyễn Thị Nga",
     "full_name": "Nguyễn Thị Nga",
     "doctor_username": "AI_Researcher",
@@ -39,14 +39,14 @@
     "comments": "BÁO CÁO PHÂN TÍCH AI (TỔNG QUAN):\n- Bài tập: Bài tập con lắc Codman\n- Độ chính xác: 96.7% | Đúng: 2540/2628 frames\n- Frame: Đúng 2540 | Gần đúng 53 | Sai 35 | Unknown 0 | Tổng 2628\n- MAE: 3.97°\n- F1-score: 0.983\n- AI đề xuất: Duy trì bài tập và theo dõi định kỳ.",
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập con lắc Codman: Đạt 96.7% - Duy trì bài tập và theo dõi định kỳ.",
-    "time": "11:34 - 22/06/2026",
-    "created_at": "2026-06-22T04:34:05.049584+00:00",
+    "time": "07:28 - 23/06/2026",
+    "created_at": "2026-06-23T00:28:07.789215+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Phân tích Tổng quan",
     "sai_so": 30
   },
   {
-    "id": "ai-summary-52d918d7ec095efe",
+    "id": "ai-summary-0cef9682661a4974",
     "patient_username": "Cao Thị Thường",
     "full_name": "Cao Thị Thường",
     "doctor_username": "AI_Researcher",
@@ -62,14 +62,14 @@
     "comments": "BÁO CÁO PHÂN TÍCH AI (TỔNG QUAN):\n- Bài tập: Bài tập với gậy (Pulley Exercise)\n- Độ chính xác: 53.3% | Đúng: 1914/3591 frames\n- Frame: Đúng 1914 | Gần đúng 815 | Sai 862 | Unknown 0 | Tổng 3591\n- MAE: 22.59°\n- F1-score: 0.695\n- AI đề xuất: Cần rèn luyện thêm để giảm sai số.",
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập với gậy (Pulley Exercise): Đạt 53.3% - Cần rèn luyện thêm để giảm sai số.",
-    "time": "11:34 - 22/06/2026",
-    "created_at": "2026-06-22T04:34:05.049584+00:00",
+    "time": "07:28 - 23/06/2026",
+    "created_at": "2026-06-23T00:28:07.789215+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)",
     "sai_so": 30
   },
   {
-    "id": "ai-summary-c4d374504834c8fb",
+    "id": "ai-summary-b08d08227afe459a",
     "patient_username": "Hoàng Hạnh Nguyên",
     "full_name": "Hoàng Hạnh Nguyên",
     "doctor_username": "AI_Researcher",
@@ -85,14 +85,14 @@
     "comments": "BÁO CÁO PHÂN TÍCH AI (TỔNG QUAN):\n- Bài tập: Bài tập con lắc Codman\n- Độ chính xác: 95.3% | Đúng: 3048/3198 frames\n- Frame: Đúng 3048 | Gần đúng 27 | Sai 123 | Unknown 10 | Tổng 3208\n- MAE: 4.36°\n- F1-score: 0.976\n- AI đề xuất: Duy trì bài tập và theo dõi định kỳ.",
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập con lắc Codman: Đạt 95.3% - Duy trì bài tập và theo dõi định kỳ.",
-    "time": "11:34 - 22/06/2026",
-    "created_at": "2026-06-22T04:34:05.049584+00:00",
+    "time": "07:28 - 23/06/2026",
+    "created_at": "2026-06-23T00:28:07.789215+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Phân tích Tổng quan",
     "sai_so": 30
   },
   {
-    "id": "ai-summary-bfd8b7493fab70e0",
+    "id": "ai-summary-d85699dbc2d88e7e",
     "patient_username": "Cao Thị Thường",
     "full_name": "Cao Thị Thường",
     "doctor_username": "AI_Researcher",
@@ -108,8 +108,8 @@
     "comments": "BÁO CÁO PHÂN TÍCH AI (TỔNG QUAN):\n- Bài tập: Bài tập con lắc Codman\n- Độ chính xác: 84.0% | Đúng: 2321/2763 frames\n- Frame: Đúng 2321 | Gần đúng 186 | Sai 256 | Unknown 0 | Tổng 2763\n- MAE: 9.88°\n- F1-score: 0.913\n- AI đề xuất: Duy trì bài tập và theo dõi định kỳ.",
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập con lắc Codman: Đạt 84.0% - Duy trì bài tập và theo dõi định kỳ.",
-    "time": "11:34 - 22/06/2026",
-    "created_at": "2026-06-22T04:34:05.049584+00:00",
+    "time": "07:28 - 23/06/2026",
+    "created_at": "2026-06-23T00:28:07.789215+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Phân tích Tổng quan",
     "sai_so": 30
@@ -201,7 +201,7 @@
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập với gậy (Pulley Exercise): Đạt 48.4% - Cần chuyên gia y tế hướng dẫn thêm trước khi tăng cường độ.",
     "time": "18:43 - 14/06/2026",
-    "created_at": "2026-06-22T16:47:13.130073+00:00",
+    "created_at": "2026-06-23T05:25:53.985398+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Giai đoạn 2: Hồi phục (Sai số ±30°)",
     "sai_so": 30
@@ -224,7 +224,7 @@
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập với gậy (Pulley Exercise): Đạt 38.5% - Cần chuyên gia y tế hướng dẫn thêm trước khi tăng cường độ.",
     "time": "04:29 - 04/06/2026",
-    "created_at": "2026-06-22T16:47:13.127688+00:00",
+    "created_at": "2026-06-23T05:25:53.983480+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Phân tích Tổng quan",
     "sai_so": 30
@@ -247,7 +247,7 @@
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập con lắc Codman: Đạt 82.2% - Duy trì bài tập và theo dõi định kỳ.",
     "time": "04:25 - 04/06/2026",
-    "created_at": "2026-06-22T16:47:13.128814+00:00",
+    "created_at": "2026-06-23T05:25:53.984049+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Phân tích Tổng quan",
     "sai_so": 30
@@ -270,7 +270,7 @@
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập con lắc Codman: Đạt 100.0% - Duy trì bài tập và theo dõi định kỳ.",
     "time": "14:31 - 01/06/2026",
-    "created_at": "2026-06-22T16:47:13.127688+00:00",
+    "created_at": "2026-06-23T05:25:53.982491+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Phân tích Tổng quan",
     "sai_so": 30
@@ -293,7 +293,7 @@
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập con lắc Codman: Đạt 99.9% - Duy trì bài tập và theo dõi định kỳ.",
     "time": "11:16 - 29/05/2026",
-    "created_at": "2026-06-22T16:47:13.126690+00:00",
+    "created_at": "2026-06-23T05:25:53.982081+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Phân tích Tổng quan",
     "sai_so": 30
@@ -316,7 +316,7 @@
     "comments_ncv": "Tự đồng bộ từ kết quả AI mới nhất trong video_list.json.",
     "plan": "Kế hoạch luyện tập đề xuất:\n- Bài tập con lắc Codman: Đạt 99.5% - Duy trì bài tập và theo dõi định kỳ.",
     "time": "10:42 - 29/05/2026",
-    "created_at": "2026-06-22T16:47:13.126690+00:00",
+    "created_at": "2026-06-23T05:25:53.980710+00:00",
     "source": "video_list_ai_researcher",
     "giai_doan": "Phân tích Tổng quan",
     "sai_so": 30

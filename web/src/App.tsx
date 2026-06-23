@@ -1272,7 +1272,8 @@ function AnalysisCharts({
   const elbow = chart.series?.elbow || [];
   const shoulderRef = chart.series?.shoulder_ref || [];
   const elbowRef = chart.series?.elbow_ref || [];
-  const phaseOptions = [{ key: "all", label: "Tất cả", threshold: null, start: 0, end: Number.POSITIVE_INFINITY }, ...(chart.phase_ranges || [])];
+  const codmanPhaseRanges = (chart.phase_ranges || []).filter((phase) => ["g1", "g2", "g3"].includes(phase.key));
+  const phaseOptions = [{ key: "all", label: "Tất cả", threshold: null, start: 0, end: Number.POSITIVE_INFINITY }, ...codmanPhaseRanges];
   const [chartPhase, setChartPhase] = useState("all");
   const selectedPhase = phaseOptions.find((item) => item.key === chartPhase) || phaseOptions[0];
   const withinPhase = (point: { x: number; y: number }) => selectedPhase.key === "all" || (point.x >= selectedPhase.start && point.x <= selectedPhase.end);
@@ -1406,7 +1407,8 @@ function AnalysisChartsLegacy({ chart }: { chart: VideoDetailPayload["chart"] })
   const elbow = chart.series?.elbow || [];
   const shoulderRef = chart.series?.shoulder_ref || [];
   const elbowRef = chart.series?.elbow_ref || [];
-  const phaseOptions = [{ key: "all", label: "Tất cả", threshold: null, start: 0, end: Number.POSITIVE_INFINITY }, ...(chart.phase_ranges || [])];
+  const codmanPhaseRanges = (chart.phase_ranges || []).filter((phase) => ["g1", "g2", "g3"].includes(phase.key));
+  const phaseOptions = [{ key: "all", label: "Tất cả", threshold: null, start: 0, end: Number.POSITIVE_INFINITY }, ...codmanPhaseRanges];
   const [chartPhase, setChartPhase] = useState("all");
   const selectedPhase = phaseOptions.find((item) => item.key === chartPhase) || phaseOptions[0];
   const withinPhase = (point: { x: number; y: number }) => selectedPhase.key === "all" || (point.x >= selectedPhase.start && point.x <= selectedPhase.end);
@@ -2756,6 +2758,8 @@ function VideoResultWorkspace({
   const f1Metric = metricNumber("f1_score");
   const maeMetric = metricNumber("mae");
   const iccMetric = metricNumber("icc");
+  const selectedExerciseKey = detailExerciseKey(detail);
+  const showCodmanPhaseStrip = selectedExerciseKey === "codman";
   const moveFramePage = (direction: -1 | 1) => {
     setFrameOffset((current) => {
       const maxOffset = Math.max(0, frameTotal - frameLimit);
@@ -2819,7 +2823,7 @@ function VideoResultWorkspace({
                 </div>
                 <span className="role-pill">{asText(detail.video.status)}</span>
               </div>
-              {detail.chart.phases?.length ? (
+              {showCodmanPhaseStrip && detail.chart.phases?.length ? (
                 <div className="phase-strip">
                   {detail.chart.phases.map((phase) => (
                     <span key={phase.label}>
@@ -3044,6 +3048,21 @@ function mlDisplayLabel(frame: VideoDetailPayload["frames"][number]) {
   if (normalized === "1" || normalized.includes("gan") || normalized.includes("near")) return "Gan dung";
   if (normalized === "0" || normalized.includes("sai") || normalized.includes("fail")) return "Sai";
   return label || "N/A";
+}
+
+function exerciseKeyFromText(value: unknown) {
+  const text = asText(value).toLowerCase();
+  if (text.includes("codman") || text.includes("con l")) return "codman";
+  if (text.includes("pulley") || text.includes("gậy") || text.includes("gay")) return "pulley";
+  return "";
+}
+
+function detailExerciseKey(detail?: VideoDetailPayload | null) {
+  if (!detail) return "";
+  const firstFrameKey = asText(detail.frames?.find((frame) => frame.exercise_key)?.exercise_key).toLowerCase();
+  if (firstFrameKey) return firstFrameKey;
+  const video = detail.video || {};
+  return exerciseKeyFromText(video.exercise || video.exercise_key || video.video_name);
 }
 
 function isUnknownFrame(frame: VideoDetailPayload["frames"][number]) {
