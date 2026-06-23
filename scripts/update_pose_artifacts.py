@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import sys
 import time
@@ -8,6 +9,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 
 from backend.main import (  # noqa: E402
     _analysis_metrics,
@@ -24,6 +29,7 @@ from backend.main import (  # noqa: E402
     _frame_with_detected_pose,
     _load_data,
     _pose_landmarks,
+    _redetect_or_keep_oriented_pose_for_preview_frame,
     _recompute_pose_angles_for_frame,
     _relative_repo_path,
     _render_analysis_artifacts_from_records,
@@ -63,6 +69,36 @@ def _load_records(path: Path) -> list[dict]:
     return [row for row in rows if isinstance(row, dict)]
 
 
+def _write_records_csv(path: Path, records: list[dict]) -> None:
+    if not records:
+        return
+    existing_header: list[str] = []
+    if path.is_file():
+        try:
+            with path.open("r", encoding="utf-8-sig", newline="") as handle:
+                reader = csv.reader(handle)
+                existing_header = next(reader, [])
+        except Exception:
+            existing_header = []
+    keys: list[str] = []
+    seen: set[str] = set()
+    for key in existing_header:
+        if key and key not in seen:
+            keys.append(key)
+            seen.add(key)
+    for record in records:
+        for key in record.keys():
+            if key not in seen:
+                keys.append(key)
+                seen.add(key)
+    if not keys:
+        return
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=keys, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(records)
+
+
 def _video_source(video: dict) -> Path | None:
     for key in ("video_path", "raw_video_path", "processed_path", "audio_video_path"):
         path = _resolve_video_source_path(video.get(key))
@@ -83,8 +119,8 @@ def _processed_paths(video: dict, records_path: Path) -> tuple[Path, Path, Path]
     else:
         stem = f"processed_{records_path.stem.removeprefix('f_')}"
     output = REPO_ROOT / "processed_results" / f"{stem}_f.mp4"
-    frames_zip = REPO_ROOT / "processed_results" / f"{stem}_frames.zip"
-    csv_path = REPO_ROOT / "processed_results" / f"{stem}_data.csv"
+    frames_zip = _resolve_existing_path(video.get("frames_zip") or video.get("frames_zip_path")) or REPO_ROOT / "processed_results" / f"{stem}_frames.zip"
+    csv_path = _resolve_existing_path(video.get("df_path")) or REPO_ROOT / "processed_results" / f"{stem}_data.csv"
     return output, frames_zip, csv_path
 
 
@@ -102,7 +138,7 @@ def _ffmpeg_probe(path: Path) -> tuple[float, int, int, int]:
     return fps, width, height, total
 
 
-def update_video(idx: int, video: dict, *, render: bool, limit: int | None = None) -> dict:
+def update_video(idx: int, video: dict, *, render: bool, limit: int | None = None, force_redetect: bool = False) -> dict:
     exercise = video.get("exercise") or video.get("video_name")
     exercise_key = _exercise_key(exercise)
     if exercise_key not in {"codman", "pulley"}:
@@ -134,8 +170,8 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
     cap = cv2.VideoCapture(str(source))
     _disable_capture_autorotate(cap)
     pose = mp.solutions.pose.Pose(
-        static_image_mode=exercise_key == "codman",
-        model_complexity=2,
+        static_image_mode=True,
+        model_complexity=1,
         enable_segmentation=False,
         min_detection_confidence=0.35,
     )
@@ -176,15 +212,25 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
                         "filtered": row.get("filtered_stranger"),
                         "points": len(_pose_landmarks(row)),
                         "reason": row.get("stranger_reason"),
+                        "left_shoulder": row.get("goc_vai_trai") or row.get("left_shoulder_angle"),
+                        "left_elbow": row.get("goc_khuyu_trai") or row.get("left_elbow_angle"),
+                        "right_shoulder": row.get("goc_vai_phai") or row.get("right_shoulder_angle"),
+                        "right_elbow": row.get("goc_khuyu_phai") or row.get("right_elbow_angle"),
                     },
                     sort_keys=True,
                 )
-                if len(_pose_landmarks(oriented_row)) < 33 or _clean_text(oriented_row.get("status")).upper() == "UNKNOWN":
-                    oriented_row = _frame_with_detected_pose(oriented_frame, oriented_row, pose_context=pose, force_redetect=True)
+                if force_redetect or len(_pose_landmarks(oriented_row)) < 33 or _clean_text(oriented_row.get("status")).upper() == "UNKNOWN":
+                    oriented_row = _redetect_or_keep_oriented_pose_for_preview_frame(
+                        oriented_frame,
+                        oriented_row,
+                        exercise,
+                        pose_context=pose,
+                    )
                 elif exercise_key in {"codman", "pulley"}:
                     oriented_row = _recompute_pose_angles_for_frame(oriented_row, oriented_frame.shape, exercise)
                 oriented_row = _apply_people_filter_to_record(oriented_frame, oriented_row, exercise)
-                _, row = _force_portrait_pose_frame(oriented_frame, oriented_row, exercise)
+                oriented_frame, row = _force_portrait_pose_frame(oriented_frame, oriented_row, exercise)
+                row = _recompute_pose_angles_for_frame(row, oriented_frame.shape, exercise)
                 records[pos] = row
                 after = json.dumps(
                     {
@@ -192,6 +238,10 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
                         "filtered": row.get("filtered_stranger"),
                         "points": len(_pose_landmarks(row)),
                         "reason": row.get("stranger_reason"),
+                        "left_shoulder": row.get("goc_vai_trai") or row.get("left_shoulder_angle"),
+                        "left_elbow": row.get("goc_khuyu_trai") or row.get("left_elbow_angle"),
+                        "right_shoulder": row.get("goc_vai_phai") or row.get("right_shoulder_angle"),
+                        "right_elbow": row.get("goc_khuyu_phai") or row.get("right_elbow_angle"),
                     },
                     sort_keys=True,
                 )
@@ -211,10 +261,12 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
     records_path.write_text(json.dumps(records, ensure_ascii=False), encoding="utf-8")
 
     if csv_path.is_file():
+        _write_records_csv(csv_path, records)
         try:
             metrics = _apply_ml_to_records(csv_path, records_path, records, metrics, exercise)
         except Exception as exc:
             metrics["ml_status"] = f"skip ML refresh: {exc}"
+        _write_records_csv(csv_path, records)
 
     rendered = 0
     if render:
@@ -269,6 +321,7 @@ def main() -> None:
     parser.add_argument("--contains", default="")
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--limit", type=int)
+    parser.add_argument("--force-redetect", action="store_true")
     args = parser.parse_args()
 
     videos = _load_data("video_list")
@@ -282,7 +335,7 @@ def main() -> None:
 
     results = []
     for idx in selected:
-        result = update_video(idx, videos[idx], render=args.render, limit=args.limit)
+        result = update_video(idx, videos[idx], render=args.render, limit=args.limit, force_redetect=args.force_redetect)
         print(json.dumps(result, ensure_ascii=False), flush=True)
         results.append(result)
     _save_data("video_list", videos)

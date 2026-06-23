@@ -1215,7 +1215,7 @@ def _register_video_pose_frame_candidates(paths: list[Path | None], frame_index:
                 "status": frame.get("status") or frame.get("phase_status"),
                 "ml": frame.get("ml_label_text") or frame.get("ml_label"),
                 "score": frame.get("ml_score") or frame.get("ml_confidence"),
-                "orient": "raw_first_redetect_current_frame_v13",
+                "orient": "raw_first_redetect_current_frame_v16_unknown_only_on_blocking_overlap",
                 "threshold": frame.get("threshold") or frame.get("phase_threshold"),
                 "pts": [
                     (frame.get(f"pt{idx}_x"), frame.get(f"pt{idx}_y"), frame.get(f"pt{idx}_vis"))
@@ -1397,12 +1397,27 @@ def _force_portrait_pose_frame(image: Any, frame: dict[str, Any], exercise: Any 
     output_image = image
     output_frame = frame
     if width > height:
-        rotation = _pose_sideways_rotation(output_image, output_frame) or "clockwise"
-        try:
-            output_image, output_frame = _rotate_pose_frame_upright(output_image, output_frame, rotation)
-            output_frame["forced_portrait"] = True
-        except Exception:
-            return image, frame
+        already_portrait_pose = _to_bool(output_frame.get("forced_portrait")) or _to_bool(output_frame.get("auto_oriented"))
+        if already_portrait_pose and _has_complete_pose(output_frame):
+            try:
+                import cv2  # type: ignore[import-not-found]
+
+                orientation = _search_text(output_frame.get("auto_orientation"))
+                if "counterclockwise" in orientation:
+                    output_image = cv2.rotate(output_image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                else:
+                    output_image = cv2.rotate(output_image, cv2.ROTATE_90_CLOCKWISE)
+                output_frame = dict(output_frame)
+            except Exception:
+                return image, frame
+            height, width = output_image.shape[:2]
+        else:
+            rotation = _pose_sideways_rotation(output_image, output_frame) or "clockwise"
+            try:
+                output_image, output_frame = _rotate_pose_frame_upright(output_image, output_frame, rotation)
+                output_frame["forced_portrait"] = True
+            except Exception:
+                return image, frame
     try:
         out_height, out_width = output_image.shape[:2]
         if _pose_head_to_feet_upside_down(output_frame, out_width, out_height):
@@ -1767,7 +1782,7 @@ def _read_video_frame_image(paths: list[Path | None], frame_index: Any) -> Any |
         index = max(0, int(float(frame_index or 0)) - 1)
     except (TypeError, ValueError):
         index = 0
-    candidates = sorted((path for path in paths if path and path.is_file()), key=_video_context_priority)
+    candidates = sorted((path for path in paths if path and path.is_file()), key=_pose_video_context_priority)
     for candidate in candidates:
         try:
             if _video_frame_count(candidate) <= index:
@@ -1887,30 +1902,56 @@ def _has_complete_pose(frame: Any) -> bool:
     return isinstance(frame, dict) and len(_pose_landmarks(frame)) >= len(POSE_REQUIRED_INDICES)
 
 
-def _frame_should_be_unknown(frame: dict[str, Any], exercise: Any = None) -> bool:
-    if _to_bool(frame.get("filtered_stranger")):
-        return True
+BLOCKING_PERSON_OVERLAP_REASONS = {
+    "codman_helper_overlap",
+    "multiple_people_overlap",
+    "multi_person_overlap",
+    "patient_overlap",
+    "body_overlap",
+    "person_overlap",
+    "overlap_person",
+}
+
+
+def _has_required_pose_measurements(frame: dict[str, Any], exercise: Any = None) -> bool:
     exercise_key = _frame_exercise_key(frame, exercise)
-    if exercise_key in {"codman", "pulley"}:
-        if not _has_complete_pose(frame):
+    if exercise_key not in {"codman", "pulley"}:
+        return True
+    if not _has_complete_pose(frame):
+        return False
+    if exercise_key == "pulley":
+        left_shoulder, left_elbow = _side_angle_values(frame, "left")
+        right_shoulder, right_elbow = _side_angle_values(frame, "right")
+        if all(value is not None for value in (left_shoulder, left_elbow, right_shoulder, right_elbow)):
             return True
-        if exercise_key == "pulley":
-            left_shoulder, left_elbow = _side_angle_values(frame, "left")
-            right_shoulder, right_elbow = _side_angle_values(frame, "right")
-            if any(value is None for value in (left_shoulder, left_elbow, right_shoulder, right_elbow)):
-                return True
-        else:
-            shoulder, elbow = _frame_angle_values(frame, exercise)
-            if shoulder is None or elbow is None:
-                return True
-    status_text = _clean_text(frame.get("status") or frame.get("phase_status")).upper()
-    if status_text == "UNKNOWN":
-        reason = _search_text(frame.get("stranger_reason"))
-        if reason in {"multiple_people", "pulley_multiple_people", "codman_helper_overlap", "incomplete_pose_33", "unknown_pose"}:
-            return True
-        if not _has_complete_pose(frame):
-            return True
+        probe = _recompute_pose_angles_for_frame(frame, (1000, 1000, 3), exercise)
+        left_shoulder, left_elbow = _side_angle_values(probe, "left")
+        right_shoulder, right_elbow = _side_angle_values(probe, "right")
+        return all(value is not None for value in (left_shoulder, left_elbow, right_shoulder, right_elbow))
+    shoulder, elbow = _frame_angle_values(frame, exercise)
+    if shoulder is not None and elbow is not None:
+        return True
+    probe = _recompute_pose_angles_for_frame(frame, (1000, 1000, 3), exercise)
+    shoulder, elbow = _frame_angle_values(probe, exercise)
+    return shoulder is not None and elbow is not None
+
+
+def _has_blocking_person_overlap(frame: dict[str, Any], exercise: Any = None) -> bool:
+    reason = _search_text(frame.get("stranger_reason"))
+    if reason in BLOCKING_PERSON_OVERLAP_REASONS:
+        return True
+    if reason in {"multiple_people", "pulley_multiple_people"}:
+        return not _has_required_pose_measurements(frame, exercise)
     return False
+
+
+def _frame_should_be_unknown(frame: dict[str, Any], exercise: Any = None) -> bool:
+    if not isinstance(frame, dict):
+        return False
+    if _to_bool(frame.get("filtered_stranger")) and _has_blocking_person_overlap(frame, exercise):
+        return not _has_required_pose_measurements(frame, exercise)
+    status_text = _clean_text(frame.get("status") or frame.get("phase_status")).upper()
+    return status_text == "UNKNOWN" and _has_blocking_person_overlap(frame, exercise) and not _has_required_pose_measurements(frame, exercise)
 
 
 def _pose_data_from_landmarks(landmarks: Any, image_shape: tuple[int, int, int] | tuple[int, int], crop_box: tuple[int, int, int, int] | None = None) -> dict[str, Any]:
@@ -2221,7 +2262,7 @@ def _select_codman_patient_pose(image: Any, pose: Any) -> dict[str, Any] | None:
             continue
         score = _codman_patient_pose_score(candidate, image.shape)
         if _codman_helper_overlap_detected(image, candidate):
-            _mark_filtered_stranger(candidate, "codman_helper_overlap")
+            candidate["helper_overlap_detected"] = True
             score -= 1.25
         candidate["pose_selector"] = "codman_patient_roi" if crop_box else "codman_full_frame"
         candidate["pose_selector_score"] = round(score, 4)
@@ -2249,33 +2290,39 @@ def _recompute_pose_angles_for_frame(frame: dict[str, Any], image_shape: tuple[i
     right_shoulder = angle((24, 12, 14))
     right_elbow = angle((12, 14, 16))
     output = dict(frame)
-    output.update(
-        {
-            "goc_vai_trai": left_shoulder,
-            "goc_khuyu_trai": left_elbow,
-            "left_shoulder_angle": left_shoulder,
-            "left_elbow_angle": left_elbow,
-            "goc_vai_phai": right_shoulder,
-            "goc_khuyu_phai": right_elbow,
-            "right_shoulder_angle": right_shoulder,
-            "right_elbow_angle": right_elbow,
-        }
-    )
+    for key, value in {
+        "goc_vai_trai": left_shoulder,
+        "goc_khuyu_trai": left_elbow,
+        "left_shoulder_angle": left_shoulder,
+        "left_elbow_angle": left_elbow,
+        "goc_vai_phai": right_shoulder,
+        "goc_khuyu_phai": right_elbow,
+        "right_shoulder_angle": right_shoulder,
+        "right_elbow_angle": right_elbow,
+    }.items():
+        if value is not None:
+            output[key] = value
     exercise_key = _frame_exercise_key(output, exercise)
     if exercise_key == "codman":
-        output["goc_vai"] = right_shoulder
-        output["goc_khuyu"] = right_elbow
-        output["shoulder_angle"] = right_shoulder
-        output["elbow_angle"] = right_elbow
+        if right_shoulder is not None:
+            output["goc_vai"] = right_shoulder
+            output["shoulder_angle"] = right_shoulder
+        if right_elbow is not None:
+            output["goc_khuyu"] = right_elbow
+            output["elbow_angle"] = right_elbow
     elif exercise_key == "pulley":
-        shoulder_values = [value for value in (left_shoulder, right_shoulder) if value is not None]
-        elbow_values = [value for value in (left_elbow, right_elbow) if value is not None]
+        current_left_shoulder, current_left_elbow = _side_angle_values(output, "left")
+        current_right_shoulder, current_right_elbow = _side_angle_values(output, "right")
+        shoulder_values = [value for value in (current_left_shoulder, current_right_shoulder) if value is not None]
+        elbow_values = [value for value in (current_left_elbow, current_right_elbow) if value is not None]
         shoulder = sum(shoulder_values) / len(shoulder_values) if shoulder_values else None
         elbow = sum(elbow_values) / len(elbow_values) if elbow_values else None
-        output["goc_vai"] = shoulder
-        output["goc_khuyu"] = elbow
-        output["shoulder_angle"] = shoulder
-        output["elbow_angle"] = elbow
+        if shoulder is not None:
+            output["goc_vai"] = shoulder
+            output["shoulder_angle"] = shoulder
+        if elbow is not None:
+            output["goc_khuyu"] = elbow
+            output["elbow_angle"] = elbow
     return output
 
 
@@ -2307,12 +2354,8 @@ def _frame_with_detected_pose(
     force_redetect: bool = False,
 ) -> dict[str, Any]:
     exercise_key = _frame_exercise_key(frame)
-    if _to_bool(frame.get("filtered_stranger")) and _search_text(frame.get("stranger_reason")) in {
-        "multiple_people",
-        "pulley_multiple_people",
-        "codman_helper_overlap",
-    }:
-        if not _has_complete_pose(frame):
+    if _to_bool(frame.get("filtered_stranger")) and _has_blocking_person_overlap(frame, exercise_key):
+        if not _has_required_pose_measurements(frame, exercise_key):
             return _mark_filtered_stranger(dict(frame), _clean_text(frame.get("stranger_reason")) or "multiple_people")
         if exercise_key == "codman" and _codman_helper_overlap_detected(image, frame):
             return _mark_filtered_stranger(dict(frame), "codman_helper_overlap")
@@ -2325,7 +2368,7 @@ def _frame_with_detected_pose(
         return _recompute_pose_angles_for_frame(frame, image.shape, frame.get("exercise") or frame.get("exercise_key"))
     detected = _mediapipe_pose_frame_data(image, frame.get("exercise") or frame.get("exercise_key"), pose_context=pose_context)
     if not detected:
-        if exercise_key in {"codman", "pulley"} and _visible_person_count(image) >= 2:
+        if exercise_key in {"codman", "pulley"} and _visible_person_count(image) >= 2 and not _has_required_pose_measurements(frame, exercise_key):
             return _mark_filtered_stranger(dict(frame), "multiple_people")
         return frame
     merged = dict(frame)
@@ -2333,10 +2376,13 @@ def _frame_with_detected_pose(
         if value not in (None, ""):
             merged[key] = value
     merged = _recompute_pose_angles_for_frame(merged, image.shape, frame.get("exercise") or frame.get("exercise_key"))
-    if exercise_key == "codman" and _codman_helper_overlap_detected(image, merged):
+    if exercise_key == "codman" and _codman_helper_overlap_detected(image, merged) and not _has_required_pose_measurements(merged, exercise_key):
         return _mark_filtered_stranger(merged, "codman_helper_overlap")
-    if exercise_key == "pulley" and not _has_complete_pose(merged) and _visible_person_count(image) >= 2:
+    if exercise_key == "pulley" and not _has_required_pose_measurements(merged, exercise_key) and _visible_person_count(image) >= 2:
         return _mark_filtered_stranger(merged, "multiple_people")
+    if _to_bool(merged.get("filtered_stranger")) and not _frame_should_be_unknown(merged, exercise_key):
+        merged["filtered_stranger"] = False
+        merged["stranger_reason"] = None
     if _to_bool(frame.get("filtered_stranger")) and not _to_bool(merged.get("filtered_stranger")) and _has_complete_pose(merged):
         merged["filtered_stranger"] = False
         merged["stranger_reason"] = None
@@ -2390,6 +2436,8 @@ def _redetect_or_keep_oriented_pose_for_preview_frame(
     allow_oriented_metadata_fallback: bool = False,
 ) -> dict[str, Any]:
     exercise_key = _frame_exercise_key(frame, exercise)
+    if _has_complete_pose(frame) and not _to_bool(frame.get("filtered_stranger")) and not _pose_shape_mismatches_frame(image, frame, exercise_key):
+        return frame
     detected = _redetect_pose_for_preview_frame(image, frame, exercise_key, pose_context=pose_context)
     if _has_complete_pose(detected) and not _to_bool(detected.get("filtered_stranger")) and not _pose_shape_mismatches_frame(image, detected, exercise_key):
         return detected
@@ -2467,10 +2515,13 @@ def _angle_color(value: float | None, ref: float | None, threshold: float) -> tu
 
 def _rule_label_for_frame(frame: dict[str, Any], threshold: float, exercise: Any = None) -> str:
     status_text = _phase_status_for_frame(frame, threshold, exercise=exercise)
+    status_text = _display_status_for_frame(frame, status_text, exercise)
     if status_text == "PASS":
         return "PASS"
     if status_text == "NEAR":
         return "NEARLY"
+    if status_text == "UNKNOWN":
+        return "NO POSE"
     return "FAIL"
 
 
@@ -2641,10 +2692,10 @@ def _draw_pose_analysis_overlay(image: Any, frame: dict[str, Any], frame_index: 
     thickness = max(1, int(2 * scale))
     thin = max(1, int(1 * scale))
     points = _pose_points_for_frame(frame, width, height)
-    is_filtered_stranger = _to_bool(frame.get("filtered_stranger"))
+    exercise_key = _frame_exercise_key(frame)
+    is_filtered_stranger = _frame_should_be_unknown(frame, exercise_key)
     is_detected = _to_bool(frame.get("detected"))
     pose_ok = len(points) >= len(POSE_REQUIRED_INDICES) and not is_filtered_stranger
-    exercise_key = _frame_exercise_key(frame)
     frame = _fill_missing_reference_values(frame, exercise_key)
     is_codman = exercise_key == "codman"
     overlay = image.copy()
@@ -2758,7 +2809,7 @@ def _draw_pose_analysis_overlay(image: Any, frame: dict[str, Any], frame_index: 
     )
 
     if not pose_ok:
-        warn_text = "KHONG NHAN DANG - LAN NGUOI KHAC" if is_filtered_stranger else "KHONG NHAN DANG DU 33 DIEM"
+        warn_text = "KHONG NHAN DANG - NGUOI KHAC CHE KHUAT" if is_filtered_stranger else "KHONG DU 33 DIEM POSE"
         warn_w = min(width - int(40 * scale), int(560 * scale))
         warn_h = int(92 * scale)
         warn_x = max(10, (width - warn_w) // 2)
@@ -3339,9 +3390,8 @@ def _pose_record_from_image(image: Any, frame_number: int, timestamp_seconds: fl
         }
     )
     record = _fill_missing_reference_values(record, exercise)
-    if exercise_key in {"codman", "pulley"} and not _has_complete_pose(record):
-        return _mark_filtered_stranger(record, "incomplete_pose_33")
     status_text = _phase_status_for_frame(record, threshold, _default_refs_for_exercise(exercise), exercise)
+    status_text = _display_status_for_frame(record, status_text, exercise)
     record["dung"] = status_text == "PASS"
     record["gan_dung"] = status_text == "NEAR"
     record["status"] = status_text
@@ -3352,16 +3402,11 @@ def _apply_people_filter_to_record(image: Any, record: dict[str, Any], exercise:
     exercise_key = _frame_exercise_key(record, exercise)
     if exercise_key not in {"codman", "pulley"}:
         return record
-    if exercise_key == "codman" and _codman_helper_overlap_detected(image, record):
+    if exercise_key == "codman" and _codman_helper_overlap_detected(image, record) and not _has_required_pose_measurements(record, exercise):
         return _mark_filtered_stranger(record, "codman_helper_overlap")
-    if exercise_key == "pulley" and not _has_complete_pose(record) and _visible_person_count(image) >= 2:
+    if exercise_key == "pulley" and not _has_required_pose_measurements(record, exercise) and _visible_person_count(image) >= 2:
         return _mark_filtered_stranger(record, "multiple_people")
-    locked_reason = _search_text(record.get("stranger_reason"))
-    if (
-        _to_bool(record.get("filtered_stranger"))
-        and locked_reason not in {"multiple_people", "pulley_multiple_people", "codman_helper_overlap"}
-        and _has_complete_pose(record)
-    ):
+    if _to_bool(record.get("filtered_stranger")) and not _frame_should_be_unknown(record, exercise) and _has_complete_pose(record):
         record["filtered_stranger"] = False
         record["stranger_reason"] = None
     return record
@@ -3386,12 +3431,12 @@ def _analysis_metrics(records: list[dict[str, Any]], total_frames: int, elapsed:
         if _frame_should_be_unknown(record, exercise):
             return "UNKNOWN"
         status_text = _clean_text(record.get("phase_status") or record.get("status")).upper()
-        if status_text in {"PASS", "NEAR", "FAIL", "UNKNOWN"}:
-            return status_text
+        if status_text in {"PASS", "NEAR", "FAIL"}:
+            return _display_status_for_frame(record, status_text, exercise)
         threshold = _to_float(record.get("threshold") or record.get("phase_threshold"))
         if threshold is None:
             threshold = 30 if _is_pulley_exercise(exercise) else 45
-        return _phase_status_for_frame(record, threshold, exercise=exercise)
+        return _display_status_for_frame(record, _phase_status_for_frame(record, threshold, exercise=exercise), exercise)
 
     pass_count = sum(1 for record in valid if record_status(record) == "PASS")
     near_count = sum(1 for record in valid if record_status(record) == "NEAR")
@@ -3494,8 +3539,8 @@ def _apply_ml_to_records(csv_path: Path, frames_path: Path, records: list[dict[s
             "ml_prob_dung",
         ]
         for idx, record in enumerate(records[: len(predicted_df)]):
-            if _to_bool(record.get("filtered_stranger")) or _clean_text(record.get("status")).upper() == "UNKNOWN" or _clean_text(record.get("phase_status")).upper() == "UNKNOWN":
-                _mark_filtered_stranger(record, _clean_text(record.get("stranger_reason")) or "unknown_pose")
+            if _frame_should_be_unknown(record, exercise):
+                _mark_filtered_stranger(record, _clean_text(record.get("stranger_reason")) or "multiple_people")
                 continue
             for col in ml_cols:
                 if col in predicted_df.columns:
@@ -3652,11 +3697,12 @@ def _render_analysis_artifacts_from_records(
 
 
 def _audio_state_for_record(record: dict[str, Any]) -> str | None:
-    if _to_bool(record.get("filtered_stranger")):
+    if _frame_should_be_unknown(record, record.get("exercise") or record.get("exercise_key")):
         return None
     status_text = _clean_text(record.get("phase_status") or record.get("status")).upper()
     if not status_text:
         status_text = _phase_status_for_frame(record, _to_float(record.get("threshold") or record.get("phase_threshold")) or 30.0)
+    status_text = _display_status_for_frame(record, status_text, record.get("exercise") or record.get("exercise_key"))
     if status_text == "PASS":
         return "dung"
     if status_text == "NEAR":
@@ -3961,10 +4007,10 @@ def _run_lightweight_pose_analysis_impl(video: dict[str, Any], video_index: int,
             phase, _, threshold = _phase_for_position(len(records), max(1, total_frames // skip), exercise)
             record["phase"] = phase
             if _frame_should_be_unknown(record, exercise):
-                _mark_filtered_stranger(record, _clean_text(record.get("stranger_reason")) or "incomplete_pose_33")
+                _mark_filtered_stranger(record, _clean_text(record.get("stranger_reason")) or "multiple_people")
                 status_text = "UNKNOWN"
             else:
-                status_text = _phase_status_for_frame(record, threshold, _default_refs_for_exercise(exercise), exercise)
+                status_text = _display_status_for_frame(record, _phase_status_for_frame(record, threshold, _default_refs_for_exercise(exercise), exercise), exercise)
             record["status"] = status_text or record.get("status") or "FAIL"
             record["phase_status"] = record["status"]
             record["dung"] = status_text == "PASS"
@@ -5125,8 +5171,9 @@ def _artifact_paths_for_export(video: dict[str, Any]) -> dict[str, Any]:
     df_path = _ensure_hf_dataset_file(hydrated.get("df_path"), min_size=128) or _resolve_existing_path(hydrated.get("df_path"))
     frame_records = _read_frame_records(frame_path)
     csv_frame_records = _frame_records_from_csv(df_path) if df_path else []
+    prefer_csv = _prefer_csv_frame_records(frame_path, df_path)
     if frame_records and csv_frame_records:
-        frame_records = _merge_frame_records_with_csv_pose(frame_records, csv_frame_records)
+        frame_records = _merge_frame_records_with_csv_pose(frame_records, csv_frame_records, prefer_csv=prefer_csv)
     elif csv_frame_records:
         frame_records = csv_frame_records
     frame_dir = _frame_dir_for_video(hydrated, processed_video_path or playback_video_path)
@@ -5601,6 +5648,8 @@ def _backup_match_score(video: dict[str, Any], backup: dict[str, Any]) -> tuple[
         _video_name_score(video.get("video_path"), backup.get("video_path")),
     )
     path_score = 1 if _related_search_text(video.get("video_path"), backup.get("video_path")) else 0
+    if not _artifact_identity_matches(video, backup, name_score=name_score, path_score=path_score):
+        return (0, 0, 0, datetime.min)
     return (artifact_score, name_score, path_score, _parse_vn_time(backup.get("time")))
 
 
@@ -5633,7 +5682,42 @@ def _local_artifact_match_score(video: dict[str, Any], candidate: dict[str, Any]
         _video_name_score(video.get("video_path"), candidate.get("video_path")),
     )
     path_score = 1 if _related_search_text(video.get("video_path"), candidate.get("video_path")) else 0
+    if not _artifact_identity_matches(video, candidate, name_score=name_score, path_score=path_score):
+        return (0, 0, 0, datetime.min)
     return (artifact_score, name_score, path_score, _parse_vn_time(candidate.get("time")))
+
+
+def _artifact_identity_tokens(video: dict[str, Any]) -> set[str]:
+    values = [
+        video.get("video_name"),
+        video.get("stored_filename"),
+        video.get("video_path"),
+        video.get("raw_video_path"),
+        video.get("processed_path"),
+        video.get("audio_video_path"),
+        video.get("df_path"),
+        video.get("all_frames_data_path"),
+        video.get("frames_zip"),
+        video.get("frames_zip_path"),
+    ]
+    tokens: set[str] = set()
+    for value in values:
+        text = _clean_text(value)
+        if not text:
+            continue
+        tokens.update(re.findall(r"\d{6,}", text))
+        tokens.update(re.findall(r"[a-f0-9]{8,}", _search_text(text)))
+    return tokens
+
+
+def _artifact_identity_matches(video: dict[str, Any], candidate: dict[str, Any], *, name_score: int, path_score: int) -> bool:
+    if path_score > 0:
+        return True
+    video_tokens = _artifact_identity_tokens(video)
+    candidate_tokens = _artifact_identity_tokens(candidate)
+    if video_tokens and candidate_tokens and video_tokens & candidate_tokens:
+        return True
+    return False
 
 
 def _find_local_video_artifacts_for_slot(video: dict[str, Any]) -> tuple[int, dict[str, Any]] | None:
@@ -5846,10 +5930,21 @@ def _project_record_angles_for_exercise(record: dict[str, Any], exercise: Any) -
     record["exercise_key"] = exercise_key
     if _clean_text(exercise):
         record["exercise"] = _exercise_label(exercise)
-    if _to_bool(record.get("filtered_stranger")):
+    if _frame_should_be_unknown(record, exercise):
         return _mark_filtered_stranger(record, _clean_text(record.get("stranger_reason")) or "multiple_people")
-    if exercise_key in {"codman", "pulley"} and not _has_complete_pose(record):
-        return _mark_filtered_stranger(record, "incomplete_pose_33")
+    if _to_bool(record.get("filtered_stranger")):
+        record["filtered_stranger"] = False
+        record["stranger_reason"] = None
+    if (
+        exercise_key == "codman"
+        and _has_complete_pose(record)
+        and any(value is None for value in _frame_angle_values(record, exercise))
+    ) or (
+        exercise_key == "pulley"
+        and _has_complete_pose(record)
+        and any(value is None for value in (*_side_angle_values(record, "left"), *_side_angle_values(record, "right")))
+    ):
+        record.update(_recompute_pose_angles_for_frame(record, (1000, 1000, 3), exercise))
     left_shoulder, left_elbow = _side_angle_values(record, "left")
     right_shoulder, right_elbow = _side_angle_values(record, "right")
     if exercise_key == "codman":
@@ -5882,7 +5977,8 @@ def _apply_phase_thresholds_to_records(
             _project_record_angles_for_exercise(record, exercise)
             threshold = 30
             is_unknown = _frame_should_be_unknown(record, exercise)
-            status_text = "UNKNOWN" if is_unknown else (_phase_status_for_frame(record, threshold, fallback_refs, exercise) or _frame_status(record) or "FAIL")
+            raw_status = _phase_status_for_frame(record, threshold, fallback_refs, exercise) or _frame_status(record) or "FAIL"
+            status_text = "UNKNOWN" if is_unknown else _display_status_for_frame(record, raw_status, exercise)
             record["phase"] = "overview"
             record["phase_label"] = PHASE_LABELS["overview"]
             record["threshold"] = threshold
@@ -5891,7 +5987,7 @@ def _apply_phase_thresholds_to_records(
             record["status"] = status_text
             record["dung"] = status_text == "PASS"
             record["gan_dung"] = status_text == "NEAR"
-            if status_text == "UNKNOWN":
+            if is_unknown:
                 _mark_filtered_stranger(record, _clean_text(record.get("stranger_reason")) or "multiple_people")
         return phase_bounds
     for record in records:
@@ -5900,14 +5996,15 @@ def _apply_phase_thresholds_to_records(
     for idx, record in enumerate(records):
         phase, phase_label, threshold = _phase_for_position(idx, total, exercise, effective_bounds)
         is_unknown = _frame_should_be_unknown(record, exercise)
-        status_text = "UNKNOWN" if is_unknown else (_phase_status_for_frame(record, threshold, fallback_refs, exercise) or _frame_status(record) or "FAIL")
+        raw_status = _phase_status_for_frame(record, threshold, fallback_refs, exercise) or _frame_status(record) or "FAIL"
+        status_text = "UNKNOWN" if is_unknown else _display_status_for_frame(record, raw_status, exercise)
         record["phase"] = phase
         record["phase_label"] = phase_label
         record["threshold"] = threshold
         record["phase_threshold"] = threshold
         record["phase_status"] = status_text
         record["status"] = status_text
-        if status_text == "UNKNOWN":
+        if is_unknown:
             _mark_filtered_stranger(record, _clean_text(record.get("stranger_reason")) or "multiple_people")
         record["dung"] = status_text == "PASS"
         record["gan_dung"] = status_text == "NEAR"
@@ -6121,7 +6218,51 @@ def _display_status_for_frame(
     phase_status: str,
     exercise: Any = None,
 ) -> str:
-    return phase_status
+    if _frame_should_be_unknown(frame, exercise):
+        return "UNKNOWN"
+
+    def normalized_status(value: Any) -> str:
+        text = _search_text(value)
+        if not text:
+            return ""
+        if "unknown" in text or "no pose" in text or "khong nhan" in text or "lan nguoi" in text:
+            return "UNKNOWN"
+        if "gan" in text or "near" in text:
+            return "NEAR"
+        if "sai" in text or "fail" in text or "incorrect" in text:
+            return "FAIL"
+        if "dung" in text or "pass" in text or "correct" in text:
+            return "PASS"
+        return ""
+
+    ml_status = normalized_status(
+        frame.get("ml_label_text")
+        or frame.get("ml_result")
+        or frame.get("rf_label")
+        or frame.get("predicted_label")
+        or frame.get("classifier_label")
+    )
+    if not ml_status:
+        ml_value = _to_float(frame.get("ml_label"))
+        if ml_value is not None:
+            ml_index = int(round(ml_value))
+            if ml_index == 0:
+                ml_status = "FAIL"
+            elif ml_index == 1:
+                ml_status = "NEAR"
+            elif ml_index == 2:
+                ml_status = "PASS"
+    if ml_status and ml_status != "UNKNOWN":
+        return ml_status
+
+    stored_status = normalized_status(frame.get("phase_status") or frame.get("status") or frame.get("result") or frame.get("label"))
+    if stored_status and stored_status != "UNKNOWN":
+        return stored_status
+    if phase_status in {"PASS", "NEAR", "FAIL"}:
+        return phase_status
+    if phase_status == "UNKNOWN":
+        return "FAIL"
+    return phase_status or "FAIL"
 
 
 def _frame_ml_label(frame: dict[str, Any]) -> str:
@@ -6205,6 +6346,16 @@ def _enrich_frame_payload(
 ) -> dict[str, Any]:
     frame = _frame_with_exercise_context(frame, exercise)
     exercise_key = _frame_exercise_key(frame, exercise)
+    if (
+        exercise_key == "codman"
+        and _has_complete_pose(frame)
+        and any(value is None for value in _frame_angle_values(frame, exercise))
+    ) or (
+        exercise_key == "pulley"
+        and _has_complete_pose(frame)
+        and any(value is None for value in (*_side_angle_values(frame, "left"), *_side_angle_values(frame, "right")))
+    ):
+        frame = _recompute_pose_angles_for_frame(frame, (1000, 1000, 3), exercise)
     frame = _fill_missing_reference_values(frame, exercise)
     is_unknown_frame = _frame_should_be_unknown(frame, exercise)
     frame_index = frame.get("index") or frame.get("frame") or absolute_idx + 1
@@ -6262,7 +6413,7 @@ def _enrich_frame_payload(
         "exercise_key": exercise_key,
         "pose_points": len(_pose_landmarks(frame)),
         "pose_complete": _has_complete_pose(frame),
-        "filtered_stranger": _to_bool(frame.get("filtered_stranger")),
+        "filtered_stranger": _frame_should_be_unknown(frame, exercise),
         "stranger_reason": frame.get("stranger_reason"),
         "ref_source": frame.get("ref_source"),
         "youtube_ref_exercise_id": frame.get("youtube_ref_exercise_id"),
@@ -6326,7 +6477,8 @@ def _frame_group_summary(frames: list[dict[str, Any]], total: int, exercise: Any
     fallback_refs = _default_refs_for_exercise(exercise)
     for idx, frame in enumerate(frames):
         phase, _, threshold = _phase_for_position(idx, total, exercise, phase_bounds)
-        status_key = _search_text(_phase_status_for_frame(frame, threshold, fallback_refs, exercise) or frame.get("phase_status") or frame.get("status"))
+        raw_status = _phase_status_for_frame(frame, threshold, fallback_refs, exercise) or frame.get("phase_status") or frame.get("status")
+        status_key = _search_text(_display_status_for_frame(frame, raw_status, exercise))
         status_field = (
             "unknown"
             if "unknown" in status_key or "no pose" in status_key or "khong nhan" in status_key or "lan nguoi" in status_key
@@ -6370,6 +6522,7 @@ def _read_frame_group_payload(
         phase, _, threshold = _phase_for_position(idx, total, exercise, phase_bounds)
         frame = _frame_with_exercise_context(frame, exercise)
         status_text = _phase_status_for_frame(frame, threshold, fallback_refs, exercise) or _frame_status(frame)
+        status_text = _display_status_for_frame(frame, status_text, exercise)
         status_field = "unknown" if status_text == "UNKNOWN" else "pass" if status_text == "PASS" else "near" if status_text == "NEAR" else "fail" if status_text == "FAIL" else ""
         if not status_field:
             continue
@@ -6417,9 +6570,28 @@ def _frame_records_from_csv(path: Path | None) -> list[dict[str, Any]]:
     return output
 
 
+def _artifact_mtime_ns(path: Path | None) -> int:
+    if not path or not path.is_file():
+        return 0
+    try:
+        return int(path.stat().st_mtime_ns)
+    except OSError:
+        return 0
+
+
+def _prefer_csv_frame_records(frame_path: Path | None, csv_path: Path | None) -> bool:
+    csv_mtime = _artifact_mtime_ns(csv_path)
+    if not csv_mtime:
+        return False
+    frame_mtime = _artifact_mtime_ns(frame_path)
+    return not frame_mtime or csv_mtime > frame_mtime
+
+
 def _merge_frame_records_with_csv_pose(
     frame_records: list[dict[str, Any]],
     csv_records: list[dict[str, Any]],
+    *,
+    prefer_csv: bool = False,
 ) -> list[dict[str, Any]]:
     if not frame_records:
         return csv_records
@@ -6442,12 +6614,20 @@ def _merge_frame_records_with_csv_pose(
                 "frame_idx",
                 "frame_number",
                 "timestamp_seconds",
+                "exercise",
+                "exercise_key",
                 "goc_vai",
                 "goc_khuyu",
                 "goc_vai_trai",
                 "goc_khuyu_trai",
                 "goc_vai_phai",
                 "goc_khuyu_phai",
+                "shoulder_angle",
+                "elbow_angle",
+                "left_shoulder_angle",
+                "left_elbow_angle",
+                "right_shoulder_angle",
+                "right_elbow_angle",
                 "dung",
                 "gan_dung",
                 "vai_dung",
@@ -6456,6 +6636,14 @@ def _merge_frame_records_with_csv_pose(
                 "khuyu_chuan",
                 "shoulder_ref",
                 "elbow_ref",
+                "shoulder_ref_left",
+                "elbow_ref_left",
+                "shoulder_ref_right",
+                "elbow_ref_right",
+                "vai_chuan_trai",
+                "khuyu_chuan_trai",
+                "vai_chuan_phai",
+                "khuyu_chuan_phai",
                 "ml_label",
                 "ml_label_text",
                 "dung_ml",
@@ -6465,12 +6653,24 @@ def _merge_frame_records_with_csv_pose(
                 "ml_prob_sai",
                 "ml_prob_gan_dung",
                 "ml_prob_dung",
+                "ml_prob_fail",
+                "ml_prob_near",
+                "ml_prob_pass",
                 "filtered_stranger",
                 "stranger_reason",
                 "status",
                 "phase_status",
+                "phase",
+                "phase_label",
+                "threshold",
+                "phase_threshold",
+                "ref_source",
+                "youtube_ref_exercise_id",
+                "motion_subtype",
+                "motion_type",
+                "youtube_ref_time",
             }:
-                if value not in (None, "") and next_record.get(key) in (None, ""):
+                if value not in (None, "") and (prefer_csv or next_record.get(key) in (None, "")):
                     next_record[key] = value
         merged.append(next_record)
     return merged
@@ -6765,9 +6965,12 @@ def _read_frame_payload(
             first_key = min(zip_lookup)
             token = _register_zip_media(frame_zip, zip_lookup[first_key], frame_media_meta)
             source = "artifact_zip_nearest"
+        display_frame = frame
+        if source == "video_pose_preview" and video_paths:
+            display_frame = _video_pose_frame_data_for_payload(video_paths, frame_index, frame, exercise)
         output.append(
             _enrich_frame_payload(
-                frame,
+                display_frame,
                 absolute_idx=absolute_idx,
                 total=total,
                 image_url=f"/media/{token}" if token else "",
@@ -7120,7 +7323,7 @@ def _histogram(values: list[float], *, bins: int = 18) -> list[dict[str, float]]
 
 
 def _status_for_row(row: dict[str, Any], exercise: Any = None) -> str:
-    if _to_bool(row.get("filtered_stranger")):
+    if _frame_should_be_unknown(row, exercise):
         return "UNKNOWN"
     row = _fill_missing_reference_values(_frame_with_exercise_context(row, exercise), exercise or row.get("exercise"))
     threshold = _to_float(row.get("threshold") or row.get("phase_threshold"))
@@ -7130,10 +7333,10 @@ def _status_for_row(row: dict[str, Any], exercise: Any = None) -> str:
         threshold = 30 if _frame_exercise_key(row, exercise) == "pulley" else PHASE_THRESHOLDS.get(phase_key, 45)
     recomputed = _phase_status_for_frame(row, threshold, fallback_refs, exercise)
     if recomputed:
-        return recomputed
+        return _display_status_for_frame(row, recomputed, exercise)
     stored_status = _stored_frame_status(row)
     if stored_status:
-        return stored_status
+        return _display_status_for_frame(row, stored_status, exercise)
     if _to_bool(row.get("dung")):
         return "PASS"
     if _to_bool(row.get("gan_dung")):
@@ -7149,7 +7352,7 @@ def _status_for_row(row: dict[str, Any], exercise: Any = None) -> str:
 
 
 def _status_for_contextual_row(row: dict[str, Any], exercise: Any = None) -> str:
-    if _to_bool(row.get("filtered_stranger")):
+    if _frame_should_be_unknown(row, exercise):
         return "UNKNOWN"
     threshold = _to_float(row.get("threshold") or row.get("phase_threshold"))
     if threshold is None:
@@ -7157,8 +7360,8 @@ def _status_for_contextual_row(row: dict[str, Any], exercise: Any = None) -> str
         threshold = 30 if _frame_exercise_key(row, exercise) == "pulley" else PHASE_THRESHOLDS.get(phase_key, 45)
     status_text = _phase_status_for_frame(row, threshold, _default_refs_for_exercise(exercise or row.get("exercise") or row.get("exercise_key")), exercise)
     if status_text:
-        return status_text
-    return _stored_frame_status(row) or _frame_status(row) or "FAIL"
+        return _display_status_for_frame(row, status_text, exercise)
+    return _display_status_for_frame(row, _stored_frame_status(row) or _frame_status(row) or "FAIL", exercise)
 
 
 def _boxplot(rows: list[dict[str, Any]], key: str) -> list[dict[str, Any]]:
@@ -7467,6 +7670,7 @@ def _phase_research_metrics(rows: list[dict[str, Any]], exercise: Any) -> list[d
         for raw_row in subset:
             row = _frame_with_exercise_context(dict(raw_row), exercise)
             status_text = _phase_status_for_frame(row, threshold, fallback_refs, exercise)
+            status_text = _display_status_for_frame(row, status_text, exercise)
             counts[status_text if status_text in counts else "FAIL"] += 1
             shoulder, elbow = _frame_angle_values(row, exercise)
             if shoulder is not None:
@@ -7601,6 +7805,36 @@ def _chart_payload_from_metrics(video: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _chart_payload_from_artifact_metrics(path: Path | None, frame_path: Path | None, video: dict[str, Any]) -> dict[str, Any]:
+    frame_rows = _read_frame_records(frame_path)
+    csv_rows = _frame_records_from_csv(path) if path else []
+    rows = frame_rows or csv_rows
+    if frame_rows and csv_rows:
+        rows = _merge_frame_records_with_csv_pose(frame_rows, csv_rows, prefer_csv=_prefer_csv_frame_records(frame_path, path))
+    rows = [_frame_with_exercise_context(row, video.get("exercise")) for row in rows if isinstance(row, dict)]
+    if _exercise_key(video.get("exercise")) in {"codman", "pulley"}:
+        rows = [_fill_missing_reference_values(row, video.get("exercise")) for row in rows]
+    if not rows:
+        return _chart_payload_from_metrics(video)
+    metrics = _chart_metrics(video, None, rows)
+    payload = _chart_payload_from_metrics(video)
+    payload.update(
+        {
+            "pie": [
+                {"label": "PASS", "value": metrics["pass_frames"]},
+                {"label": "NEAR", "value": metrics["near_frames"]},
+                {"label": "FAIL", "value": metrics["fail_frames"]},
+                {"label": "UNKNOWN", "value": metrics["unknown_frames"]},
+            ],
+            "phase_pies": _phase_distribution(rows, video.get("exercise")),
+            "research_metrics": metrics,
+            "source": "frame_artifact_metrics",
+            "row_count": len(rows),
+        }
+    )
+    return payload
+
+
 def _read_chart_payload(path: Path | None, video: dict[str, Any], latest_evaluation: dict[str, Any] | None = None) -> dict[str, Any]:
     cache_key: tuple[str, int, int, str] | None = None
     frame_path = _ensure_hf_dataset_file(video.get("all_frames_data_path"), min_size=128) or _resolve_existing_path(video.get("all_frames_data_path"))
@@ -7614,7 +7848,7 @@ def _read_chart_payload(path: Path | None, video: dict[str, Any], latest_evaluat
     csv_rows = _read_analysis_rows(path)
     rows = frame_rows or csv_rows
     if frame_rows and csv_rows:
-        rows = _merge_frame_records_with_csv_pose(frame_rows, csv_rows)
+        rows = _merge_frame_records_with_csv_pose(frame_rows, csv_rows, prefer_csv=_prefer_csv_frame_records(frame_path, path))
     rows = [_frame_with_exercise_context(row, video.get("exercise")) for row in rows]
     sampled_rows = _sample_rows(rows)
     if _exercise_key(video.get("exercise")) in {"codman", "pulley"}:
@@ -8127,7 +8361,7 @@ def _video_detail(
         raw_video_path = _resolve_readable_video_sibling(raw_video_path)
     pose_playback_path = _pose_playback_video_path(processed_video_path or _resolve_existing_path(video.get("processed_path")))
     if use_original_pulley_artifacts:
-        video_path = raw_video_path if _video_frame_count(raw_video_path) > 0 else (processed_video_path or audio_video_path)
+        video_path = audio_video_path or processed_video_path or pose_playback_path or raw_video_path
     else:
         video_path = audio_video_path or (processed_video_path if _audio_codec(processed_video_path) else (pose_playback_path or processed_video_path or raw_video_path))
     playback_video_path, playback_status = _resolve_playback_video_path(video_path, raw_video_path)
@@ -8164,9 +8398,10 @@ def _video_detail(
     sample_records = frame_records[: min(24, len(frame_records))]
     frame_records_have_pose = bool(sample_records) and any(_has_complete_pose(frame) for frame in sample_records)
     frame_records_have_ml = bool(sample_records) and any(_frame_ml_label(frame) for frame in sample_records)
-    csv_frame_records = _frame_records_from_csv(df_path) if df_path and (not frame_records or not (frame_records_have_pose and frame_records_have_ml)) else []
+    prefer_csv = _prefer_csv_frame_records(frame_path, df_path)
+    csv_frame_records = _frame_records_from_csv(df_path) if df_path and (prefer_csv or not frame_records or not (frame_records_have_pose and frame_records_have_ml)) else []
     if frame_records and csv_frame_records:
-        frame_records = _merge_frame_records_with_csv_pose(frame_records, csv_frame_records)
+        frame_records = _merge_frame_records_with_csv_pose(frame_records, csv_frame_records, prefer_csv=prefer_csv)
     elif csv_frame_records:
         frame_records = csv_frame_records
     media_token = _register_media(playback_video_path)
@@ -8228,7 +8463,7 @@ def _video_detail(
             fallback_refs=fallback_refs,
             phase_bounds=phase_bounds,
         )
-    chart = _read_chart_payload(df_path, video, latest_evaluation) if include_chart else _chart_payload_from_metrics(video)
+    chart = _read_chart_payload(df_path, video, latest_evaluation) if include_chart else _chart_payload_from_artifact_metrics(df_path, frame_path, video)
     return {
         "id": idx,
         "video": video,
@@ -8673,9 +8908,6 @@ async def start_analysis_job(
     if user["role_key"] not in {"admin", "researcher", "doctor_ktv"}:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Chỉ admin/NCV được chạy phân tích AI.")
     video, video_index = _video_for_identifier(identifier, user)
-    restored_job = _restore_saved_artifacts_job(video, video_index, user, payload, "start")
-    if restored_job:
-        return {"started": True, "reason": "restored_saved_artifacts", "job": restored_job}
     job = _start_real_analysis_job(video, video_index, user, payload, "start")
     return {"started": True, "reason": "running_mediapipe", "job": job}
 
@@ -8834,6 +9066,8 @@ async def media(token: str):
     if not path.is_file():
         _forget_media_token(token)
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Media không tồn tại.")
+    frame_cache_headers = {"Cache-Control": "no-cache, max-age=0, must-revalidate"}
+    immutable_cache_headers = {"Cache-Control": "public, max-age=604800, immutable"}
     if meta.get("kind") in {"video_frame", "video_pose_frame"}:
         try:
             import cv2  # type: ignore[import-not-found]
@@ -8867,9 +9101,8 @@ async def media(token: str):
                 render_overlay = _to_bool(meta.get("render_overlay", True))
                 if render_overlay:
                     if exercise_key in {"codman", "pulley"}:
-                        # These media previews are drawn on a freshly-read video frame.
-                        # Do not reuse landmarks from old/rotated artifacts; stale 33/33
-                        # points can draw a sideways skeleton over an upright patient.
+                        # Draw against the freshly-read video frame so the skeleton stays
+                        # attached to the visible patient; stored landmarks are fallback only.
                         frame_data = _redetect_or_keep_oriented_pose_for_preview_frame(
                             frame,
                             frame_data,
@@ -8893,7 +9126,7 @@ async def media(token: str):
                 raise RuntimeError("frame encode failed")
         except Exception:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Không tạo được frame preview từ video.")
-        return Response(content=encoded.tobytes(), media_type="image/jpeg", headers={"Cache-Control": "public, max-age=604800, immutable"})
+        return Response(content=encoded.tobytes(), media_type="image/jpeg", headers=frame_cache_headers)
     member = _clean_text(meta.get("member"))
     if member:
         try:
@@ -8911,18 +9144,20 @@ async def media(token: str):
         if meta.get("kind") == "artifact_frame" and media_type.startswith("image/") and _to_bool(meta.get("patch_badges")):
             patched, patched_type = _patch_artifact_frame_badges(content, meta)
             if patched_type:
-                return Response(content=patched, media_type=patched_type, headers={"Cache-Control": "public, max-age=604800, immutable"})
-        return Response(content=content, media_type=media_type, headers={"Cache-Control": "public, max-age=604800, immutable"})
+                return Response(content=patched, media_type=patched_type, headers=frame_cache_headers)
+        media_headers = frame_cache_headers if meta.get("kind") == "artifact_frame" and media_type.startswith("image/") else immutable_cache_headers
+        return Response(content=content, media_type=media_type, headers=media_headers)
     download_name = _clean_text(meta.get("download_name"))
     if meta.get("kind") == "artifact_frame" and path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"} and _to_bool(meta.get("patch_badges")):
         try:
             content = path.read_bytes()
             patched, patched_type = _patch_artifact_frame_badges(content, meta)
             if patched_type:
-                return Response(content=patched, media_type=patched_type, headers={"Cache-Control": "public, max-age=604800, immutable"})
+                return Response(content=patched, media_type=patched_type, headers=frame_cache_headers)
         except Exception:
             pass
-    return FileResponse(path, filename=download_name or None, headers={"Cache-Control": "public, max-age=604800, immutable"})
+    file_headers = frame_cache_headers if meta.get("kind") == "artifact_frame" and path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"} else immutable_cache_headers
+    return FileResponse(path, filename=download_name or None, headers=file_headers)
 
 
 @app.get("/admin/users")

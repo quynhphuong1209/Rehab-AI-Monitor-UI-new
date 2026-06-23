@@ -24,6 +24,7 @@ from backend.main import (
     _read_chart_payload,
     _frame_should_be_unknown,
     _has_complete_pose,
+    _local_artifact_match_score,
     _mark_filtered_stranger,
     _scope_records,
     _merge_video_ai_evaluation_summaries,
@@ -177,6 +178,7 @@ def test_hydrate_video_artifacts_uses_debug_backup_when_database_record_is_missi
         "full_name": "Patient A",
         "video_name": "Patient A - Codman.mp4",
         "exercise": "Codman",
+        "video_path": "patient_uploads/patient_a_202606240001.mp4",
         "processed_path": str(processed),
         "df_path": str(csv_path),
         "all_frames_data_path": str(frames_path),
@@ -191,6 +193,7 @@ def test_hydrate_video_artifacts_uses_debug_backup_when_database_record_is_missi
             "full_name": "Patient A",
             "video_name": "Patient A - Codman.mp4",
             "exercise": "Codman",
+            "video_path": "patient_uploads/patient_a_202606240001.mp4",
             "accuracy": None,
         }
     )
@@ -220,6 +223,7 @@ def test_hydrate_video_artifacts_uses_richer_local_video_record_for_same_slot(
         "full_name": "Hoàng Hạnh Nguyên",
         "video_name": "160754_Hoàng Hạnh Nguyên - Codman.mp4",
         "exercise": "Bài tập con lắc Codman",
+        "video_path": "patient_uploads/hoang_hanh_nguyen_202606240002.mp4",
         "time": "16:47 - 14/06/2026",
         "processed_path": str(processed),
         "df_path": str(csv_path),
@@ -237,6 +241,7 @@ def test_hydrate_video_artifacts_uses_richer_local_video_record_for_same_slot(
             "full_name": "Hoàng Hạnh Nguyên",
             "video_name": "Hoàng Hạnh Nguyên - Codman.mp4",
             "exercise": "Bài tập con lắc Codman",
+            "video_path": "patient_uploads/hoang_hanh_nguyen_202606240002.mp4",
             "accuracy": 99.5,
             "processed_path": None,
             "df_path": None,
@@ -603,7 +608,7 @@ def test_cao_thi_thuong_pulley_prefers_original_artifact_frames(tmp_path) -> Non
     assert frames[0]["source"] != "video_pose_preview"
 
 
-def test_video_pose_preview_payload_is_lazy(tmp_path, monkeypatch) -> None:
+def test_video_pose_preview_payload_uses_preview_pose_data(tmp_path, monkeypatch) -> None:
     frame_path = tmp_path / "frames.json"
     video_path = tmp_path / "patient_upload.mp4"
     video_path.write_bytes(b"video")
@@ -626,10 +631,15 @@ def test_video_pose_preview_payload_is_lazy(tmp_path, monkeypatch) -> None:
 
     monkeypatch.setattr(backend_main, "_video_frame_count", lambda path: 10)
 
-    def fail_eager_render(*args, **kwargs):
-        raise AssertionError("payload should only register video pose media tokens")
+    def fake_preview_pose_data(paths, frame_index, frame, exercise):
+        updated = dict(frame)
+        updated["goc_vai_trai"] = 101
+        updated["goc_khuyu_trai"] = 121
+        updated["goc_vai_phai"] = 103
+        updated["goc_khuyu_phai"] = 123
+        return updated
 
-    monkeypatch.setattr(backend_main, "_video_pose_frame_data_for_payload", fail_eager_render)
+    monkeypatch.setattr(backend_main, "_video_pose_frame_data_for_payload", fake_preview_pose_data)
 
     frames, total = _read_frame_payload(
         frame_path,
@@ -643,6 +653,10 @@ def test_video_pose_preview_payload_is_lazy(tmp_path, monkeypatch) -> None:
     assert total == 1
     assert frames[0]["source"] == "video_pose_preview"
     assert frames[0]["image_url"].startswith("/media/")
+    assert frames[0]["left_shoulder"] == 101
+    assert frames[0]["left_elbow"] == 121
+    assert frames[0]["right_shoulder"] == 103
+    assert frames[0]["right_elbow"] == 123
 
 
 def test_unreadable_ftmp_video_falls_back_to_readable_f_sibling(tmp_path, monkeypatch) -> None:
@@ -764,7 +778,7 @@ def test_resolve_playback_video_path_prefers_h264_sidecar(monkeypatch, tmp_path)
     assert status == "processed_h264"
 
 
-def test_codman_pulley_require_complete_33_pose_for_scoring() -> None:
+def test_unknown_requires_blocking_person_overlap() -> None:
     complete = complete_pose_record(goc_vai=90, goc_khuyu=170)
     for idx in range(33):
         complete[f"pt{idx}_x"] = 0.5
@@ -777,11 +791,16 @@ def test_codman_pulley_require_complete_33_pose_for_scoring() -> None:
 
     assert _has_complete_pose(complete)
     assert not _frame_should_be_unknown(complete, "Codman")
+    assert not _frame_should_be_unknown(partial, "Codman")
+    assert not _frame_should_be_unknown(partial, "Pulley Exercise")
+
+    partial["filtered_stranger"] = True
+    partial["stranger_reason"] = "multiple_people"
     assert _frame_should_be_unknown(partial, "Codman")
     assert _frame_should_be_unknown(partial, "Bài tập với gậy")
 
 
-def test_scored_pose_exercise_without_33_points_is_unknown_even_with_angles(tmp_path) -> None:
+def test_scored_pose_exercise_without_33_points_keeps_label_without_overlap(tmp_path) -> None:
     frame_path = tmp_path / "frames.json"
     frame_path.write_text(
         json.dumps(
@@ -806,12 +825,12 @@ def test_scored_pose_exercise_without_33_points_is_unknown_even_with_angles(tmp_
     frames, total = _read_frame_payload(frame_path, limit=10, exercise="Codman")
 
     assert total == 1
-    assert frames[0]["phase_status"] == "UNKNOWN"
-    assert frames[0]["ml_label"] == "UNKNOWN"
-    assert frames[0]["angle"] is None
+    assert frames[0]["phase_status"] == "PASS"
+    assert frames[0]["ml_label"] == "Dung"
+    assert frames[0]["angle"] == 90
 
 
-def test_pose_exercise_missing_required_angles_is_unknown_even_with_old_status() -> None:
+def test_pose_exercise_missing_required_angles_needs_overlap_for_unknown() -> None:
     frame = complete_pose_record(status="FAIL", phase_status="FAIL")
     for key in (
         "goc_vai",
@@ -828,6 +847,9 @@ def test_pose_exercise_missing_required_angles_is_unknown_even_with_old_status()
         "right_elbow_angle",
     ):
         frame.pop(key, None)
+    assert _frame_should_be_unknown(frame, "Pulley Exercise") is False
+    frame["filtered_stranger"] = True
+    frame["stranger_reason"] = "multiple_people"
 
     assert _frame_should_be_unknown(frame, "Bài tập với gậy (Pulley Exercise)") is True
     assert _phase_status_for_frame(frame, 30, (90, 160), "Bài tập với gậy (Pulley Exercise)") == "UNKNOWN"
@@ -862,3 +884,33 @@ def test_multiple_people_unknown_stays_locked() -> None:
 
     assert record["status"] == "UNKNOWN"
     assert _frame_should_be_unknown(record, "Codman")
+
+
+def test_local_artifact_match_requires_video_identity(tmp_path) -> None:
+    artifact_video = tmp_path / "old_processed.mp4"
+    artifact_csv = tmp_path / "old_data.csv"
+    artifact_json = tmp_path / "old_frames.json"
+    artifact_zip = tmp_path / "old_frames.zip"
+    for path in (artifact_video, artifact_csv, artifact_json, artifact_zip):
+        path.write_text("x", encoding="utf-8")
+
+    current = {
+        "full_name": "Nguyen Thi Nga",
+        "video_name": "Nguyen Thi Nga - Codman.mp4",
+        "exercise": "Codman",
+        "video_path": "patient_uploads/new_upload_202606240001.mp4",
+    }
+    stale_same_slot = {
+        "full_name": "Nguyen Thi Nga",
+        "video_name": "162458_Nguyen Thi Nga - Codman.mp4",
+        "exercise": "Codman",
+        "video_path": "patient_uploads/old_upload_202606230001.mp4",
+        "processed_path": str(artifact_video),
+        "df_path": str(artifact_csv),
+        "all_frames_data_path": str(artifact_json),
+        "frames_zip": str(artifact_zip),
+    }
+
+    assert _local_artifact_match_score(current, stale_same_slot)[0] == 0
+    same_identity = {**stale_same_slot, "video_path": current["video_path"]}
+    assert _local_artifact_match_score(current, same_identity)[0] > 0

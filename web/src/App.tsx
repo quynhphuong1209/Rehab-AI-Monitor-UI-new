@@ -207,6 +207,40 @@ function compactText(value: unknown, max = 110) {
   return text.length > max ? `${text.slice(0, max)}...` : text;
 }
 
+function objectMap(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function rawCacheText(value: unknown) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function detailArtifactVersion(video: Record<string, unknown>) {
+  const metrics = objectMap(video.metrics);
+  const paths = objectMap(video.paths);
+  return [
+    video.artifact_updated_at,
+    video.latest_bundle_updated_at,
+    video.updated_at,
+    video.frame_total,
+    video.processed_path,
+    video.df_path,
+    video.all_frames_data_path,
+    video.frames_zip,
+    metrics.metrics_refreshed_at,
+    metrics.tong_frame_da_cham,
+    metrics.frame_dung,
+    metrics.frame_gan_dung,
+    metrics.frame_sai,
+    metrics.frame_khong_nhan_dang,
+    paths.processed_path,
+    paths.df_path,
+    paths.all_frames_data_path,
+  ].map(rawCacheText).join("|");
+}
+
 function isActiveJobStatus(status: unknown) {
   return ["queued", "processing", "ready_for_ai_worker"].includes(String(status || "").toLowerCase());
 }
@@ -2680,6 +2714,8 @@ function VideoResultWorkspace({
   const detailCache = useRef(new Map<string, VideoDetailPayload>());
   const effectiveFrameLimit = resultSubtab === "media" ? frameLimit : 1;
   const includeChart = resultSubtab === "charts";
+  const selectedVideo = videos[Math.min(selectedId, Math.max(0, videos.length - 1))] || {};
+  const selectedArtifactVersion = detailArtifactVersion(selectedVideo);
 
   useEffect(() => {
     if (!videos.length) {
@@ -2689,7 +2725,7 @@ function VideoResultWorkspace({
     const nextId = Math.min(selectedId, videos.length - 1);
     const selectedVideo = videos[nextId] || {};
     const detailId = selectedVideo._detail_id ?? nextId;
-    const cacheKey = `${detailId}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`;
+    const cacheKey = `${detailId}:${detailArtifactVersion(selectedVideo)}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`;
     const cached = detailCache.current.get(cacheKey);
     if (cached) {
       setDetail(cached);
@@ -2712,14 +2748,13 @@ function VideoResultWorkspace({
         setMessage(error instanceof ApiError ? error.message : "Không thể tải chi tiết video.");
       })
       .finally(() => setLoading(false));
-  }, [selectedId, token, videos.length, frameOffset, framePhase, frameStatus, effectiveFrameLimit, includeChart]);
+  }, [selectedId, token, videos.length, selectedArtifactVersion, frameOffset, framePhase, frameStatus, effectiveFrameLimit, includeChart]);
 
   useEffect(() => {
     setFrameOffset(0);
   }, [framePhase, frameStatus]);
 
   const latest = detail?.latest_evaluation;
-  const selectedVideo = videos[Math.min(selectedId, Math.max(0, videos.length - 1))] || {};
   const analysisControls = controls;
   const reloadDetail = () => {
     const detailId = selectedVideo._detail_id ?? selectedId;
@@ -2728,8 +2763,9 @@ function VideoResultWorkspace({
     api
       .videoDetail(token, String(detailId), frameOffset, effectiveFrameLimit, framePhase, frameStatus, includeChart)
       .then((data) => {
+        const version = detailArtifactVersion(data.video || selectedVideo);
         detailCache.current.clear();
-        detailCache.current.set(`${detailId}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`, data);
+        detailCache.current.set(`${detailId}:${version}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`, data);
         setDetail(data);
       })
       .catch((error) => setMessage(error instanceof ApiError ? error.message : "Không thể tải chi tiết video."))
@@ -4280,6 +4316,7 @@ function DoctorEvaluationWorkspace({
   const [selected, setSelected] = useState(0);
   const selectedVideo = videos[Math.min(selected, Math.max(0, videos.length - 1))] || {};
   const identifier = String(selectedVideo._detail_id ?? selected);
+  const selectedArtifactVersion = detailArtifactVersion(selectedVideo);
   const [detail, setDetail] = useState<VideoDetailPayload | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [frameOffset, setFrameOffset] = useState(0);
@@ -4333,7 +4370,7 @@ function DoctorEvaluationWorkspace({
       setDetail(null);
       return;
     }
-    const cacheKey = `${identifier}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`;
+    const cacheKey = `${identifier}:${selectedArtifactVersion}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`;
     const cached = detailCache.current.get(cacheKey);
     if (cached) {
       setDetail(cached);
@@ -4349,7 +4386,7 @@ function DoctorEvaluationWorkspace({
       })
       .catch(() => setDetail(null))
       .finally(() => setLoadingDetail(false));
-  }, [identifier, token, videos.length, frameOffset, framePhase, frameStatus, effectiveFrameLimit, includeChart]);
+  }, [identifier, token, videos.length, selectedArtifactVersion, frameOffset, framePhase, frameStatus, effectiveFrameLimit, includeChart]);
 
   useEffect(() => {
     setFrameOffset(0);
@@ -4368,8 +4405,9 @@ function DoctorEvaluationWorkspace({
     api
       .videoDetail(token, identifier, frameOffset, effectiveFrameLimit, framePhase, frameStatus, includeChart)
       .then((data) => {
+        const version = detailArtifactVersion(data.video || selectedVideo);
         detailCache.current.clear();
-        detailCache.current.set(`${identifier}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`, data);
+        detailCache.current.set(`${identifier}:${version}:${frameOffset}:${effectiveFrameLimit}:${framePhase}:${frameStatus}:${includeChart}`, data);
         setDetail(data);
       })
       .catch(() => setDetail(null))
