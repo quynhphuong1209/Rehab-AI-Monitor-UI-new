@@ -1,15 +1,3 @@
----
-title: Rehab AI Monitor 2026
-emoji: 🏥
-colorFrom: blue
-colorTo: green
-sdk: streamlit
-sdk_version: 1.57.0
-python_version: "3.10"
-app_file: app.py
-pinned: false
----
-
 <!-- LOCAL_WEB_SNAPSHOT_START -->
 
 ## Cập nhật local web mới nhất (24/06/2026)
@@ -89,6 +77,18 @@ npm run dev -- --host 127.0.0.1 --port 5174
 
 Mở web tại `http://127.0.0.1:5174`. API docs ở `http://127.0.0.1:8001/docs`.
 
+### URL frontend đã deploy
+
+Frontend React đã được đẩy lên Cloudflare Pages với deployment ID `18f0b817-db9e-4be3-b4d3-896b85201fb5`.
+
+| Môi trường | URL mở web |
+| --- | --- |
+| Cloudflare Pages deployment | `https://18f0b817.rehab-ai-monitor.pages.dev/` |
+| Domain chính | `https://rehab-ai-monitor.com/` |
+| Domain www | `https://www.rehab-ai-monitor.com/` |
+
+Backend production dùng subdomain API riêng. Tạm ghi theo cấu hình chuẩn của dự án là `https://api.rehab-ai-monitor.com`; nếu backend thực tế khác thì chỉ cần đổi `API_DOMAIN` trong `deploy/.env.production` và `VITE_API_BASE_URL` trên Cloudflare Pages cho khớp đúng URL API đó.
+
 ### Vận hành bằng Docker sau tái cấu trúc
 
 ```powershell
@@ -102,6 +102,8 @@ Docker Compose mount trực tiếp `database/`, `patient_uploads/`, `processed_r
 ### Deploy production đề xuất
 
 Hướng dẫn đẩy server theo mô hình **Cloudflare Pages + VPS Docker/Caddy + dữ liệu local giữ nguyên bước đầu** nằm ở [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md). Mô hình này đưa frontend lên Cloudflare Pages, backend FastAPI lên VPS, còn R2/Postgres để migrate sau khi server đã chạy ổn.
+
+Khi deploy production, frontend mở bằng 3 URL hiện tại: `https://18f0b817.rehab-ai-monitor.pages.dev/`, `https://rehab-ai-monitor.com/`, `https://www.rehab-ai-monitor.com/`. Backend API dự kiến chạy ở `https://api.rehab-ai-monitor.com` qua Caddy reverse proxy tới FastAPI port `8001`.
 
 <!-- LOCAL_WEB_SNAPSHOT_END -->
 
