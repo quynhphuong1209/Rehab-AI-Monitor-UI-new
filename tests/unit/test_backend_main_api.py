@@ -602,7 +602,7 @@ def test_cao_thi_thuong_pulley_prefers_original_artifact_frames(tmp_path) -> Non
         allow_video_pose_frames=prefer,
     )
 
-    assert prefer is False
+    assert prefer is True
     assert total == 1
     assert frames[0]["source"] == "artifact_zip"
     assert frames[0]["source"] != "video_pose_preview"
@@ -791,8 +791,8 @@ def test_unknown_requires_blocking_person_overlap() -> None:
 
     assert _has_complete_pose(complete)
     assert not _frame_should_be_unknown(complete, "Codman")
-    assert not _frame_should_be_unknown(partial, "Codman")
-    assert not _frame_should_be_unknown(partial, "Pulley Exercise")
+    assert _frame_should_be_unknown(partial, "Codman")
+    assert _frame_should_be_unknown(partial, "Pulley Exercise")
 
     partial["filtered_stranger"] = True
     partial["stranger_reason"] = "multiple_people"
@@ -825,9 +825,9 @@ def test_scored_pose_exercise_without_33_points_keeps_label_without_overlap(tmp_
     frames, total = _read_frame_payload(frame_path, limit=10, exercise="Codman")
 
     assert total == 1
-    assert frames[0]["phase_status"] == "PASS"
-    assert frames[0]["ml_label"] == "Dung"
-    assert frames[0]["angle"] == 90
+    assert frames[0]["phase_status"] == "UNKNOWN"
+    assert frames[0]["ml_label"] == "UNKNOWN"
+    assert frames[0]["angle"] is None
 
 
 def test_pose_exercise_missing_required_angles_needs_overlap_for_unknown() -> None:
@@ -847,7 +847,7 @@ def test_pose_exercise_missing_required_angles_needs_overlap_for_unknown() -> No
         "right_elbow_angle",
     ):
         frame.pop(key, None)
-    assert _frame_should_be_unknown(frame, "Pulley Exercise") is False
+    assert _frame_should_be_unknown(frame, "Pulley Exercise") is True
     frame["filtered_stranger"] = True
     frame["stranger_reason"] = "multiple_people"
 

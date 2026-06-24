@@ -74,6 +74,9 @@ ROOT_METRIC_KEYS = [
     "tb_khuyu_chuan",
     "ref_source",
     "exercise_key",
+    "phase_accuracy_g1",
+    "phase_accuracy_g2",
+    "phase_accuracy_g3",
     "thoi_gian",
     "tong_frame",
     "metrics_refreshed_at",
@@ -321,6 +324,9 @@ def _has_blocking_person_overlap(frame: dict[str, Any], exercise: Any) -> bool:
 
 
 def _frame_should_be_unknown(frame: dict[str, Any], exercise: Any) -> bool:
+    exercise_key = _exercise_key(exercise)
+    if exercise_key in {"codman", "pulley"} and not _has_required_pose_measurements(frame, exercise_key):
+        return True
     if _to_bool(frame.get("filtered_stranger")) and _has_blocking_person_overlap(frame, exercise):
         return not _has_required_pose_measurements(frame, exercise)
     status_text = _clean_text(frame.get("status") or frame.get("phase_status")).upper()
@@ -405,6 +411,23 @@ def _analysis_metrics(records: list[dict[str, Any]], exercise: Any) -> dict[str,
     precision = pass_count / max(1, pass_count + fail_count) if valid else 0.0
     recall = pass_count / max(1, valid) if valid else 0.0
     f1 = (2 * precision * recall / max(0.0001, precision + recall)) if valid else 0.0
+    phase_counts = {key: {"PASS": 0, "NEAR": 0, "FAIL": 0} for key in ("g1", "g2", "g3")}
+    if _exercise_key(exercise) == "codman":
+        for record in records:
+            if _frame_should_be_unknown(record, exercise) or _status(record) == "UNKNOWN":
+                continue
+            phase_key = _clean_text(record.get("phase"))
+            if phase_key not in phase_counts:
+                continue
+            status = _status(record)
+            if status in phase_counts[phase_key]:
+                phase_counts[phase_key][status] += 1
+
+    def phase_accuracy(key: str) -> float:
+        counts = phase_counts[key]
+        denominator = counts["PASS"] + counts["NEAR"] + counts["FAIL"]
+        return round((counts["PASS"] / denominator * 100.0) if denominator else 0.0, 2)
+
     return {
         "do_chinh_xac": round(accuracy, 2),
         "ty_le_tong_the": round(accuracy, 2),
@@ -431,6 +454,9 @@ def _analysis_metrics(records: list[dict[str, Any]], exercise: Any) -> dict[str,
         "tb_khuyu_chuan": round(sum(elbow_refs) / len(elbow_refs), 3) if elbow_refs else 0,
         "ref_source": "youtube_mediapipe" if _exercise_key(exercise) in {"codman", "pulley"} else "default",
         "exercise_key": _exercise_key(exercise),
+        "phase_accuracy_g1": phase_accuracy("g1"),
+        "phase_accuracy_g2": phase_accuracy("g2"),
+        "phase_accuracy_g3": phase_accuracy("g3"),
         "thoi_gian": 0.0,
         "tong_frame": len(records),
     }
@@ -552,6 +578,18 @@ def _write_csv(path: Path, records: list[dict[str, Any]]) -> None:
             writer.writerow({key: record.get(key, "") for key in fieldnames})
 
 
+def _write_records_json(path: Path, records: list[dict[str, Any]]) -> None:
+    tmp_path = path.with_name(f"{path.name}.tmp")
+    with tmp_path.open("w", encoding="utf-8") as handle:
+        handle.write("[")
+        for idx, record in enumerate(records):
+            if idx:
+                handle.write(",")
+            json.dump(record, handle, ensure_ascii=False)
+        handle.write("]")
+    tmp_path.replace(path)
+
+
 def _records_path(video: dict[str, Any]) -> Path | None:
     path = _resolve_existing_path(video.get("all_frames_data_path"))
     if path and path.is_file():
@@ -634,7 +672,7 @@ def _refresh_records(video: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[
     metrics = dict(existing_metrics)
     metrics.update(_analysis_metrics(records, exercise))
     metrics["metrics_refreshed_at"] = _now_iso()
-    records_path.write_text(json.dumps(records, ensure_ascii=False), encoding="utf-8")
+    _write_records_json(records_path, records)
     csv_path = _csv_path(video, records_path)
     if csv_path:
         _write_csv(csv_path, records)

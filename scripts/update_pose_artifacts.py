@@ -27,6 +27,7 @@ from backend.main import (  # noqa: E402
     _force_portrait_pose_frame,
     _frame_number_key,
     _frame_with_detected_pose,
+    _frame_without_pose_measurements,
     _load_data,
     _pose_landmarks,
     _redetect_or_keep_oriented_pose_for_preview_frame,
@@ -37,6 +38,7 @@ from backend.main import (  # noqa: E402
     _resolve_readable_video_sibling,
     _resolve_video_source_path,
     _save_data,
+    _to_float,
     _video_frame_count,
 )
 
@@ -99,6 +101,100 @@ def _write_records_csv(path: Path, records: list[dict]) -> None:
         writer.writerows(records)
 
 
+def _write_records_json(path: Path, records: list[dict]) -> None:
+    tmp_path = path.with_name(f"{path.name}.tmp")
+    with tmp_path.open("w", encoding="utf-8") as handle:
+        handle.write("[")
+        for idx, record in enumerate(records):
+            if idx:
+                handle.write(",")
+            json.dump(record, handle, ensure_ascii=False)
+        handle.write("]")
+    tmp_path.replace(path)
+
+
+def _sideways_pose_needs_repair(record: dict) -> bool:
+    if len(_pose_landmarks(record)) < 33:
+        return False
+    values = {
+        key: _to_float(record.get(key))
+        for key in (
+            "pt11_x",
+            "pt11_y",
+            "pt12_x",
+            "pt12_y",
+            "pt23_x",
+            "pt23_y",
+            "pt24_x",
+            "pt24_y",
+            "pt27_y",
+            "pt28_y",
+        )
+    }
+    if any(value is None for value in values.values()):
+        return False
+    shoulder_dx = abs(values["pt11_x"] - values["pt12_x"])
+    shoulder_dy = abs(values["pt11_y"] - values["pt12_y"])
+    hip_dx = abs(values["pt23_x"] - values["pt24_x"])
+    hip_dy = abs(values["pt23_y"] - values["pt24_y"])
+    torso = ((values["pt23_y"] + values["pt24_y"]) / 2) - ((values["pt11_y"] + values["pt12_y"]) / 2)
+    leg = ((values["pt27_y"] + values["pt28_y"]) / 2) - ((values["pt23_y"] + values["pt24_y"]) / 2)
+    return (
+        shoulder_dx < 0.035
+        and shoulder_dy > 0.10
+        and hip_dx < 0.025
+        and hip_dy > 0.07
+        and abs(torso) < 0.06
+        and leg < 0.08
+    )
+
+
+def _repair_sideways_pose_record(record: dict, image_shape: tuple[int, int, int], exercise: str) -> dict:
+    output = dict(record)
+    orientation = _clean_text(output.get("auto_orientation")).lower()
+    counterclockwise = "counterclockwise" in orientation
+    for idx in range(33):
+        x = _to_float(output.get(f"pt{idx}_x"))
+        y = _to_float(output.get(f"pt{idx}_y"))
+        if x is None or y is None:
+            continue
+        if counterclockwise:
+            next_x = 1.0 - y
+            next_y = x
+        else:
+            next_x = y
+            next_y = 1.0 - x
+        output[f"pt{idx}_x"] = max(0.0, min(1.0, next_x))
+        output[f"pt{idx}_y"] = max(0.0, min(1.0, next_y))
+    output["pose_repaired_sideways"] = True
+    output["pose_sideways_repair"] = "counterclockwise_inverse" if counterclockwise else "clockwise_inverse"
+    output = _recompute_pose_angles_for_frame(output, image_shape, exercise)
+    return output
+
+
+def _repair_sideways_records(records: list[dict], source: Path | None, exercise: str) -> int:
+    try:
+        import cv2  # type: ignore[import-not-found]
+
+        cap = cv2.VideoCapture(str(source)) if source else None
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0) if cap and cap.isOpened() else 0
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0) if cap and cap.isOpened() else 0
+        if cap:
+            cap.release()
+    except Exception:
+        width = height = 0
+    if width <= 0 or height <= 0:
+        width = height = 1000
+    image_shape = (height, width, 3)
+    changed = 0
+    for pos, record in enumerate(records):
+        if not isinstance(record, dict) or not _sideways_pose_needs_repair(record):
+            continue
+        records[pos] = _repair_sideways_pose_record(record, image_shape, exercise)
+        changed += 1
+    return changed
+
+
 def _video_source(video: dict) -> Path | None:
     for key in ("video_path", "raw_video_path", "processed_path", "audio_video_path"):
         path = _resolve_video_source_path(video.get(key))
@@ -138,7 +234,15 @@ def _ffmpeg_probe(path: Path) -> tuple[float, int, int, int]:
     return fps, width, height, total
 
 
-def update_video(idx: int, video: dict, *, render: bool, limit: int | None = None, force_redetect: bool = False) -> dict:
+def update_video(
+    idx: int,
+    video: dict,
+    *,
+    render: bool,
+    limit: int | None = None,
+    force_redetect: bool = False,
+    repair_sideways: bool = False,
+) -> dict:
     exercise = video.get("exercise") or video.get("video_name")
     exercise_key = _exercise_key(exercise)
     if exercise_key not in {"codman", "pulley"}:
@@ -153,6 +257,35 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
     output_video, frames_zip, csv_path = _processed_paths(video, records_path)
     changed = 0
     unknown_before = sum(1 for row in records if row.get("filtered_stranger") or _clean_text(row.get("status")).upper() == "UNKNOWN")
+
+    if repair_sideways:
+        changed = _repair_sideways_records(records, source, exercise)
+        phase_bounds = _apply_phase_thresholds_to_records(records, exercise)
+        metrics = _analysis_metrics(records, total_frames or len(records), 0.0, exercise)
+        _write_records_json(records_path, records)
+        if csv_path.is_file():
+            _write_records_csv(csv_path, records)
+            try:
+                metrics = _apply_ml_to_records(csv_path, records_path, records, metrics, exercise)
+            except Exception as exc:
+                metrics["ml_status"] = f"skip ML refresh: {exc}"
+            _write_records_csv(csv_path, records)
+        unknown_after = sum(1 for row in records if row.get("filtered_stranger") or _clean_text(row.get("status")).upper() == "UNKNOWN")
+        video["all_frames_data_path"] = _relative_repo_path(records_path)
+        video["metrics"] = metrics
+        video["accuracy"] = metrics.get("do_chinh_xac")
+        video["status"] = "Đã phân tích"
+        video["artifact_updated_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        return {
+            "idx": idx,
+            "video": video.get("video_name"),
+            "frames": len(records),
+            "changed": changed,
+            "unknown_before": unknown_before,
+            "unknown_after": unknown_after,
+            "rendered": 0,
+            "metrics": {k: metrics.get(k) for k in ("frame_dung", "frame_gan_dung", "frame_sai", "frame_khong_nhan_dang", "tong_frame_hop_le")},
+        }
 
     try:
         import cv2  # type: ignore[import-not-found]
@@ -205,7 +338,8 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
                     "exercise": row.get("exercise") or exercise,
                     "exercise_key": row.get("exercise_key") or exercise_key,
                 }
-                oriented_frame, oriented_row = _force_portrait_pose_frame(frame, row, exercise)
+                source_row = _frame_without_pose_measurements(row) if force_redetect else row
+                oriented_frame, oriented_row = _force_portrait_pose_frame(frame, source_row, exercise)
                 before = json.dumps(
                     {
                         "status": row.get("status"),
@@ -258,7 +392,7 @@ def update_video(idx: int, video: dict, *, render: bool, limit: int | None = Non
 
     phase_bounds = _apply_phase_thresholds_to_records(records, exercise)
     metrics = _analysis_metrics(records, total_frames or len(records), 0.0, exercise)
-    records_path.write_text(json.dumps(records, ensure_ascii=False), encoding="utf-8")
+    _write_records_json(records_path, records)
 
     if csv_path.is_file():
         _write_records_csv(csv_path, records)
@@ -322,6 +456,7 @@ def main() -> None:
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--force-redetect", action="store_true")
+    parser.add_argument("--repair-sideways", action="store_true")
     args = parser.parse_args()
 
     videos = _load_data("video_list")
@@ -335,7 +470,14 @@ def main() -> None:
 
     results = []
     for idx in selected:
-        result = update_video(idx, videos[idx], render=args.render, limit=args.limit, force_redetect=args.force_redetect)
+        result = update_video(
+            idx,
+            videos[idx],
+            render=args.render,
+            limit=args.limit,
+            force_redetect=args.force_redetect,
+            repair_sideways=args.repair_sideways,
+        )
         print(json.dumps(result, ensure_ascii=False), flush=True)
         results.append(result)
     _save_data("video_list", videos)

@@ -2805,6 +2805,7 @@ function VideoResultWorkspace({
   const iccMetric = metricNumber("icc");
   const selectedExerciseKey = detailExerciseKey(detail);
   const showCodmanPhaseStrip = selectedExerciseKey === "codman";
+  const codmanPhaseCards = showCodmanPhaseStrip ? chartPhaseCards(detail?.chart) : [];
   const moveFramePage = (direction: -1 | 1) => {
     setFrameOffset((current) => {
       const maxOffset = Math.max(0, frameTotal - frameLimit);
@@ -2868,12 +2869,15 @@ function VideoResultWorkspace({
                 </div>
                 <span className="role-pill">{asText(detail.video.status)}</span>
               </div>
-              {showCodmanPhaseStrip && detail.chart.phases?.length ? (
+              {codmanPhaseCards.length ? (
                 <div className="phase-strip">
-                  {detail.chart.phases.map((phase) => (
-                    <span key={phase.label}>
+                  {codmanPhaseCards.map((phase) => (
+                    <span key={phase.key || phase.label}>
                       <b>{phase.label}</b>
-                      {phase.value.toFixed(1)}%
+                      <strong>{fmtMetric(phase.accuracy, 1)}%</strong>
+                      <small>
+                        PASS {fmtInt(phase.pass)} · NEAR {fmtInt(phase.near)} · FAIL {fmtInt(phase.fail)} · UNKNOWN {fmtInt(phase.unknown)}
+                      </small>
                     </span>
                   ))}
                 </div>
@@ -3115,9 +3119,62 @@ function detailExerciseKey(detail?: VideoDetailPayload | null) {
   return exerciseKeyFromText(video.exercise || video.exercise_key || video.video_name);
 }
 
+type PhaseAccuracyCard = {
+  key: string;
+  label: string;
+  accuracy: number;
+  total: number;
+  pass: number;
+  near: number;
+  fail: number;
+  unknown: number;
+  threshold?: number | null;
+};
+
+function chartPhaseCards(chart?: VideoDetailPayload["chart"]): PhaseAccuracyCard[] {
+  const wanted = new Set(["g1", "g2", "g3"]);
+  const fromMetrics = (chart?.phase_metrics || [])
+    .filter((item) => wanted.has(String(item.key || "")))
+    .map((item) => {
+      const metrics = item.metrics || {};
+      return {
+        key: item.key,
+        label: item.label || item.key.toUpperCase(),
+        accuracy: Number(metrics.accuracy),
+        total: Number(metrics.total_frames || 0),
+        pass: Number(metrics.pass_frames || 0),
+        near: Number(metrics.near_frames || 0),
+        fail: Number(metrics.fail_frames || 0),
+        unknown: Number(metrics.unknown_frames || 0),
+        threshold: item.threshold,
+      };
+    })
+    .filter((item) => Number.isFinite(item.accuracy));
+  if (fromMetrics.length) return fromMetrics;
+  return (chart?.phase_pies || [])
+    .filter((item) => wanted.has(String(item.key || "")))
+    .map((item) => ({
+      key: item.key,
+      label: item.label || item.key.toUpperCase(),
+      accuracy: Number(item.accuracy),
+      total: Number(item.total || 0),
+      pass: Number(item.pass || 0),
+      near: Number(item.near || 0),
+      fail: Number(item.fail || 0),
+      unknown: Number(item.unknown || 0),
+      threshold: item.threshold,
+    }))
+    .filter((item) => Number.isFinite(item.accuracy));
+}
+
 function isUnknownFrame(frame: VideoDetailPayload["frames"][number]) {
   const status = `${asText(frame.phase_status)} ${asText(frame.status)} ${asText(frame.ml_label)}`.toLowerCase();
   return Boolean(frame.filtered_stranger) || status.includes("unknown") || status.includes("khong") || status.includes("không") || status.includes("no pose");
+}
+
+function isPoseAngleFrame(frame: VideoDetailPayload["frames"][number]) {
+  const key = String(frame.exercise_key || "").toLowerCase();
+  return key === "codman" || key === "pulley";
 }
 
 function FrameMetrics({ frame }: { frame: VideoDetailPayload["frames"][number] }) {
@@ -3467,7 +3524,7 @@ function FrameGallery({
                 </div>
               )}
               <FrameMetrics frame={frame} />
-              <div className="frame-meta-grid legacy-frame-meta">
+              <div className={`frame-meta-grid legacy-frame-meta${isPoseAngleFrame(frame) ? " pose-angle-hidden" : ""}`}>
                 <span><b>{frame.phase_label || "Tổng quan"}</b> · REF ±{asText(frame.threshold)}°</span>
                 <span>Vai {fmtNumber(frame.angle)}° / REF {fmtNumber(frame.shoulder_ref)}° · Δ {fmtNumber(frame.shoulder_delta)}°</span>
                 <span>Khuỷu {fmtNumber(frame.elbow)}° / REF {fmtNumber(frame.elbow_ref)}° · Δ {fmtNumber(frame.elbow_delta)}°</span>
@@ -3489,7 +3546,7 @@ function FrameGallery({
             </div>
             <img src={mediaUrl(zoomFrame.image_url)} alt={`Frame ${zoomFrame.index}`} loading="eager" decoding="async" />
             <FrameMetrics frame={zoomFrame} />
-            <p className="frame-summary-legacy">
+            <p className={`frame-summary-legacy${isPoseAngleFrame(zoomFrame) ? " pose-angle-hidden" : ""}`}>
               {zoomFrame.phase_status || zoomFrame.status || "N/A"} · Vai {fmtNumber(zoomFrame.angle)}° / REF {fmtNumber(zoomFrame.shoulder_ref)}° · Khuỷu {fmtNumber(zoomFrame.elbow)}° / REF {fmtNumber(zoomFrame.elbow_ref)}°
             </p>
           </div>

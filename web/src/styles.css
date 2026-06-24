@@ -3450,6 +3450,19 @@ textarea:focus {
   font-size: 12px;
 }
 
+.phase-strip strong {
+  color: var(--rehab-blue-strong);
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.phase-strip small {
+  color: var(--rehab-muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .result-summary .stat-card {
   min-height: 96px;
 }
