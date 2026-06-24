@@ -56,6 +56,32 @@ const themeKey = "rehab_ui_theme";
 
 type ThemeMode = "light" | "dark";
 
+type LocalSaveMode = "picker" | "download" | "ready";
+
+type LocalExportLink = {
+  url: string;
+  filename: string;
+  size: number;
+  localMode: LocalSaveMode;
+  savedAt: string;
+  path?: string;
+  datasetPath?: string;
+};
+
+type BrowserSaveFileHandle = {
+  createWritable: () => Promise<WritableStream<Uint8Array> & {
+    write: (data: Blob) => Promise<void>;
+    close: () => Promise<void>;
+  }>;
+};
+
+type BrowserSaveWindow = Window & {
+  showSaveFilePicker?: (options: {
+    suggestedName?: string;
+    types?: { description: string; accept: Record<string, string[]> }[];
+  }) => Promise<BrowserSaveFileHandle>;
+};
+
 const roles = [
   "Quản trị viên",
   "Bác sĩ / KTV PHCN",
@@ -337,6 +363,58 @@ function browserDownload(url: string, filename?: string) {
   anchor.remove();
 }
 
+function fileExtension(filename: string) {
+  return filename.match(/\.[a-z0-9]+$/i)?.[0] || ".bin";
+}
+
+function mimeTypeForFilename(filename: string) {
+  const extension = fileExtension(filename).toLowerCase();
+  if (extension === ".zip") return "application/zip";
+  if (extension === ".mp4") return "video/mp4";
+  if (extension === ".csv") return "text/csv";
+  if (extension === ".json") return "application/json";
+  return "application/octet-stream";
+}
+
+async function saveFileToComputer(url: string, filename: string): Promise<LocalSaveMode> {
+  const suggestedName = filename || "rehab-export";
+  const savePicker = (window as BrowserSaveWindow).showSaveFilePicker;
+  if (savePicker && window.isSecureContext) {
+    try {
+      const mimeType = mimeTypeForFilename(suggestedName);
+      const handle = await savePicker.call(window, {
+        suggestedName,
+        types: [
+          {
+            description: "Rehab export",
+            accept: { [mimeType]: [fileExtension(suggestedName)] },
+          },
+        ],
+      });
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Không tải được file để lưu trên máy.");
+      const writable = await handle.createWritable();
+      if (response.body) {
+        await response.body.pipeTo(writable);
+      } else {
+        await writable.write(await response.blob());
+        await writable.close();
+      }
+      return "picker";
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") throw error;
+    }
+  }
+  browserDownload(url, suggestedName);
+  return "download";
+}
+
+function localSaveText(mode: LocalSaveMode) {
+  if (mode === "picker") return "Đã lưu trên máy";
+  if (mode === "download") return "Đã tải về Downloads";
+  return "File đã tạo xong";
+}
+
 function PoseGraphic() {
   return (
     <div className="auth-pose" aria-hidden="true">
@@ -455,7 +533,7 @@ function ArtifactExportPanel({
 }) {
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
-  const [links, setLinks] = useState<Record<string, { url: string; filename: string; size: number }>>({});
+  const [links, setLinks] = useState<Record<string, LocalExportLink>>({});
   const codmanGroups = (detail.frame_groups || []).filter((group) => ["g1", "g2", "g3"].includes(group.key) && group.total > 0);
   const phaseButtons = [{ key: "all", label: "Tất cả" }, ...codmanGroups.map((group) => ({ key: group.key, label: group.label }))];
 
@@ -465,16 +543,40 @@ function ArtifactExportPanel({
     setMessage("");
     try {
       const result = await api.prepareVideoExport(token, identifier, kind, phase, true);
+      const downloadUrl = mediaUrl(result.url);
+      let localMode: LocalSaveMode = "ready";
+      let localError = "";
+      try {
+        localMode = await saveFileToComputer(downloadUrl, result.filename);
+      } catch (saveError) {
+        localError =
+          saveError instanceof DOMException && saveError.name === "AbortError"
+            ? "Bạn đã hủy hộp thoại lưu file."
+            : "Chưa lưu được file về máy, có thể bấm link tải lại bên dưới.";
+      }
       setLinks((current) => ({
         ...current,
-        [key]: { url: result.url, filename: result.filename, size: result.size },
+        [key]: {
+          url: result.url,
+          filename: result.filename,
+          size: result.size,
+          localMode,
+          savedAt: new Date().toLocaleString("vi-VN"),
+          path: result.path,
+          datasetPath: result.dataset_path,
+        },
       }));
-      browserDownload(mediaUrl(result.url), result.filename);
       const datasetNote = result.dataset_path ? ` Dataset: ${result.dataset_path}.` : "";
+      const localNote =
+        localMode === "picker"
+          ? " Đã lưu file vào vị trí bạn chọn trên máy tính."
+          : localMode === "download"
+            ? " Trình duyệt đã tải file về thư mục Downloads trên máy tính."
+            : ` ${localError}`;
       setMessage(
         kind === "video"
-          ? `Đã lưu video vào database/dataset, gửi cho bệnh nhân/Bác sĩ-KTV và tải về máy.${datasetNote}`
-          : `Đã lưu ZIP frames kèm CSV/JSON vào database/dataset, gửi cho bệnh nhân/Bác sĩ-KTV và tải về máy.${datasetNote}`,
+          ? `Đã lưu/gửi video trên hệ thống.${localNote}${datasetNote}`
+          : `Đã lưu/gửi ZIP frames kèm CSV/JSON trên hệ thống.${localNote}${datasetNote}`,
       );
       window.setTimeout(onSaved, 350);
     } catch (error) {
@@ -506,8 +608,8 @@ function ArtifactExportPanel({
           <Database size={15} aria-hidden="true" />
           Lưu bundle 8 video
         </button>
-        <strong>Lưu và gửi video & frames</strong>
-        <span>Ghi metadata vào database/video_list.json, tạo link tải và đồng bộ hiển thị cho bệnh nhân + Bác sĩ/KTV.</span>
+        <strong>Lưu, gửi và tải về máy tính</strong>
+        <span>Video/frames được lưu trên hệ thống, đồng bộ cho bệnh nhân + Bác sĩ/KTV, rồi hiển thị trạng thái tải về máy tính ngay tại đây.</span>
       </div>
       <div className="artifact-export-grid">
         {phaseButtons.map((phase) => (
@@ -515,24 +617,36 @@ function ArtifactExportPanel({
             <b>{phase.label}</b>
             <button type="button" disabled={Boolean(busy)} onClick={() => prepare("video", phase.key)}>
               <Download size={15} aria-hidden="true" />
-              Lưu & gửi video
+              Lưu/gửi + tải video
             </button>
             <button type="button" disabled={Boolean(busy)} onClick={() => prepare("frames", phase.key)}>
               <Download size={15} aria-hidden="true" />
-              Lưu & gửi frames
+              Lưu/gửi + tải frames
             </button>
-            {(["video", "frames"] as const).map((kind) => {
-              const item = links[`${kind}-${phase.key}`];
-              return item?.url ? (
-                <a key={kind} href={mediaUrl(item.url)} download={item.filename}>
-                  Tải {kind === "video" ? "video" : "frames"} {formatBytes(item.size)}
-                </a>
-              ) : null;
-            })}
+            <div className="artifact-local-save">
+              {(["video", "frames"] as const).map((kind) => {
+                const item = links[`${kind}-${phase.key}`];
+                return item?.url ? (
+                  <a key={kind} href={mediaUrl(item.url)} download={item.filename} title={item.path || item.datasetPath || item.filename}>
+                    <Download size={13} aria-hidden="true" />
+                    Tải lại {kind === "video" ? "video" : "frames"} {formatBytes(item.size)}
+                  </a>
+                ) : null;
+              })}
+              {(["video", "frames"] as const).map((kind) => {
+                const item = links[`${kind}-${phase.key}`];
+                return item ? (
+                  <small key={kind}>
+                    {localSaveText(item.localMode)} lúc {item.savedAt}: {item.filename}
+                  </small>
+                ) : null;
+              })}
+              {!links[`video-${phase.key}`] && !links[`frames-${phase.key}`] ? <small>Chưa lưu file nào về máy tính.</small> : null}
+            </div>
           </div>
         ))}
       </div>
-      {busy ? <small>Đang chuẩn bị {busy.includes("frames") ? "frames" : "video"}...</small> : null}
+      {busy ? <small>Đang chuẩn bị {busy.includes("frames") ? "frames" : "video"} để lưu về máy...</small> : null}
       {message ? <div className={`alert ${message.includes("Không") || message.includes("Chưa") ? "error" : "success"}`}>{message}</div> : null}
     </div>
   );

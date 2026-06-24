@@ -27,6 +27,8 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://127.0.0.1:8001
     container_name: rehab-ai-web
     environment:
       VITE_API_BASE_URL: http://127.0.0.1:8001
