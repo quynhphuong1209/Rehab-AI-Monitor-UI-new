@@ -222,6 +222,82 @@ Password: ncv123@
 Role: Nghiên cứu viên
 ```
 
+## Vận Hành Phân Tích, Đánh Giá Và Train Model
+
+### Luồng Phân Tích AI Trên Web
+
+1. Người dùng đăng nhập và chọn video bệnh nhân cần phân tích.
+2. Frontend gọi backend FastAPI qua `web/src/api.ts`, chủ yếu dùng các endpoint `POST /videos/{identifier}/analysis-jobs`, `GET /videos/{identifier}/analysis-jobs/latest` và `GET /videos/{identifier}/detail`.
+3. Backend mở video bằng OpenCV, chạy MediaPipe Pose/BlazePose để lấy 33 landmarks, tính góc vai/khuỷu và lưu dữ liệu frame.
+4. Hệ thống so sánh dữ liệu góc với chuẩn bài tập trong `database/reference_codman.json`, `database/reference_gay.json`, `database/reference_day.json`.
+5. Với Codman, backend chia 3 giai đoạn và dùng ngưỡng sai số động: GĐ1 ±45°, GĐ2 ±30°, GĐ3 ±15°.
+6. Kết quả frame được gắn nhãn `PASS/NEAR/FAIL/UNKNOWN`, sau đó xuất video overlay, frames, CSV/JSON và metrics vào `processed_results/`.
+7. Dashboard React đọc lại kết quả qua API để dựng video, biểu đồ góc khớp, phân bố kết quả, histogram, boxplot, radar và bảng chỉ số.
+
+### Luồng Bác Sĩ/KTV Đánh Giá
+
+1. Bác sĩ/KTV đăng nhập bằng role tương ứng.
+2. Mở tab `PHIẾU ĐÁNH GIÁ` hoặc chi tiết bệnh nhân/video.
+3. Xem video gốc, video overlay, frames, biểu đồ và kết quả NCV/AI.
+4. Đối chiếu kết quả AI với quan sát lâm sàng: tầm vận động, bù trừ thân người, kiểm soát vai/khuỷu, chất lượng video, triệu chứng đau/VAS và khả năng thực hiện bài tập.
+5. Nhập phiếu đánh giá chuyên môn gồm kết quả `Đúng`, `Gần đúng` hoặc `Sai`, nhận xét lâm sàng và hướng dẫn tiếp theo.
+6. Backend lưu phiếu vào `database/doctor_evaluations.json`. Phiếu NCV/AI tự động từ `video_list` có `source = video_list_ai_researcher`; phiếu bác sĩ/KTV nhập tay được giữ riêng để phục vụ ground truth và theo dõi chuyên môn.
+
+### Mô Hình Đang Dùng
+
+Dự án dùng 2 tầng model:
+
+| Tầng | Mô hình | Vai trò |
+| --- | --- | --- |
+| 1 | MediaPipe Pose / BlazePose | Trích xuất 33 landmarks và góc khớp theo frame |
+| 2 | scikit-learn `RandomForestClassifier` | Phân loại frame thành `Sai`, `Gần đúng`, `Đúng` |
+
+MediaPipe là mô hình đã huấn luyện sẵn, dự án không train lại MediaPipe. Phần train ML trong repo là train `RandomForestClassifier` từ CSV đã trích xuất bởi MediaPipe.
+
+Model hiện có:
+
+| Thuộc tính | Giá trị |
+| --- | --- |
+| File model | `database/pose_classifier.pkl` |
+| Feature schema | `database/pose_classifier_features.json` |
+| Loại model | `RandomForestClassifier` |
+| Số cây | 200 |
+| `max_depth` | 12 |
+| `class_weight` | `balanced` |
+| Số feature | 34 |
+| Classes | `[0, 1, 2]` = `Sai`, `Gần đúng`, `Đúng` |
+
+Dữ liệu train đã kiểm tra read-only:
+
+| Chỉ số | Giá trị |
+| --- | ---: |
+| CSV train trong `processed_results` | 62 |
+| CSV hợp lệ | 61 |
+| Tổng mẫu hợp lệ | 329,421 |
+| Nhãn `Sai` | 134,140 |
+| Nhãn `Gần đúng` | 41,646 |
+| Nhãn `Đúng` | 153,635 |
+
+### Train Hoặc Cập Nhật Model
+
+Train từ PowerShell tại thư mục gốc dự án:
+
+```powershell
+cd D:\Downloads\Rehab-AI-Monitor-UI-new
+python scripts\train_classifier.py
+```
+
+Pipeline train/apply:
+
+```powershell
+cd D:\Downloads\Rehab-AI-Monitor-UI-new
+python scripts\run_ml_pipeline.py train
+python scripts\run_ml_pipeline.py apply
+python scripts\run_ml_pipeline.py all
+```
+
+Lưu ý: `train_classifier.py` sẽ ghi/cập nhật `database/pose_classifier.pkl` và `database/pose_classifier_features.json`. Lệnh `apply` hoặc `all` có thể ghi thêm kết quả ML vào CSV/frame JSON và cập nhật metrics. Nếu chỉ muốn kiểm tra an toàn thì chỉ load model hoặc đọc thống kê dữ liệu, không chạy train/apply.
+
 ## API Frontend Đang Gọi
 
 Frontend gọi API qua `web/src/api.ts`. API base mặc định là [Backend API local](http://127.0.0.1:8001).

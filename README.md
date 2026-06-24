@@ -1,112 +1,3 @@
-<!-- LOCAL_WEB_SNAPSHOT_START -->
-
-## Cập nhật local web mới nhất (24/06/2026)
-
-Bản React/FastAPI local hiện là giao diện web chính. Frontend nằm trong `web/`, backend API nằm ở `backend/main.py`, dữ liệu runtime lấy từ `database/*.json`. Web không đọc JSON trực tiếp; `web/src/api.ts` gọi FastAPI tại [Backend API local](http://127.0.0.1:8001), backend đồng bộ `latest_video_bundle.json`, `video_list.json`, `doctor_evaluations.json` và các hồ sơ liên quan trước khi trả payload cho dashboard. `app.py` vẫn được giữ cho bản Streamlit legacy/Hugging Face Space.
-
-### Số lượng dữ liệu local hiện tại
-
-| Nhóm dữ liệu | Số lượng | File nguồn chính |
-| --- | ---: | --- |
-| Video trong dashboard | 14 | `database/video_list.json` |
-| Video AI xong / bundle mới nhất | 8 | `database/latest_video_bundle.json` |
-| Phiếu đánh giá tổng | 77 | `database/doctor_evaluations.json` |
-| Phiếu NCV/AI tự động từ `video_list` | 14 | `source = video_list_ai_researcher` |
-| Phiếu cũ/nhập tay giữ lại | 63 | `doctor_evaluations.json` |
-| Người dùng | 25 | `database/users.json` |
-| Bản ghi dữ liệu NCKH | 8 | `database/research_data.json` |
-| Khai báo triệu chứng | 8 | `database/patient_symptoms.json` |
-| Lịch sử tập luyện | 73 | `database/lich_su_tap_luyen.json` |
-| Lịch nhắc | 0 | `database/schedules.json` |
-
-Phân bố tài khoản hiện tại: **14 Nghiên cứu viên**, **5 Bác sĩ/KTV PHCN**, **4 Bệnh nhân**, **2 Quản trị viên**. Tài khoản test NCV: `2211090031 / ncv123@`; QTV mới: `admin / admin123@`; QTV Đinh Lê Quỳnh Phương vẫn giữ mật khẩu riêng `bong0912@`.
-
-### Tổng hợp mới nhất theo bệnh nhân
-
-| Bệnh nhân | Video | Video AI mới | Accuracy TB | Đúng | Gần đúng | Sai | Unknown | Tổng frame có metric | Kết quả NCV/AI tự động |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| BN04 | 4 | 2 | 40.00% | 2539 | 2015 | 1800 | 0 | 6354 | Sai 2 |
-| BN01 | 3 | 2 | 56.39% | 6865 | 1557 | 6555 | 145 | 15122 | Gần đúng 1, Sai 1 |
-| BN02 | 4 | 2 | 61.15% | 6046 | 2407 | 3227 | 17 | 11697 | Gần đúng 1, Sai 1 |
-| BN03 | 3 | 2 | 61.27% | 4213 | 691 | 3271 | 4098 | 12273 | Đúng 1, Sai 1 |
-
-### 8 video/kết quả AI mới nhất đang hiển thị trên web
-
-| Bệnh nhân | Video | Bài tập | Kết quả | Accuracy | Frames | MAE | F1 | Precision | Recall | Thời gian kết quả |
-| --- | --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | --- |
-| BN01 | `BN01 - Bài tập với gậy.mp4` | Bài tập với gậy | Sai | 37.48% | Đúng 4373, Gần đúng 1078, Sai 6217, Unknown 106, Tổng 11774 | 18.20° | 0.393 | 0.413 | 0.375 | 06:32 - 24/06/2026 |
-| BN03 | `BN03 - Bài tập với gậy.mp4` | Bài tập với gậy | Sai | 31.74% | Đúng 1725, Gần đúng 470, Sai 3240, Unknown 4098, Tổng 9533 | 15.27° | 0.332 | 0.347 | 0.317 | 06:33 - 24/06/2026 |
-| BN02 | `BN02 - Bài tập với gậy.mp4` | Bài tập với gậy | Sai | 44.09% | Đúng 3991, Gần đúng 1981, Sai 3080, Unknown 17, Tổng 9069 | 17.00° | 0.495 | 0.564 | 0.441 | 06:32 - 24/06/2026 |
-| BN03 | `BN03 - Codman.mp4` | Codman | Đúng | 90.80% | Đúng 2488, Gần đúng 221, Sai 31, Unknown 0, Tổng 2740 | 11.78° | 0.946 | 0.988 | 0.908 | 06:33 - 24/06/2026 |
-| BN02 | `BN02 - Codman.mp4` | Codman | Gần đúng | 78.20% | Đúng 2055, Gần đúng 426, Sai 147, Unknown 0, Tổng 2628 | 11.48° | 0.851 | 0.933 | 0.782 | 06:32 - 24/06/2026 |
-| BN04 | `BN04 - Bài tập với gậy.mp4` | Bài tập với gậy | Sai | 39.68% | Đúng 1425, Gần đúng 1020, Sai 1146, Unknown 0, Tổng 3591 | 14.47° | 0.463 | 0.554 | 0.397 | 06:31 - 24/06/2026 |
-| BN01 | `BN01 - Codman.mp4` | Codman | Gần đúng | 75.31% | Đúng 2492, Gần đúng 479, Sai 338, Unknown 39, Tổng 3348 | 10.01° | 0.812 | 0.881 | 0.753 | 06:32 - 24/06/2026 |
-| BN04 | `BN04 - Codman.mp4` | Codman | Sai | 40.32% | Đúng 1114, Gần đúng 995, Sai 654, Unknown 0, Tổng 2763 | 20.59° | 0.492 | 0.630 | 0.403 | 06:31 - 24/06/2026 |
-
-### Kết quả biểu đồ/frame mới nhất
-
-Các biểu đồ trên web lấy từ payload chi tiết video (`GET /videos/{identifier}/detail`) và metrics đã lưu trong `video_list.json`/artifact. Nhóm biểu đồ React UI hiện có: góc khớp theo frame, phân bố PASS/NEAR/FAIL/UNKNOWN, histogram góc vai/khuỷu, boxplot, radar chỉ số nghiên cứu, bảng chỉ số NCV/AI và biểu đồ tổng quan theo vai trò.
-
-Tổng hợp 8 video mới nhất dùng cho biểu đồ phân bố kết quả:
-
-| PASS | NEAR | FAIL | UNKNOWN | Tổng frame |
-| ---: | ---: | ---: | ---: | ---: |
-| 19663 | 6670 | 14853 | 4260 | 45446 |
-
-Tỷ lệ trên tổng frame mới nhất:
-
-| Nhóm | Tỷ lệ |
-| --- | ---: |
-| PASS | 43.27% |
-| NEAR | 14.68% |
-| FAIL | 32.68% |
-| UNKNOWN | 9.37% |
-
-### Vận hành local React/FastAPI
-
-```powershell
-# Terminal 1: backend/API
-cd D:\Downloads\Rehab-AI-Monitor-UI-new
-D:\miniconda3\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8001
-
-# Terminal 2: frontend/web
-cd D:\Downloads\Rehab-AI-Monitor-UI-new\web
-npm install
-npm run dev -- --host 127.0.0.1 --port 5174
-```
-
-Mở web tại [Frontend local](http://127.0.0.1:5174). API docs ở [FastAPI docs local](http://127.0.0.1:8001/docs).
-
-### URL frontend đã deploy
-
-Frontend React đã được đẩy lên Cloudflare Pages với deployment ID `18f0b817-db9e-4be3-b4d3-896b85201fb5`.
-
-| Môi trường | URL mở web |
-| --- | --- |
-| Cloudflare Pages deployment | [18f0b817.rehab-ai-monitor.pages.dev](https://18f0b817.rehab-ai-monitor.pages.dev/) |
-| Domain chính | [rehab-ai-monitor.com](https://rehab-ai-monitor.com/) |
-| Domain www | [www.rehab-ai-monitor.com](https://www.rehab-ai-monitor.com/) |
-
-Backend production dùng subdomain API riêng. Tạm ghi theo cấu hình chuẩn của dự án là [api.rehab-ai-monitor.com](https://api.rehab-ai-monitor.com); nếu backend thực tế khác thì chỉ cần đổi `API_DOMAIN` trong `deploy/.env.production` và `VITE_API_BASE_URL` trên Cloudflare Pages cho khớp đúng URL API đó.
-
-### Vận hành bằng Docker sau tái cấu trúc
-
-```powershell
-cd D:\Downloads\Rehab-AI-Monitor-UI-new
-$env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
-docker compose up -d --build
-```
-
-Docker Compose mount trực tiếp `database/`, `patient_uploads/`, `processed_results/` và các JSON root vào container, nên dữ liệu local vẫn giữ nguyên như khi chạy bằng terminal. Frontend chạy ở [Frontend local](http://127.0.0.1:5174), backend chạy ở [Backend API local](http://127.0.0.1:8001).
-
-### Deploy production đề xuất
-
-Hướng dẫn đẩy server theo mô hình **Cloudflare Pages + VPS Docker/Caddy + dữ liệu local giữ nguyên bước đầu** nằm ở [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md). Mô hình này đưa frontend lên Cloudflare Pages, backend FastAPI lên VPS, còn R2/Postgres để migrate sau khi server đã chạy ổn.
-
-Khi deploy production, frontend mở bằng 3 URL hiện tại: [Cloudflare Pages deployment](https://18f0b817.rehab-ai-monitor.pages.dev/), [domain chính](https://rehab-ai-monitor.com/), [domain www](https://www.rehab-ai-monitor.com/). Backend API dự kiến chạy ở [api.rehab-ai-monitor.com](https://api.rehab-ai-monitor.com) qua Caddy reverse proxy tới FastAPI port `8001`.
-
-<!-- LOCAL_WEB_SNAPSHOT_END -->
-
 # 🏥 Rehab AI Monitor (Clinical Ecosystem)
 
 **Hệ thống giám sát tập luyện Phục hồi chức năng từ xa dựa trên Trí tuệ nhân tạo (AI) và Thị giác máy tính - Giải pháp Clinical-Grade chuyên nghiệp.**
@@ -150,6 +41,86 @@ Hệ thống tự động thay đổi cấu trúc dựa trên vai trò người 
 - **Bác sĩ / KTV:** Quản lý bệnh nhân, Giao diện quản lý & Phê duyệt video (Trình xem video kép, JavaScript Auto-Tab), Bộ đánh giá lâm sàng chuyên môn (Ground Truth Entry), Quản lý phác đồ.
 - **Nghiên cứu viên:** Cấu hình tham số mô hình AI, Phân tích sâu & Trích xuất tọa độ (Xuất CSV/JSON), Phân tích đa chiều (ROM Trend, Boxplot, Radar Chart), Bảng đối sánh 3 giai đoạn PHCN, Đồng bộ Ground Truth từ Bác sĩ.
 - **Quản trị viên:** Bộ Metric Cards tổng quan, Biểu đồ thống kê trực quan (Cơ cấu vai trò, bài tập phổ biến), Bảng quản trị cốt lõi (hợp nhất mọi thông tin bệnh nhân, AI, bác sĩ), Nhật ký hoạt động toàn hệ thống (Admin Log - Xuất CSV), Dọn dẹp & Reset hệ thống.
+
+## 🧭 Vận hành phân tích, đánh giá lâm sàng và train model
+
+### 1. Luồng vận hành phân tích AI
+
+1. **Bệnh nhân hoặc NCV đưa video vào hệ thống:** Video bài tập được upload hoặc chọn từ danh sách bệnh nhân, ví dụ Codman, bài tập với gậy hoặc pulley.
+2. **Chọn cấu hình phân tích:** Người vận hành chọn `MediaPipe Heavy`, `MediaPipe Full` hoặc `MediaPipe Lite`, ngưỡng tin cậy, resize width và skip frames. Mặc định lâm sàng ưu tiên `MediaPipe Heavy`.
+3. **Pass 1 - trích xuất dữ liệu:** Backend đọc từng frame bằng OpenCV, MediaPipe Pose/BlazePose trích xuất 33 landmark cơ thể, sau đó hệ thống tính góc vai, góc khuỷu và các chỉ số theo frame.
+4. **Đối sánh chuẩn bài tập:** Chuỗi góc khớp được so với dữ liệu chuẩn trong `database/reference_codman.json`, `database/reference_gay.json`, `database/reference_day.json`. Với Codman, hệ thống chia 3 giai đoạn và áp dụng ngưỡng sai số động: GĐ1 ±45°, GĐ2 ±30°, GĐ3 ±15°.
+5. **Gắn nhãn kết quả theo frame:** Mỗi frame được gắn nhãn `Đúng/PASS`, `Gần đúng/NEAR`, `Sai/FAIL` hoặc `UNKNOWN` khi pose không đủ tin cậy, bị che khuất hoặc không nhận diện được.
+6. **Pass 2 - dựng kết quả xem lại:** Hệ thống vẽ khung xương, góc khớp, badge kết quả, xuất video overlay, ZIP frames, CSV/JSON tọa độ và dữ liệu biểu đồ vào `processed_results/`.
+7. **Đồng bộ dashboard:** Kết quả tổng hợp được lưu vào `database/video_list.json`, `database/latest_video_bundle.json` và được React/FastAPI đọc qua API để hiển thị biểu đồ, bảng chỉ số và phiếu NCV/AI.
+
+### 2. Luồng bác sĩ/KTV đánh giá
+
+1. **Đăng nhập vai trò Bác sĩ/KTV:** Vào web local hoặc web deploy, đăng nhập tài khoản có vai trò bác sĩ/KTV PHCN.
+2. **Mở tab đánh giá:** Dùng `PHIẾU ĐÁNH GIÁ`, `KẾT QUẢ ĐÁNH GIÁ` hoặc phần chi tiết bệnh nhân để xem video gốc, video overlay, frame, biểu đồ góc khớp, histogram, boxplot, radar chỉ số và bảng metrics.
+3. **Đối chiếu AI với lâm sàng:** Bác sĩ/KTV kiểm tra biên độ vận động, bù trừ thân người, kiểm soát khớp vai/khuỷu, chất lượng góc quay, ánh sáng, che khuất và triệu chứng đau/VAS của bệnh nhân.
+4. **Nhập đánh giá chuyên môn:** Người đánh giá chọn kết quả `Đúng`, `Gần đúng` hoặc `Sai`, ghi nhận xét lâm sàng, hướng dẫn chỉnh động tác và kế hoạch theo dõi.
+5. **Lưu phiếu đánh giá:** Phiếu thủ công được ghi vào `database/doctor_evaluations.json`. Phiếu NCV/AI tự động từ `video_list` có `source = video_list_ai_researcher`, còn phiếu bác sĩ/KTV nhập tay được giữ riêng để làm ground truth/chuyên môn.
+6. **Nguyên tắc sử dụng:** Kết quả AI là công cụ hỗ trợ sàng lọc và theo dõi tiến trình, không thay thế kết luận cuối cùng của bác sĩ điều trị.
+
+### 3. Mô hình đang sử dụng
+
+Dự án đang dùng 2 tầng model:
+
+| Tầng | Mô hình | Vai trò | File/code chính |
+| --- | --- | --- | --- |
+| 1 | MediaPipe Pose / BlazePose | Trích xuất 33 landmarks, góc vai/khuỷu và pose theo frame | `app.py`, `backend/main.py` |
+| 2 | scikit-learn `RandomForestClassifier` | Phân loại frame thành `Sai`, `Gần đúng`, `Đúng` từ landmark + góc khớp | `utils/pose_classifier_utils.py`, `database/pose_classifier.pkl` |
+
+MediaPipe là mô hình pose estimation đã huấn luyện sẵn, dự án **không train lại MediaPipe**. Phần train trong dự án là train lớp ML thứ hai `RandomForestClassifier` dựa trên dữ liệu CSV đã trích xuất từ MediaPipe.
+
+Model hiện có ở `database/pose_classifier.pkl` đã được kiểm tra ở chế độ read-only và load được ổn:
+
+| Thuộc tính | Giá trị |
+| --- | --- |
+| Loại model | `RandomForestClassifier` |
+| Số cây | 200 |
+| `max_depth` | 12 |
+| `class_weight` | `balanced` |
+| Số feature | 34 |
+| Classes | `[0, 1, 2]` tương ứng `Sai`, `Gần đúng`, `Đúng` |
+
+Dữ liệu train hiện đủ điều kiện:
+
+| Chỉ số | Giá trị |
+| --- | ---: |
+| CSV train tìm thấy trong `processed_results` | 62 |
+| CSV hợp lệ | 61 |
+| Tổng mẫu hợp lệ | 329,421 |
+| Nhãn `Sai` | 134,140 |
+| Nhãn `Gần đúng` | 41,646 |
+| Nhãn `Đúng` | 153,635 |
+
+Chỉ có 1 CSV bị bỏ qua vì thiếu cột landmark; code train đã có cơ chế skip file lỗi nên không làm hỏng quá trình train.
+
+### 4. Cách train hoặc cập nhật model
+
+Có 2 cách vận hành train:
+
+**Train từ giao diện:** Nghiên cứu viên mở dashboard phân tích, chọn cấu hình `MediaPipe Heavy`, sau đó bấm `TRAIN / CẬP NHẬT MODEL`. Hệ thống sẽ đọc các file `processed_results/*_data.csv`, lấy feature từ góc khớp và landmark, lấy nhãn từ các cột `dung` và `gan_dung`, rồi train lại classifier.
+
+**Train từ PowerShell:**
+
+```powershell
+cd D:\Downloads\Rehab-AI-Monitor-UI-new
+python scripts\train_classifier.py
+```
+
+Chạy pipeline đầy đủ nếu muốn train rồi áp dụng lại ML cho các video đã phân tích:
+
+```powershell
+cd D:\Downloads\Rehab-AI-Monitor-UI-new
+python scripts\run_ml_pipeline.py train
+python scripts\run_ml_pipeline.py apply
+python scripts\run_ml_pipeline.py all
+```
+
+Lưu ý quan trọng: `train_classifier.py` sẽ ghi/cập nhật `database/pose_classifier.pkl` và `database/pose_classifier_features.json`. Lệnh `apply` hoặc `all` có thể ghi thêm cột ML vào CSV/frame JSON và cập nhật metrics. Vì vậy khi chỉ muốn kiểm tra an toàn, chỉ nên load model hoặc đọc thống kê dữ liệu ở chế độ read-only, không chạy train/apply.
 
 <!-- CLINICAL_FINDINGS_START -->
 
@@ -496,4 +467,113 @@ streamlit run app.py
 
 ---
 © 2025-2026 Rehab AI Monitor Team.
+
+<!-- LOCAL_WEB_SNAPSHOT_START -->
+
+## Cập nhật local web mới nhất (24/06/2026)
+
+Bản React/FastAPI local hiện là giao diện web chính. Frontend nằm trong `web/`, backend API nằm ở `backend/main.py`, dữ liệu runtime lấy từ `database/*.json`. Web không đọc JSON trực tiếp; `web/src/api.ts` gọi FastAPI tại [Backend API local](http://127.0.0.1:8001), backend đồng bộ `latest_video_bundle.json`, `video_list.json`, `doctor_evaluations.json` và các hồ sơ liên quan trước khi trả payload cho dashboard. `app.py` vẫn được giữ cho bản Streamlit legacy/Hugging Face Space.
+
+### Số lượng dữ liệu local hiện tại
+
+| Nhóm dữ liệu | Số lượng | File nguồn chính |
+| --- | ---: | --- |
+| Video trong dashboard | 14 | `database/video_list.json` |
+| Video AI xong / bundle mới nhất | 8 | `database/latest_video_bundle.json` |
+| Phiếu đánh giá tổng | 77 | `database/doctor_evaluations.json` |
+| Phiếu NCV/AI tự động từ `video_list` | 14 | `source = video_list_ai_researcher` |
+| Phiếu cũ/nhập tay giữ lại | 63 | `doctor_evaluations.json` |
+| Người dùng | 25 | `database/users.json` |
+| Bản ghi dữ liệu NCKH | 8 | `database/research_data.json` |
+| Khai báo triệu chứng | 8 | `database/patient_symptoms.json` |
+| Lịch sử tập luyện | 73 | `database/lich_su_tap_luyen.json` |
+| Lịch nhắc | 0 | `database/schedules.json` |
+
+Phân bố tài khoản hiện tại: **14 Nghiên cứu viên**, **5 Bác sĩ/KTV PHCN**, **4 Bệnh nhân**, **2 Quản trị viên**. Tài khoản test NCV: `2211090031 / ncv123@`; QTV mới: `admin / admin123@`; QTV Đinh Lê Quỳnh Phương vẫn giữ mật khẩu riêng `bong0912@`.
+
+### Tổng hợp mới nhất theo bệnh nhân
+
+| Bệnh nhân | Video | Video AI mới | Accuracy TB | Đúng | Gần đúng | Sai | Unknown | Tổng frame có metric | Kết quả NCV/AI tự động |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| BN04 | 4 | 2 | 40.00% | 2539 | 2015 | 1800 | 0 | 6354 | Sai 2 |
+| BN01 | 3 | 2 | 56.39% | 6865 | 1557 | 6555 | 145 | 15122 | Gần đúng 1, Sai 1 |
+| BN02 | 4 | 2 | 61.15% | 6046 | 2407 | 3227 | 17 | 11697 | Gần đúng 1, Sai 1 |
+| BN03 | 3 | 2 | 61.27% | 4213 | 691 | 3271 | 4098 | 12273 | Đúng 1, Sai 1 |
+
+### 8 video/kết quả AI mới nhất đang hiển thị trên web
+
+| Bệnh nhân | Video | Bài tập | Kết quả | Accuracy | Frames | MAE | F1 | Precision | Recall | Thời gian kết quả |
+| --- | --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | --- |
+| BN01 | `BN01 - Bài tập với gậy.mp4` | Bài tập với gậy | Sai | 37.48% | Đúng 4373, Gần đúng 1078, Sai 6217, Unknown 106, Tổng 11774 | 18.20° | 0.393 | 0.413 | 0.375 | 06:32 - 24/06/2026 |
+| BN03 | `BN03 - Bài tập với gậy.mp4` | Bài tập với gậy | Sai | 31.74% | Đúng 1725, Gần đúng 470, Sai 3240, Unknown 4098, Tổng 9533 | 15.27° | 0.332 | 0.347 | 0.317 | 06:33 - 24/06/2026 |
+| BN02 | `BN02 - Bài tập với gậy.mp4` | Bài tập với gậy | Sai | 44.09% | Đúng 3991, Gần đúng 1981, Sai 3080, Unknown 17, Tổng 9069 | 17.00° | 0.495 | 0.564 | 0.441 | 06:32 - 24/06/2026 |
+| BN03 | `BN03 - Codman.mp4` | Codman | Đúng | 90.80% | Đúng 2488, Gần đúng 221, Sai 31, Unknown 0, Tổng 2740 | 11.78° | 0.946 | 0.988 | 0.908 | 06:33 - 24/06/2026 |
+| BN02 | `BN02 - Codman.mp4` | Codman | Gần đúng | 78.20% | Đúng 2055, Gần đúng 426, Sai 147, Unknown 0, Tổng 2628 | 11.48° | 0.851 | 0.933 | 0.782 | 06:32 - 24/06/2026 |
+| BN04 | `BN04 - Bài tập với gậy.mp4` | Bài tập với gậy | Sai | 39.68% | Đúng 1425, Gần đúng 1020, Sai 1146, Unknown 0, Tổng 3591 | 14.47° | 0.463 | 0.554 | 0.397 | 06:31 - 24/06/2026 |
+| BN01 | `BN01 - Codman.mp4` | Codman | Gần đúng | 75.31% | Đúng 2492, Gần đúng 479, Sai 338, Unknown 39, Tổng 3348 | 10.01° | 0.812 | 0.881 | 0.753 | 06:32 - 24/06/2026 |
+| BN04 | `BN04 - Codman.mp4` | Codman | Sai | 40.32% | Đúng 1114, Gần đúng 995, Sai 654, Unknown 0, Tổng 2763 | 20.59° | 0.492 | 0.630 | 0.403 | 06:31 - 24/06/2026 |
+
+### Kết quả biểu đồ/frame mới nhất
+
+Các biểu đồ trên web lấy từ payload chi tiết video (`GET /videos/{identifier}/detail`) và metrics đã lưu trong `video_list.json`/artifact. Nhóm biểu đồ React UI hiện có: góc khớp theo frame, phân bố PASS/NEAR/FAIL/UNKNOWN, histogram góc vai/khuỷu, boxplot, radar chỉ số nghiên cứu, bảng chỉ số NCV/AI và biểu đồ tổng quan theo vai trò.
+
+Tổng hợp 8 video mới nhất dùng cho biểu đồ phân bố kết quả:
+
+| PASS | NEAR | FAIL | UNKNOWN | Tổng frame |
+| ---: | ---: | ---: | ---: | ---: |
+| 19663 | 6670 | 14853 | 4260 | 45446 |
+
+Tỷ lệ trên tổng frame mới nhất:
+
+| Nhóm | Tỷ lệ |
+| --- | ---: |
+| PASS | 43.27% |
+| NEAR | 14.68% |
+| FAIL | 32.68% |
+| UNKNOWN | 9.37% |
+
+### Vận hành local React/FastAPI
+
+```powershell
+# Terminal 1: backend/API
+cd D:\Downloads\Rehab-AI-Monitor-UI-new
+D:\miniconda3\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8001
+
+# Terminal 2: frontend/web
+cd D:\Downloads\Rehab-AI-Monitor-UI-new\web
+npm install
+npm run dev -- --host 127.0.0.1 --port 5174
+```
+
+Mở web tại [Frontend local](http://127.0.0.1:5174). API docs ở [FastAPI docs local](http://127.0.0.1:8001/docs).
+
+### URL frontend đã deploy
+
+Frontend React đã được đẩy lên Cloudflare Pages với deployment ID `18f0b817-db9e-4be3-b4d3-896b85201fb5`.
+
+| Môi trường | URL mở web |
+| --- | --- |
+| Cloudflare Pages deployment | [18f0b817.rehab-ai-monitor.pages.dev](https://18f0b817.rehab-ai-monitor.pages.dev/) |
+| Domain chính | [rehab-ai-monitor.com](https://rehab-ai-monitor.com/) |
+| Domain www | [www.rehab-ai-monitor.com](https://www.rehab-ai-monitor.com/) |
+
+Backend production dùng subdomain API riêng. Tạm ghi theo cấu hình chuẩn của dự án là [api.rehab-ai-monitor.com](https://api.rehab-ai-monitor.com); nếu backend thực tế khác thì chỉ cần đổi `API_DOMAIN` trong `deploy/.env.production` và `VITE_API_BASE_URL` trên Cloudflare Pages cho khớp đúng URL API đó.
+
+### Vận hành bằng Docker sau tái cấu trúc
+
+```powershell
+cd D:\Downloads\Rehab-AI-Monitor-UI-new
+$env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
+docker compose up -d --build
+```
+
+Docker Compose mount trực tiếp `database/`, `patient_uploads/`, `processed_results/` và các JSON root vào container, nên dữ liệu local vẫn giữ nguyên như khi chạy bằng terminal. Frontend chạy ở [Frontend local](http://127.0.0.1:5174), backend chạy ở [Backend API local](http://127.0.0.1:8001).
+
+### Deploy production đề xuất
+
+Hướng dẫn đẩy server theo mô hình **Cloudflare Pages + VPS Docker/Caddy + dữ liệu local giữ nguyên bước đầu** nằm ở [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md). Mô hình này đưa frontend lên Cloudflare Pages, backend FastAPI lên VPS, còn R2/Postgres để migrate sau khi server đã chạy ổn.
+
+Khi deploy production, frontend mở bằng 3 URL hiện tại: [Cloudflare Pages deployment](https://18f0b817.rehab-ai-monitor.pages.dev/), [domain chính](https://rehab-ai-monitor.com/), [domain www](https://www.rehab-ai-monitor.com/). Backend API dự kiến chạy ở [api.rehab-ai-monitor.com](https://api.rehab-ai-monitor.com) qua Caddy reverse proxy tới FastAPI port `8001`.
+
+<!-- LOCAL_WEB_SNAPSHOT_END -->
 
