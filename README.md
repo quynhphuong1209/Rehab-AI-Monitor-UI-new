@@ -2,7 +2,7 @@
 
 ## Cập nhật local web mới nhất (24/06/2026)
 
-Bản React/FastAPI local hiện là giao diện web chính. Frontend nằm trong `web/`, backend API nằm ở `backend/main.py`, dữ liệu runtime lấy từ `database/*.json`. Web không đọc JSON trực tiếp; `web/src/api.ts` gọi FastAPI tại `http://127.0.0.1:8001`, backend đồng bộ `latest_video_bundle.json`, `video_list.json`, `doctor_evaluations.json` và các hồ sơ liên quan trước khi trả payload cho dashboard. `app.py` vẫn được giữ cho bản Streamlit legacy/Hugging Face Space.
+Bản React/FastAPI local hiện là giao diện web chính. Frontend nằm trong `web/`, backend API nằm ở `backend/main.py`, dữ liệu runtime lấy từ `database/*.json`. Web không đọc JSON trực tiếp; `web/src/api.ts` gọi FastAPI tại [Backend API local](http://127.0.0.1:8001), backend đồng bộ `latest_video_bundle.json`, `video_list.json`, `doctor_evaluations.json` và các hồ sơ liên quan trước khi trả payload cho dashboard. `app.py` vẫn được giữ cho bản Streamlit legacy/Hugging Face Space.
 
 ### Số lượng dữ liệu local hiện tại
 
@@ -75,7 +75,7 @@ npm install
 npm run dev -- --host 127.0.0.1 --port 5174
 ```
 
-Mở web tại `http://127.0.0.1:5174`. API docs ở `http://127.0.0.1:8001/docs`.
+Mở web tại [Frontend local](http://127.0.0.1:5174). API docs ở [FastAPI docs local](http://127.0.0.1:8001/docs).
 
 ### URL frontend đã deploy
 
@@ -83,11 +83,11 @@ Frontend React đã được đẩy lên Cloudflare Pages với deployment ID `1
 
 | Môi trường | URL mở web |
 | --- | --- |
-| Cloudflare Pages deployment | `https://18f0b817.rehab-ai-monitor.pages.dev/` |
-| Domain chính | `https://rehab-ai-monitor.com/` |
-| Domain www | `https://www.rehab-ai-monitor.com/` |
+| Cloudflare Pages deployment | [18f0b817.rehab-ai-monitor.pages.dev](https://18f0b817.rehab-ai-monitor.pages.dev/) |
+| Domain chính | [rehab-ai-monitor.com](https://rehab-ai-monitor.com/) |
+| Domain www | [www.rehab-ai-monitor.com](https://www.rehab-ai-monitor.com/) |
 
-Backend production dùng subdomain API riêng. Tạm ghi theo cấu hình chuẩn của dự án là `https://api.rehab-ai-monitor.com`; nếu backend thực tế khác thì chỉ cần đổi `API_DOMAIN` trong `deploy/.env.production` và `VITE_API_BASE_URL` trên Cloudflare Pages cho khớp đúng URL API đó.
+Backend production dùng subdomain API riêng. Tạm ghi theo cấu hình chuẩn của dự án là [api.rehab-ai-monitor.com](https://api.rehab-ai-monitor.com); nếu backend thực tế khác thì chỉ cần đổi `API_DOMAIN` trong `deploy/.env.production` và `VITE_API_BASE_URL` trên Cloudflare Pages cho khớp đúng URL API đó.
 
 ### Vận hành bằng Docker sau tái cấu trúc
 
@@ -97,13 +97,13 @@ $env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
 docker compose up -d --build
 ```
 
-Docker Compose mount trực tiếp `database/`, `patient_uploads/`, `processed_results/` và các JSON root vào container, nên dữ liệu local vẫn giữ nguyên như khi chạy bằng terminal. Frontend chạy ở `http://127.0.0.1:5174`, backend chạy ở `http://127.0.0.1:8001`.
+Docker Compose mount trực tiếp `database/`, `patient_uploads/`, `processed_results/` và các JSON root vào container, nên dữ liệu local vẫn giữ nguyên như khi chạy bằng terminal. Frontend chạy ở [Frontend local](http://127.0.0.1:5174), backend chạy ở [Backend API local](http://127.0.0.1:8001).
 
 ### Deploy production đề xuất
 
 Hướng dẫn đẩy server theo mô hình **Cloudflare Pages + VPS Docker/Caddy + dữ liệu local giữ nguyên bước đầu** nằm ở [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md). Mô hình này đưa frontend lên Cloudflare Pages, backend FastAPI lên VPS, còn R2/Postgres để migrate sau khi server đã chạy ổn.
 
-Khi deploy production, frontend mở bằng 3 URL hiện tại: `https://18f0b817.rehab-ai-monitor.pages.dev/`, `https://rehab-ai-monitor.com/`, `https://www.rehab-ai-monitor.com/`. Backend API dự kiến chạy ở `https://api.rehab-ai-monitor.com` qua Caddy reverse proxy tới FastAPI port `8001`.
+Khi deploy production, frontend mở bằng 3 URL hiện tại: [Cloudflare Pages deployment](https://18f0b817.rehab-ai-monitor.pages.dev/), [domain chính](https://rehab-ai-monitor.com/), [domain www](https://www.rehab-ai-monitor.com/). Backend API dự kiến chạy ở [api.rehab-ai-monitor.com](https://api.rehab-ai-monitor.com) qua Caddy reverse proxy tới FastAPI port `8001`.
 
 <!-- LOCAL_WEB_SNAPSHOT_END -->
 
