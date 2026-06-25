@@ -1,0 +1,51 @@
+{
+  "source_export_name": "full_web_exact_web_overlay_frames_20260624_173500",
+  "verified_source_stats": {
+    "files": 57338,
+    "bytes": 23257472818
+  },
+  "huggingface_dataset": {
+    "repo_id": "quynhphuong1209/Rehab-AI-Monitor-2026-data",
+    "repo_type": "dataset",
+    "path": "archives/full_patient_exports/full_web_exact_web_overlay_frames_20260624_173500",
+    "url": "https://huggingface.co/datasets/quynhphuong1209/Rehab-AI-Monitor-2026-data/tree/main/archives/full_patient_exports/full_web_exact_web_overlay_frames_20260624_173500"
+  },
+  "archives": [
+    {
+      "name": "BN01_cao_thi_thuong.tar",
+      "bytes": 1637786112,
+      "sha256": "728f53f6b32044504be11ded7a13d5cdcca2e44be67f8298e1455b3f23fa4068",
+      "download_url": "https://huggingface.co/datasets/quynhphuong1209/Rehab-AI-Monitor-2026-data/resolve/main/archives/full_patient_exports/full_web_exact_web_overlay_frames_20260624_173500/BN01_cao_thi_thuong.tar"
+    },
+    {
+      "name": "BN02_hoang_hanh_nguyen.tar",
+      "bytes": 6317180928,
+      "sha256": "eff40907365f8e7c31e92a1189c8e49db75eca2f800bb5ecea121af968afa1e0",
+      "download_url": "https://huggingface.co/datasets/quynhphuong1209/Rehab-AI-Monitor-2026-data/resolve/main/archives/full_patient_exports/full_web_exact_web_overlay_frames_20260624_173500/BN02_hoang_hanh_nguyen.tar"
+    },
+    {
+      "name": "BN03_nguyen_thi_nga.tar",
+      "bytes": 4996451328,
+      "sha256": "fa0a4448b1f445827829484c008a6d85d357ca3186ea193e103bf570fee8a3d7",
+      "download_url": "https://huggingface.co/datasets/quynhphuong1209/Rehab-AI-Monitor-2026-data/resolve/main/archives/full_patient_exports/full_web_exact_web_overlay_frames_20260624_173500/BN03_nguyen_thi_nga.tar"
+    },
+    {
+      "name": "BN04_vu_thi_hoa.tar",
+      "bytes": 3410356224,
+      "sha256": "464ccc34a64f9efb96e902cf2d997fa147dff518ab98a0807fb2a16593ebcd8d",
+      "download_url": "https://huggingface.co/datasets/quynhphuong1209/Rehab-AI-Monitor-2026-data/resolve/main/archives/full_patient_exports/full_web_exact_web_overlay_frames_20260624_173500/BN04_vu_thi_hoa.tar"
+    },
+    {
+      "name": "database_snapshots.tar",
+      "bytes": 619520,
+      "sha256": "46c0701d62a085cc6942b155e46710caa6cb8cee4eb444d0668ccedf81a2a4dd",
+      "download_url": "https://huggingface.co/datasets/quynhphuong1209/Rehab-AI-Monitor-2026-data/resolve/main/archives/full_patient_exports/full_web_exact_web_overlay_frames_20260624_173500/database_snapshots.tar"
+    },
+    {
+      "name": "full_patient_exports_archive_manifest.json",
+      "bytes": 1575,
+      "download_url": "https://huggingface.co/datasets/quynhphuong1209/Rehab-AI-Monitor-2026-data/resolve/main/archives/full_patient_exports/full_web_exact_web_overlay_frames_20260624_173500/full_patient_exports_archive_manifest.json"
+    }
+  ],
+  "note": "GitHub pointer only; raw archives are stored on Hugging Face Dataset."
+}
