@@ -286,7 +286,17 @@
     "has_frames": true,
     "has_chart": true,
     "latest_bundle_updated_at": "2026-06-24T00:36:19.730122+00:00",
-    "video_time": "06:33 - 24/06/2026"
+    "video_time": "06:33 - 24/06/2026",
+    "pose_video_path": "processed_results/processed_1781489158_pose_h264.mp4",
+    "export_video_all": "processed_results/exports/processed_1781489158_export_all.mp4",
+    "artifact_updated_by": "2211090031",
+    "dataset_video_path": "database/dataset/vu-thi-hoa/video/vu-thi-hoa-bai-tap-voi-gay-mp4-bai-tap-voi-gay-pulley-exercise-20260624_all.mp4",
+    "dataset_csv_path": "database/dataset/vu-thi-hoa/csv/vu-thi-hoa-bai-tap-voi-gay-mp4-bai-tap-voi-gay-pulley-exercise-20260624_all.csv",
+    "dataset_json_path": "database/dataset/vu-thi-hoa/json/f_1781489158.json",
+    "dataset_zip_path": "database/dataset/vu-thi-hoa/zip/vu-thi-hoa-bai-tap-voi-gay-mp4-bai-tap-voi-gay-pulley-exercise-20260624_all.zip",
+    "dataset_frames_path": "database/dataset/vu-thi-hoa/frames/vu-thi-hoa-bai-tap-voi-gay-mp4-bai-tap-voi-gay-pulley-exercise-20260624_all",
+    "export_frames_all": "processed_results/exports/processed_1781489158_export_frames_all.zip",
+    "dataset_sync_error": "Error -3 while decompressing data: invalid stored block lengths"
   },
   {
     "username": "Cao Thị Thường",
@@ -6635,7 +6645,15 @@
     "has_chart": true,
     "latest_bundle_updated_at": "2026-06-24T00:36:19.730122+00:00",
     "video_time": "06:31 - 24/06/2026",
-    "audio_video_path": "processed_results/processed_1781140111_sound.mp4"
+    "audio_video_path": "processed_results/processed_1781140111_sound.mp4",
+    "export_frames_all": "processed_results/exports/processed_1781140111_sound_export_frames_all.zip",
+    "artifact_updated_by": "2211090031",
+    "dataset_video_path": "database/dataset/cao-thi-thuong/video/042541-cao-thi-thuong-codman-mp4-bai-tap-con-lac-codman-20260624_all.mp4",
+    "dataset_raw_video_path": "database/dataset/cao-thi-thuong/video/042541-cao-thi-thuong-codman-mp4-bai-tap-con-lac-codman-20260624_all.mp4",
+    "dataset_csv_path": "database/dataset/cao-thi-thuong/csv/042541-cao-thi-thuong-codman-mp4-bai-tap-con-lac-codman-20260624_all.csv",
+    "dataset_json_path": "database/dataset/cao-thi-thuong/json/f_1781140111.json",
+    "dataset_zip_path": "database/dataset/cao-thi-thuong/zip/042541-cao-thi-thuong-codman-mp4-bai-tap-con-lac-codman-20260624_all.zip",
+    "dataset_frames_path": "database/dataset/cao-thi-thuong/frames/042541-cao-thi-thuong-codman-mp4-bai-tap-con-lac-codman-20260624_all"
   },
   {
     "username": "Nguyễn Thị Nga",
