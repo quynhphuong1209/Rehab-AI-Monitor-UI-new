@@ -1792,6 +1792,7 @@ function AuthScreen({
   const [mode, setMode] = useState<"login" | "register" | "reset">("login");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageKind, setMessageKind] = useState<"error" | "success">("error");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showRegisterPassword2, setShowRegisterPassword2] = useState(false);
@@ -1811,6 +1812,7 @@ function AuthScreen({
     event.preventDefault();
     setLoading(true);
     setMessage("");
+    setMessageKind("error");
     try {
       const auth = await api.login(loginForm.username, loginForm.password);
       localStorage.setItem(tokenKey, auth.token);
@@ -1826,11 +1828,16 @@ function AuthScreen({
     event.preventDefault();
     setLoading(true);
     setMessage("");
+    setMessageKind("error");
     try {
       await api.register(registerForm);
-      const auth = await api.login(registerForm.username, registerForm.password);
-      localStorage.setItem(tokenKey, auth.token);
-      onAuth(auth);
+      setLoginForm({ username: registerForm.username, password: "" });
+      setRegisterForm({ username: "", email: "", full_name: "", password: "", password2: "" });
+      setShowRegisterPassword(false);
+      setShowRegisterPassword2(false);
+      setMode("login");
+      setMessageKind("success");
+      setMessage("Đăng ký tài khoản thành công. Vui lòng đăng nhập để vào giao diện bệnh nhân.");
     } catch (error) {
       setMessage(error instanceof ApiError ? error.message : "Không thể đăng ký.");
     } finally {
@@ -1842,11 +1849,13 @@ function AuthScreen({
     event.preventDefault();
     setLoading(true);
     setMessage("");
+    setMessageKind("error");
     try {
       const result = await api.resetPassword(resetForm);
       setMode("login");
       setLoginForm({ username: resetForm.username, password: "" });
       setResetForm({ username: "", email: "", password: "", password2: "" });
+      setMessageKind("success");
       setMessage(result.message || "Đã đặt lại mật khẩu. Bạn có thể đăng nhập ngay.");
     } catch (error) {
       setMessage(error instanceof ApiError ? error.message : "Không thể khôi phục mật khẩu.");
@@ -1915,7 +1924,7 @@ function AuthScreen({
             Đăng ký
           </button>
         </div>
-        {message ? <div className="alert error">{message}</div> : null}
+        {message ? <div className={`alert ${messageKind}`}>{message}</div> : null}
         {mode === "login" ? (
           <form className="form-grid" onSubmit={submitLogin}>
             <label>
