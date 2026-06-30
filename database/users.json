@@ -219,5 +219,38 @@
     "updated_at": "2026-06-23T01:24:15.221760+00:00",
     "must_change_password": false,
     "active": true
+  },
+  "nguyenvana": {
+    "password": "$argon2id$v=19$m=65536,t=2,p=2$Ne0EeavwawdMOQ1r0a9uqQ$A9kxMlhHZKNKZ7jswbE/PteLy0PK+GXWMUb7reVm3Mc",
+    "hash_version": "argon2",
+    "email": "quynhphuong12092004@gmail.com",
+    "full_name": "Nguyễn Văn A",
+    "role": "Bệnh nhân",
+    "created_at": "2026-06-26T11:44:15.204605+00:00",
+    "updated_at": "2026-06-26T11:44:15.204605+00:00",
+    "must_change_password": false,
+    "active": true
+  },
+  "nguyenvanB": {
+    "password": "$argon2id$v=19$m=65536,t=2,p=2$/bqQ+ytoOS8OYK7PTD+DVQ$LzkmGvTiZ/dZDOG9uTbE9lsRr5TpJwW3MpF3DYawp4M",
+    "hash_version": "argon2",
+    "email": "dinhlequynhphuong@gmail.com",
+    "full_name": "Nguyễn Văn B",
+    "role": "Bệnh nhân",
+    "created_at": "2026-06-26T13:27:57.837471+00:00",
+    "updated_at": "2026-06-26T13:27:57.837471+00:00",
+    "must_change_password": false,
+    "active": true
+  },
+  "nguyenvanc": {
+    "password": "$argon2id$v=19$m=65536,t=2,p=2$jO/5kFUnVMfvckl0b5tFhg$RTBFMB9uTCupaWjPqSBZN2MEIvHleCaBFx8pyrKBGr8",
+    "hash_version": "argon2",
+    "email": "12345@gmail.com",
+    "full_name": "Văn C",
+    "role": "Bệnh nhân",
+    "created_at": "2026-06-26T13:33:28.245197+00:00",
+    "updated_at": "2026-06-26T13:33:28.245197+00:00",
+    "must_change_password": false,
+    "active": true
   }
 }
