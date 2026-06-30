@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Rehab AI Monitor HUPH 2026 - Exact PPT Web Slides</title>
+  <style>
+    :root {
+      --bg: #071f18;
+      --panel: rgba(255, 255, 255, 0.92);
+      --ink: #12382f;
+      --muted: #668078;
+      --accent: #047b55;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(4, 123, 85, 0.42), transparent 32%),
+        radial-gradient(circle at 78% 80%, rgba(255, 255, 255, 0.13), transparent 30%),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", Arial, sans-serif;
+      touch-action: pan-y;
+    }
+
+    button {
+      border: 0;
+      padding: 0;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: clamp(8px, 1.6vw, 22px);
+    }
+
+    .slide-frame {
+      position: relative;
+      width: min(100%, calc((100vh - clamp(16px, 3.2vw, 44px)) * 16 / 9));
+      max-width: calc(100vw - clamp(16px, 3.2vw, 44px));
+      aspect-ratio: 16 / 9;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .slide-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #fff;
+      opacity: 0;
+      transform: translateX(18px);
+      transition: opacity 180ms ease, transform 220ms ease;
+      pointer-events: none;
+    }
+
+    .slide-image.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    .hotzone {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 22%;
+      z-index: 20;
+      background: transparent;
+    }
+
+    .hotzone.left { left: 0; }
+    .hotzone.right { right: 0; }
+
+    .nav-button {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 40;
+      width: clamp(44px, 4.5vw, 68px);
+      height: clamp(44px, 4.5vw, 68px);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--panel);
+      color: var(--accent);
+      font-size: clamp(28px, 3vw, 44px);
+      font-weight: 800;
+      line-height: 1;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+      transition: transform 150ms ease, background 150ms ease, opacity 150ms ease;
+    }
+
+    .nav-button:hover {
+      background: #fff;
+      transform: translateY(-50%) scale(1.04);
+    }
+
+    .nav-button:active {
+      transform: translateY(-50%) scale(0.98);
+    }
+
+    .nav-button.prev { left: clamp(12px, 2vw, 30px); }
+    .nav-button.next { right: clamp(12px, 2vw, 30px); }
+
+    .toolbar {
+      position: fixed;
+      left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      z-index: 45;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: min(520px, calc(100vw - 28px));
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--panel);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(12px);
+    }
+
+    .counter {
+      min-width: 72px;
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(4, 123, 85, 0.16);
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 100%;
+      width: 5%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #047b55, #39a56f);
+      transition: width 180ms ease;
+    }
+
+    .tool-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(4, 123, 85, 0.10);
+      color: var(--accent);
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .hint {
+      position: fixed;
+      left: 50%;
+      top: max(14px, env(safe-area-inset-top));
+      transform: translateX(-50%);
+      z-index: 46;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.68);
+      color: #fff;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+      white-space: nowrap;
+    }
+
+    .hint.show { opacity: 1; }
+
+    .loading {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-weight: 700;
+      z-index: 1;
+      background: #fff;
+    }
+
+    .slide-frame.ready .loading { display: none; }
+
+    @media (max-width: 760px) {
+      .stage {
+        padding: 8px;
+      }
+
+      .slide-frame {
+        width: calc(100vw - 16px);
+        max-height: calc(100vh - 86px);
+        border-radius: 8px;
+      }
+
+      .nav-button {
+        top: auto;
+        bottom: max(66px, calc(env(safe-area-inset-bottom) + 66px));
+        transform: none;
+      }
+
+      .nav-button:hover,
+      .nav-button:active {
+        transform: none;
+      }
+
+      .toolbar {
+        min-width: calc(100vw - 18px);
+        bottom: max(8px, env(safe-area-inset-bottom));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" aria-label="Web slide giống PowerPoint gốc">
+    <section class="slide-frame" id="frame">
+      <div class="loading">Đang tải slide...</div>
+      <button class="hotzone left" id="leftZone" aria-label="Slide trước"></button>
+      <button class="hotzone right" id="rightZone" aria-label="Slide sau"></button>
+    </section>
+  </main>
+
+  <button class="nav-button prev" id="prevBtn" aria-label="Slide trước">&lsaquo;</button>
+  <button class="nav-button next" id="nextBtn" aria-label="Slide sau">&rsaquo;</button>
+
+  <div class="toolbar" aria-label="Điều khiển slide">
+    <button class="tool-button" id="firstBtn" aria-label="Về slide đầu">|‹</button>
+    <button class="tool-button" id="prevSmallBtn" aria-label="Slide trước">‹</button>
+    <div class="counter" id="counter">01 / 20</div>
+    <div class="progress-track" aria-hidden="true"><div class="progress" id="progress"></div></div>
+    <button class="tool-button" id="nextSmallBtn" aria-label="Slide sau">›</button>
+    <button class="tool-button" id="lastBtn" aria-label="Đến slide cuối">›|</button>
+  </div>
+
+  <div class="hint" id="hint">Chạm mép trái/phải, vuốt ngang hoặc dùng phím mũi tên để tua slide</div>
+
+  <script>
+    const slideFiles = [
+      'slides/slide-01.png',
+      'slides/slide-02.png',
+      'slides/slide-03.png',
+      'slides/slide-04.png',
+      'slides/slide-05.png',
+      'slides/slide-06.png',
+      'slides/slide-07.png',
+      'slides/slide-08.png',
+      'slides/slide-09.png',
+      'slides/slide-10.png',
+      'slides/slide-11.png',
+      'slides/slide-12.png',
+      'slides/slide-13.png',
+      'slides/slide-14.png',
+      'slides/slide-15.png',
+      'slides/slide-16.png',
+      'slides/slide-17.png',
+      'slides/slide-18.png',
+      'slides/slide-19.png',
+      'slides/slide-20.png'
+    ];
+
+    const frame = document.getElementById('frame');
+    const counter = document.getElementById('counter');
+    const progress = document.getElementById('progress');
+    const hint = document.getElementById('hint');
+    let current = 0;
+    let startX = 0;
+    let startY = 0;
+    let pointerDown = false;
+
+    const images = slideFiles.map((src, index) => {
+      const img = document.createElement('img');
+      img.className = 'slide-image';
+      img.src = src;
+      img.alt = `Slide ${index + 1}`;
+      img.draggable = false;
+      if (index === 0) img.classList.add('active');
+      frame.appendChild(img);
+      return img;
+    });
+
+    let loaded = 0;
+    images.forEach((img) => {
+      img.addEventListener('load', () => {
+        loaded += 1;
+        if (loaded >= 1) frame.classList.add('ready');
+      });
+      img.addEventListener('error', () => {
+        frame.classList.add('ready');
+      });
+    });
+
+    function showHint() {
+      hint.classList.add('show');
+      window.clearTimeout(showHint.timer);
+      showHint.timer = window.setTimeout(() => hint.classList.remove('show'), 1900);
+    }
+
+    function setSlide(nextIndex) {
+      const clamped = Math.max(0, Math.min(slideFiles.length - 1, nextIndex));
+      if (clamped === current) {
+        showHint();
+        return;
+      }
+      images[current].classList.remove('active');
+      current = clamped;
+      images[current].classList.add('active');
+      updateUi();
+    }
+
+    function updateUi() {
+      counter.textContent = `${String(current + 1).padStart(2, '0')} / ${slideFiles.length}`;
+      progress.style.width = `${((current + 1) / slideFiles.length) * 100}%`;
+      history.replaceState(null, '', `#${current + 1}`);
+    }
+
+    function next() { setSlide(current + 1); }
+    function prev() { setSlide(current - 1); }
+
+    document.getElementById('nextBtn').addEventListener('click', next);
+    document.getElementById('prevBtn').addEventListener('click', prev);
+    document.getElementById('nextSmallBtn').addEventListener('click', next);
+    document.getElementById('prevSmallBtn').addEventListener('click', prev);
+    document.getElementById('firstBtn').addEventListener('click', () => setSlide(0));
+    document.getElementById('lastBtn').addEventListener('click', () => setSlide(slideFiles.length - 1));
+    document.getElementById('leftZone').addEventListener('click', prev);
+    document.getElementById('rightZone').addEventListener('click', next);
+
+    document.addEventListener('keydown', (event) => {
+      if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(event.key)) {
+        event.preventDefault();
+        next();
+      } else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(event.key)) {
+        event.preventDefault();
+        prev();
+      } else if (event.key === 'Home') {
+        event.preventDefault();
+        setSlide(0);
+      } else if (event.key === 'End') {
+        event.preventDefault();
+        setSlide(slideFiles.length - 1);
+      }
+    });
+
+    frame.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      startX = event.clientX;
+      startY = event.clientY;
+      pointerDown = true;
+    });
+
+    frame.addEventListener('pointerup', (event) => {
+      if (!pointerDown) return;
+      pointerDown = false;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (Math.abs(dx) > 58 && Math.abs(dx) > Math.abs(dy) * 1.35) {
+        dx < 0 ? next() : prev();
+      }
+    });
+
+    frame.addEventListener('touchstart', (event) => {
+      if (!event.touches.length) return;
+      startX = event.touches[0].clientX;
+      startY = event.touches[0].clientY;
+      pointerDown = true;
+    }, { passive: true });
+
+    frame.addEventListener('touchend', (event) => {
+      if (!pointerDown || !event.changedTouches.length) return;
+      pointerDown = false;
+      const dx = event.changedTouches[0].clientX - startX;
+      const dy = event.changedTouches[0].clientY - startY;
+      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.35) {
+        dx < 0 ? next() : prev();
+      }
+    }, { passive: true });
+
+    const hashSlide = Number(location.hash.replace('#', ''));
+    if (Number.isFinite(hashSlide) && hashSlide >= 1 && hashSlide <= slideFiles.length) {
+      images[0].classList.remove('active');
+      current = hashSlide - 1;
+      images[current].classList.add('active');
+    }
+    updateUi();
+    window.setTimeout(showHint, 500);
+  </script>
+</body>
+</html>

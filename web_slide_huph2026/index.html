@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Rehab AI Monitor - Web Slide HUPH 2026</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #617080;
+      --line: rgba(23, 32, 42, 0.12);
+      --paper: #fbfcfd;
+      --teal: #0f8f8a;
+      --green: #5ca85d;
+      --coral: #e96f5b;
+      --amber: #e3a72f;
+      --blue: #4077b7;
+      --violet: #7b61a8;
+      --shadow: 0 24px 70px rgba(22, 33, 44, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(15, 143, 138, 0.10), transparent 30%),
+        linear-gradient(315deg, rgba(233, 111, 91, 0.12), transparent 34%),
+        #eef3f4;
+      color: var(--ink);
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      letter-spacing: 0;
+      touch-action: pan-y;
+    }
+
+    button {
+      font: inherit;
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: clamp(10px, 2vw, 22px);
+    }
+
+    .deck {
+      position: relative;
+      width: min(96vw, 1440px);
+      aspect-ratio: 16 / 9;
+      max-height: calc(100vh - 36px);
+      border-radius: 18px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: clamp(12px, 1.6vw, 22px);
+      padding: clamp(28px, 3.8vw, 62px);
+      opacity: 0;
+      transform: translateX(28px) scale(0.992);
+      pointer-events: none;
+      transition: opacity 260ms ease, transform 320ms ease;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .slide::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(15, 143, 138, 0.11), transparent 42%),
+        linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.78));
+      z-index: -2;
+    }
+
+    .slide::after {
+      content: "";
+      position: absolute;
+      right: -8%;
+      top: -18%;
+      width: 42%;
+      aspect-ratio: 1;
+      border: 34px solid rgba(15, 143, 138, 0.10);
+      border-radius: 50%;
+      z-index: -1;
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      color: var(--muted);
+      font-size: clamp(12px, 1vw, 15px);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: conic-gradient(from 210deg, var(--teal), var(--green), var(--amber), var(--coral), var(--teal));
+      flex: 0 0 auto;
+    }
+
+    .content {
+      display: grid;
+      gap: clamp(14px, 2vw, 28px);
+      align-content: center;
+      min-height: 0;
+    }
+
+    h1, h2 {
+      margin: 0;
+      letter-spacing: 0;
+      line-height: 1.04;
+      color: var(--ink);
+    }
+
+    h1 { font-size: clamp(30px, 5.2vw, 74px); max-width: 1080px; }
+    h2 { font-size: clamp(28px, 4.1vw, 58px); max-width: 1100px; }
+
+    .subtitle {
+      max-width: 920px;
+      color: var(--muted);
+      font-size: clamp(16px, 1.55vw, 24px);
+      line-height: 1.48;
+      margin: 0;
+    }
+
+    .lead {
+      max-width: 1040px;
+      color: var(--ink);
+      font-size: clamp(17px, 1.72vw, 28px);
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .accent {
+      color: var(--teal);
+      font-weight: 800;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: clamp(18px, 2.4vw, 34px);
+      align-items: center;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(12px, 1.4vw, 22px);
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(10px, 1.2vw, 18px);
+    }
+
+    .card {
+      background: rgba(255,255,255,0.70);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: clamp(14px, 1.7vw, 24px);
+      min-height: 100%;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: clamp(16px, 1.3vw, 22px);
+      line-height: 1.15;
+    }
+
+    .card p, .card li {
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(13px, 1vw, 17px);
+      line-height: 1.42;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1.15em;
+      display: grid;
+      gap: 9px;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .stat {
+      border-left: 5px solid var(--teal);
+      background: rgba(255,255,255,0.70);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: clamp(28px, 3.2vw, 52px);
+      line-height: 0.95;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: clamp(13px, 1vw, 17px);
+      line-height: 1.3;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .step {
+      position: relative;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 126px;
+    }
+
+    .step::after {
+      content: ">";
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--teal);
+      font-weight: 900;
+      font-size: 22px;
+    }
+
+    .step:last-child::after { display: none; }
+
+    .step b {
+      display: block;
+      font-size: clamp(15px, 1.1vw, 20px);
+      margin-bottom: 8px;
+    }
+
+    .step span {
+      display: block;
+      color: var(--muted);
+      font-size: clamp(12px, 0.95vw, 16px);
+      line-height: 1.35;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+
+    .result-card {
+      border-radius: 8px;
+      padding: clamp(18px, 2vw, 30px);
+      background: rgba(255,255,255,0.76);
+      border: 1px solid var(--line);
+    }
+
+    .result-card.codman { border-top: 8px solid var(--green); }
+    .result-card.stick { border-top: 8px solid var(--coral); }
+
+    .big-number {
+      font-size: clamp(46px, 5.8vw, 86px);
+      font-weight: 900;
+      line-height: 1;
+      color: var(--ink);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .metric {
+      background: rgba(23,32,42,0.04);
+      border-radius: 8px;
+      padding: 11px;
+      color: var(--muted);
+      font-size: clamp(12px, 0.95vw, 16px);
+    }
+
+    .metric b {
+      color: var(--ink);
+      display: block;
+      font-size: clamp(17px, 1.35vw, 24px);
+    }
+
+    .quote {
+      border-left: 8px solid var(--coral);
+      background: rgba(255,255,255,0.72);
+      border-radius: 8px;
+      padding: clamp(18px, 2vw, 30px);
+      max-width: 1060px;
+      font-size: clamp(20px, 2.4vw, 38px);
+      font-weight: 800;
+      line-height: 1.22;
+    }
+
+    .mini {
+      color: var(--muted);
+      font-size: clamp(12px, 0.95vw, 15px);
+      line-height: 1.35;
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      color: var(--muted);
+      font-size: clamp(12px, 0.95vw, 15px);
+      font-weight: 650;
+    }
+
+    .progress-wrap {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 7px;
+      background: rgba(23, 32, 42, 0.08);
+      z-index: 30;
+    }
+
+    .progress {
+      height: 100%;
+      width: 5.26%;
+      background: linear-gradient(90deg, var(--teal), var(--green), var(--amber));
+      transition: width 220ms ease;
+    }
+
+    .nav {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    .nav-btn {
+      pointer-events: auto;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: clamp(44px, 4vw, 64px);
+      height: clamp(44px, 4vw, 64px);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-size: clamp(22px, 2vw, 34px);
+      font-weight: 900;
+      box-shadow: 0 16px 44px rgba(23,32,42,0.14);
+      transition: transform 160ms ease, background 160ms ease;
+    }
+
+    .nav-btn:hover { background: #fff; transform: translateY(-50%) scale(1.04); }
+    .nav-btn.prev { left: clamp(12px, 2vw, 30px); }
+    .nav-btn.next { right: clamp(12px, 2vw, 30px); }
+
+    .touch-zone {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 18%;
+      pointer-events: auto;
+    }
+
+    .touch-zone.left { left: 0; }
+    .touch-zone.right { right: 0; }
+
+    .hint {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      z-index: 45;
+      background: rgba(23, 32, 42, 0.78);
+      color: white;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 240ms ease;
+      pointer-events: none;
+    }
+
+    .hint.show { opacity: 1; }
+
+    .timer {
+      position: absolute;
+      right: clamp(18px, 2vw, 34px);
+      top: clamp(16px, 2vw, 30px);
+      z-index: 50;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+    }
+
+    .cover-title {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 34px;
+      align-items: center;
+    }
+
+    .visual {
+      display: grid;
+      gap: 14px;
+      padding: 20px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.66);
+      border: 1px solid var(--line);
+    }
+
+    .pose-box {
+      height: clamp(220px, 30vw, 410px);
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(rgba(23,32,42,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23,32,42,0.06) 1px, transparent 1px),
+        rgba(255,255,255,0.68);
+      background-size: 32px 32px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+
+    .skeleton {
+      width: 62%;
+      height: 82%;
+      position: relative;
+    }
+
+    .joint {
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--teal);
+      box-shadow: 0 0 0 6px rgba(15,143,138,0.16);
+    }
+
+    .bone {
+      position: absolute;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--ink);
+      transform-origin: left center;
+      opacity: 0.76;
+    }
+
+    .j-head { left: 46%; top: 4%; }
+    .j-neck { left: 48%; top: 22%; }
+    .j-ls { left: 29%; top: 32%; }
+    .j-rs { left: 67%; top: 32%; }
+    .j-le { left: 18%; top: 50%; }
+    .j-re { left: 83%; top: 43%; }
+    .j-lh { left: 36%; top: 70%; }
+    .j-rh { left: 61%; top: 70%; }
+    .b-neck { left: 50%; top: 25%; width: 92px; transform: rotate(90deg); }
+    .b-shoulder { left: 32%; top: 35%; width: 160px; transform: rotate(0deg); }
+    .b-left-arm { left: 31%; top: 35%; width: 94px; transform: rotate(122deg); background: var(--coral); }
+    .b-right-arm { left: 69%; top: 35%; width: 96px; transform: rotate(28deg); background: var(--green); }
+    .b-torso-l { left: 33%; top: 35%; width: 150px; transform: rotate(68deg); }
+    .b-torso-r { left: 69%; top: 35%; width: 140px; transform: rotate(112deg); }
+    .b-hip { left: 38%; top: 73%; width: 108px; }
+
+    @media (max-width: 860px), (max-aspect-ratio: 1/1) {
+      .deck {
+        width: min(96vw, 720px);
+        height: min(92vh, 980px);
+        aspect-ratio: auto;
+      }
+      .slide {
+        padding: 24px 20px 42px;
+      }
+      .cover-title, .grid-2, .comparison {
+        grid-template-columns: 1fr;
+      }
+      .grid-3, .grid-4, .stat-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .flow {
+        grid-template-columns: 1fr;
+      }
+      .step::after { display: none; }
+      .visual { display: none; }
+      h1 { font-size: 34px; }
+      h2 { font-size: 31px; }
+      .nav-btn {
+        top: auto;
+        bottom: 18px;
+        transform: none;
+      }
+      .nav-btn:hover { transform: scale(1.04); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="Rehab AI Monitor web slide">
+    <section class="deck" id="deck">
+      <div class="timer" id="counter">01 / 19</div>
+
+      <article class="slide active">
+        <div class="topline"><div class="brand"><span class="mark"></span>HUPH 2026</div><span>Rehab AI Monitor</span></div>
+        <div class="content cover-title">
+          <div>
+            <h1>Ứng dụng AI và thị giác máy tính trong giám sát phục hồi chức năng từ xa</h1>
+            <p class="subtitle">Đánh giá chất lượng bài tập khớp vai bằng MediaPipe Pose và Random Forest trên video người bệnh thật tại Việt Nam.</p>
+            <div class="stat-row" style="margin-top: 22px;">
+              <div class="stat"><strong>4</strong><span>người bệnh</span></div>
+              <div class="stat"><strong>8</strong><span>video lâm sàng</span></div>
+              <div class="stat"><strong>45k+</strong><span>khung hình</span></div>
+              <div class="stat"><strong>19</strong><span>slide báo cáo</span></div>
+            </div>
+          </div>
+          <div class="visual">
+            <div class="pose-box">
+              <div class="skeleton" aria-hidden="true">
+                <span class="bone b-neck"></span><span class="bone b-shoulder"></span><span class="bone b-left-arm"></span><span class="bone b-right-arm"></span><span class="bone b-torso-l"></span><span class="bone b-torso-r"></span><span class="bone b-hip"></span>
+                <span class="joint j-head"></span><span class="joint j-neck"></span><span class="joint j-ls"></span><span class="joint j-rs"></span><span class="joint j-le"></span><span class="joint j-re"></span><span class="joint j-lh"></span><span class="joint j-rh"></span>
+              </div>
+            </div>
+            <p class="mini">Camera RGB thông thường -> pose estimation -> góc khớp -> PASS / NEAR / FAIL</p>
+          </div>
+        </div>
+        <div class="footer"><span>Báo cáo viên: Đinh Lê Quỳnh Phương</span><span>01 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Điểm nhấn khoa học</div><span>Giá trị sáng tạo</span></div>
+        <div class="content">
+          <h2>Điểm mới không chỉ là dùng AI, mà là đưa AI vào bối cảnh phục hồi chức năng thật tại Việt Nam.</h2>
+          <div class="grid-4">
+            <div class="card"><h3>01. Dữ liệu thật</h3><p>4 người bệnh, 8 video, 45.446 khung hình trong điều kiện ghi hình có nhiễu.</p></div>
+            <div class="card"><h3>02. Pipeline hai tầng</h3><p>REF rule-based có giải thích kết hợp Random Forest ở mức khung hình.</p></div>
+            <div class="card"><h3>03. Đối chiếu chuyên gia</h3><p>Không chỉ đo Accuracy, mà liên hệ với đánh giá bác sĩ/kỹ thuật viên.</p></div>
+            <div class="card"><h3>04. End-to-end</h3><p>Tải video, AI, overlay, biểu đồ góc, frame gallery và phiếu chuyên môn.</p></div>
+          </div>
+          <div class="quote">Đóng góp khoa học là biến bài toán AI thị giác máy tính thành một quy trình có thể kiểm chứng trong phục hồi chức năng.</div>
+        </div>
+        <div class="footer"><span>Video người bệnh thật · AI có giải thích · Quy trình lâm sàng</span><span>02 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Nội dung</div><span>Lộ trình trình bày</span></div>
+        <div class="content">
+          <h2>Năm phần, tập trung vào phương pháp, sáng tạo và ứng dụng.</h2>
+          <div class="flow">
+            <div class="step"><b>01. Đặt vấn đề</b><span>Nhu cầu PHCN từ xa và khoảng trống bằng chứng tại Việt Nam.</span></div>
+            <div class="step"><b>02. Mục tiêu</b><span>Xây dựng mô hình và so sánh với chuyên gia.</span></div>
+            <div class="step"><b>03. Phương pháp</b><span>MediaPipe Pose, ngưỡng góc, Random Forest.</span></div>
+            <div class="step"><b>04. Kết quả</b><span>Đánh giá theo bài tập, người bệnh và chuyên gia.</span></div>
+            <div class="step"><b>05. Hệ thống</b><span>Rehab AI Monitor và hướng phát triển.</span></div>
+          </div>
+        </div>
+        <div class="footer"><span>Trọng tâm: 30 điểm sáng tạo + 25 điểm ứng dụng</span><span>03 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Đặt vấn đề</div><span>Nhu cầu thiết yếu</span></div>
+        <div class="content grid-2">
+          <div>
+            <h2>Người bệnh cần tập mỗi ngày, nhưng không phải lúc nào cũng có chuyên gia theo dõi.</h2>
+            <p class="lead">Tập sai tư thế, sai biên độ hoặc bù trừ bằng thân người có thể làm giảm hiệu quả phục hồi.</p>
+          </div>
+          <div class="grid-2" style="grid-template-columns: 1fr;">
+            <div class="stat"><strong>~1/3</strong><span>dân số toàn cầu có nhu cầu phục hồi chức năng.</span></div>
+            <div class="stat"><strong>AI</strong><span>có thể lượng hóa vận động bằng camera thông thường.</span></div>
+          </div>
+        </div>
+        <div class="footer"><span>Cơ hội: giám sát từ xa không cần cảm biến đeo</span><span>04 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Khoảng trống</div><span>Dữ liệu thực khó hơn dữ liệu chuẩn</span></div>
+        <div class="content">
+          <h2>Video người bệnh thật có nhiều nhiễu mà mô hình trong phòng thí nghiệm thường không gặp.</h2>
+          <div class="grid-3">
+            <div class="card"><h3>Góc quay thay đổi</h3><p>Mỗi lượt ghi hình có khoảng cách, vị trí camera và khung hình khác nhau.</p></div>
+            <div class="card"><h3>Che khuất và nền nhiễu</h3><p>Tay, gậy, người hỗ trợ hoặc ánh sáng làm điểm mốc kém ổn định.</p></div>
+            <div class="card"><h3>Bù trừ tư thế</h3><p>Người bệnh xoay thân hoặc gập khuỷu thay cho vận động khớp vai.</p></div>
+          </div>
+          <p class="lead">Câu hỏi thực tế: <span class="accent">AI có khả thi trên dữ liệu lâm sàng thật tại Việt Nam hay không?</span></p>
+        </div>
+        <div class="footer"><span>Khoảng trống: marker-less pose trên người bệnh thật tại Việt Nam</span><span>05 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Mục tiêu</div><span>Xây dựng và kiểm chứng</span></div>
+        <div class="content grid-2">
+          <div class="card"><h3>01. Xây dựng và đánh giá mô hình</h3><p class="lead">Nhận diện và đánh giá bài tập phục hồi chức năng dựa trên pose estimation, góc khớp và phân loại frame-level.</p></div>
+          <div class="card"><h3>02. So sánh với chuyên gia</h3><p class="lead">Đánh giá bằng Accuracy, F1-score, ICC, MAE, RMSE và đối chiếu phiếu bác sĩ/kỹ thuật viên.</p></div>
+        </div>
+        <div class="footer"><span>Đánh giá cả hiệu năng kỹ thuật và mức phù hợp lâm sàng</span><span>06 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Tổng quan nghiên cứu</div><span>Người bệnh · Dữ liệu · Phương pháp</span></div>
+        <div class="content">
+          <div class="flow">
+            <div class="step"><b>Đối tượng</b><span>Người bệnh viêm quanh khớp vai ICD-10: M75.</span></div>
+            <div class="step"><b>Dữ liệu</b><span>4 người bệnh, 8 video, 45.446 khung hình.</span></div>
+            <div class="step"><b>Pose</b><span>MediaPipe Pose với 33 điểm mốc cơ thể.</span></div>
+            <div class="step"><b>AI</b><span>Ngưỡng REF và Random Forest tầng hai.</span></div>
+            <div class="step"><b>Đầu ra</b><span>PASS / NEAR / FAIL, dashboard và overlay.</span></div>
+          </div>
+          <p class="lead">Dữ liệu có đồng ý tham gia, có đối chiếu chuyên gia và chấp thuận đạo đức nghiên cứu.</p>
+        </div>
+        <div class="footer"><span>Bệnh viện Đa khoa Phạm Ngọc Thạch · Trường ĐHYTCC</span><span>07 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Phương pháp</div><span>Quy trình xử lý AI</span></div>
+        <div class="content">
+          <h2>Pipeline nhẹ, có thể giải thích, phù hợp triển khai bằng camera thông thường.</h2>
+          <div class="flow">
+            <div class="step"><b>Video RGB</b><span>Người bệnh quay bằng điện thoại hoặc webcam.</span></div>
+            <div class="step"><b>MediaPipe Pose</b><span>Trích xuất 33 điểm mốc, không huấn luyện lại.</span></div>
+            <div class="step"><b>Tính góc</b><span>Vai/khuỷu theo từng khung hình.</span></div>
+            <div class="step"><b>REF</b><span>So với ngưỡng tham chiếu có giải thích.</span></div>
+            <div class="step"><b>Random Forest</b><span>Học từ tọa độ và góc để hỗ trợ phân loại.</span></div>
+          </div>
+        </div>
+        <div class="footer"><span>Không dùng AI như hộp đen hoàn toàn</span><span>08 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Đánh giá</div><span>Ngưỡng tham chiếu và chỉ số</span></div>
+        <div class="content grid-2">
+          <div class="card">
+            <h3>Ngưỡng REF</h3>
+            <ul>
+              <li>Codman giai đoạn 1: ±45 độ.</li>
+              <li>Codman giai đoạn 2: ±30 độ.</li>
+              <li>Codman giai đoạn 3: ±15 độ.</li>
+              <li>Bài tập với gậy: ±30 độ toàn video.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Chỉ số đánh giá</h3>
+            <ul>
+              <li>Accuracy, Precision, Recall, F1-score.</li>
+              <li>ICC để đo mức phù hợp AI và tham chiếu.</li>
+              <li>MAE/RMSE để lượng hóa sai số góc theo độ.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer"><span>Một Accuracy đơn lẻ chưa đủ cho bài toán y sinh</span><span>09 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Kết quả chính</div><span>Frame-level theo bài tập</span></div>
+        <div class="content">
+          <div class="comparison">
+            <div class="result-card codman">
+              <h3>Bài con lắc Codman</h3>
+              <div class="big-number">71,2%</div>
+              <p class="subtitle">Accuracy trên khung hình hợp lệ; PASS + NEAR chiếm 89,5% tổng frame.</p>
+              <div class="metrics"><div class="metric"><b>0,75</b>F1-score</div><div class="metric"><b>0,71</b>ICC</div><div class="metric"><b>13,5°</b>MAE</div><div class="metric"><b>16,8°</b>RMSE</div></div>
+            </div>
+            <div class="result-card stick">
+              <h3>Bài tập với gậy</h3>
+              <div class="big-number">38,7%</div>
+              <p class="subtitle">Bài phức tạp hơn, dễ che khuất, xoay thân và gập khuỷu bù trừ.</p>
+              <div class="metrics"><div class="metric"><b>0,46</b>F1-score</div><div class="metric"><b>0,55</b>ICC</div><div class="metric"><b>21,4°</b>MAE</div><div class="metric"><b>26,8°</b>RMSE</div></div>
+            </div>
+          </div>
+          <p class="lead">Kết quả thấp ở bài tập với gậy giúp xác định <span class="accent">ranh giới triển khai an toàn</span> của hệ thống.</p>
+        </div>
+        <div class="footer"><span>Không chỉ là hạn chế, mà là phát hiện khoa học</span><span>10 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Độ phù hợp</div><span>Radar và Bland-Altman</span></div>
+        <div class="content grid-2">
+          <div>
+            <h2>Không chỉ hỏi “AI đúng hay sai”, mà hỏi sai bao nhiêu, sai ở đâu và trong điều kiện nào.</h2>
+            <p class="lead">Radar tổng hợp 6 chỉ số; Bland-Altman quan sát sai lệch góc giữa AI và tham chiếu.</p>
+          </div>
+          <div class="visual">
+            <div class="card"><h3>Ý nghĩa lâm sàng</h3><p>Sai số theo độ giúp chuyên gia hiểu mức lệch động tác, không chỉ nhìn một nhãn phân loại.</p></div>
+            <div class="card"><h3>Ý nghĩa triển khai</h3><p>Cho biết bài tập nào ổn định hơn và điều kiện nào cần chuẩn hóa trước.</p></div>
+          </div>
+        </div>
+        <div class="footer"><span>Kết quả phải kiểm tra và giải thích được</span><span>11 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Đối chiếu chuyên gia</div><span>Bác sĩ / kỹ thuật viên</span></div>
+        <div class="content">
+          <div class="stat-row">
+            <div class="stat"><strong>8</strong><span>lượt đánh giá</span></div>
+            <div class="stat"><strong>6</strong><span>gần đúng</span></div>
+            <div class="stat"><strong>2</strong><span>sai</span></div>
+            <div class="stat"><strong>100%</strong><span>tiếp tục tập luyện</span></div>
+          </div>
+          <div class="grid-3">
+            <div class="card"><h3>Sai tư thế thân người</h3><p>5 video, chiếm 62,5%.</p></div>
+            <div class="card"><h3>Vị trí tay chưa đúng</h3><p>2 video, chiếm 25,0%.</p></div>
+            <div class="card"><h3>Biên độ chưa đạt</h3><p>1 video, chiếm 12,5%.</p></div>
+          </div>
+          <p class="lead">AI và chuyên gia cùng phát hiện các nhóm lỗi về tư thế, vị trí tay và biên độ.</p>
+        </div>
+        <div class="footer"><span>AI là lớp sàng lọc ban đầu, không thay thế chuyên gia</span><span>12 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Bàn luận</div><span>Vì sao Codman tốt hơn?</span></div>
+        <div class="content grid-2">
+          <div class="card"><h3>Bài con lắc Codman</h3><ul><li>Cấu trúc vận động đơn giản.</li><li>Biên độ nhỏ, ít phối hợp hai tay.</li><li>Điểm mốc ổn định hơn.</li></ul></div>
+          <div class="card"><h3>Bài tập với gậy</h3><ul><li>Đòi hỏi phối hợp hai tay.</li><li>Dễ che khuất và bù trừ thân người.</li><li>Tăng sai số góc và UNKNOWN.</li></ul></div>
+          <p class="lead" style="grid-column: 1 / -1;">Bài học triển khai: bắt đầu từ bài tập rõ, dễ chuẩn hóa; sau đó mở rộng sang bài phức tạp hơn.</p>
+        </div>
+        <div class="footer"><span>Đưa AI vào lâm sàng cần biết bài nào triển khai trước</span><span>13 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Ứng dụng thực tiễn</div><span>4 vai trò người dùng</span></div>
+        <div class="content">
+          <h2>Rehab AI Monitor hỗ trợ theo dõi, sàng lọc và phản hồi ban đầu trong phục hồi chức năng từ xa.</h2>
+          <div class="grid-4">
+            <div class="card"><h3>Bệnh nhân</h3><p>Khai báo triệu chứng, VAS, xem bài mẫu, tải video và nhận phản hồi.</p></div>
+            <div class="card"><h3>Bác sĩ / KTV</h3><p>Xem video gốc, overlay, biểu đồ góc và nhập phiếu đánh giá.</p></div>
+            <div class="card"><h3>Nghiên cứu viên</h3><p>Phân tích dữ liệu, cấu hình xử lý, xem dashboard và frame gallery.</p></div>
+            <div class="card"><h3>Quản trị viên</h3><p>Quản lý tài khoản, phân quyền, dữ liệu và trạng thái vận hành.</p></div>
+          </div>
+        </div>
+        <div class="footer"><span>Không chỉ là mô hình AI riêng lẻ, mà là quy trình theo dõi từ xa</span><span>14 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Luồng sử dụng</div><span>Từ nhà tới chuyên gia</span></div>
+        <div class="content">
+          <div class="flow">
+            <div class="step"><b>1. Bệnh nhân</b><span>Tải video bài tập lên hệ thống.</span></div>
+            <div class="step"><b>2. AI</b><span>Chạy MediaPipe, tính góc, phân loại frame.</span></div>
+            <div class="step"><b>3. Chuyên gia</b><span>Xem video, overlay và biểu đồ góc.</span></div>
+            <div class="step"><b>4. Đánh giá</b><span>Nhập đúng, gần đúng, sai và lỗi kỹ thuật.</span></div>
+            <div class="step"><b>5. Theo dõi</b><span>Lưu tiến triển và phản hồi lại người bệnh.</span></div>
+          </div>
+          <div class="quote">Hệ thống giúp bác sĩ xem nhanh hơn, có dữ liệu định lượng hơn và phát hiện sớm trường hợp cần can thiệp.</div>
+        </div>
+        <div class="footer"><span>Phù hợp bối cảnh thiếu nhân lực phục hồi chức năng</span><span>15 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Overlay & frame gallery</div><span>Dữ liệu khách quan</span></div>
+        <div class="content grid-2">
+          <div>
+            <h2>Chuyên gia không cần xem toàn bộ video thủ công từ đầu đến cuối.</h2>
+            <p class="lead">Overlay hiển thị khung xương, góc vai/khuỷu và nhãn PASS, NEAR, FAIL trên từng khung hình. Frame gallery cho phép lọc nhanh những đoạn cần xem kỹ.</p>
+          </div>
+          <div class="grid-2" style="grid-template-columns: 1fr;">
+            <div class="card"><h3>Giảm thời gian rà soát</h3><p>Tập trung vào khung NEAR/FAIL thay vì xem toàn bộ video.</p></div>
+            <div class="card"><h3>Hồ sơ vận động theo thời gian</h3><p>Theo dõi biên độ, tỷ lệ PASS/NEAR/FAIL và lỗi lặp lại để cá nhân hóa tập luyện.</p></div>
+          </div>
+        </div>
+        <div class="footer"><span>Tạo thêm lớp dữ liệu khách quan, không thay kết luận y khoa</span><span>16 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Kết luận</div><span>Khả thi và cần mở rộng</span></div>
+        <div class="content">
+          <div class="grid-2">
+            <div class="card"><h3>Kết luận chính</h3><ul><li>MediaPipe Pose + Random Forest khả thi để lượng hóa bài tập khớp vai.</li><li>Codman ổn định hơn bài tập với gậy.</li><li>AI đồng hướng với đánh giá chuyên gia về lỗi tư thế, biên độ, vị trí tay.</li><li>Rehab AI Monitor có tiềm năng hỗ trợ PHCN từ xa.</li></ul></div>
+            <div class="card"><h3>Hướng phát triển</h3><ul><li>Mở rộng cỡ mẫu và số bài tập.</li><li>Chuẩn hóa góc quay, bối cảnh ghi hình.</li><li>Bổ sung phát hiện bù trừ tư thế.</li><li>Thử nghiệm LSTM, TCN, ST-GCN, Transformer.</li></ul></div>
+          </div>
+        </div>
+        <div class="footer"><span>Tiếp tục kiểm chứng cỡ mẫu lớn hơn</span><span>17 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Trải nghiệm hệ thống</div><span>Tiềm năng thực chiến</span></div>
+        <div class="content">
+          <h2>Không chỉ là báo cáo khoa học, nhóm hướng tới một công cụ có thể trải nghiệm, kiểm chứng và mở rộng.</h2>
+          <div class="grid-3">
+            <div class="card"><h3>Web triển khai</h3><p>rehab-ai-monitor.com với bốn vai trò người dùng.</p></div>
+            <div class="card"><h3>Mã nguồn</h3><p>GitHub kèm README, kiến trúc React/Vite, FastAPI, MediaPipe và Random Forest.</p></div>
+            <div class="card"><h3>VinUni</h3><p>Ý tưởng đề tài giúp em có cơ hội vào vòng 2 cuộc thi Nhân tài AI thực chiến do Trường Đại học VinUni tổ chức.</p></div>
+          </div>
+          <p class="lead">Đây là tín hiệu tích cực cho thấy bài toán có tính thực chiến: xuất phát từ nhu cầu y tế thật, sử dụng dữ liệu thật và hướng tới hệ thống có thể triển khai được.</p>
+        </div>
+        <div class="footer"><span>rehab-ai-monitor.com · github.com/quynhphuong1209/Rehab-AI-Monitor-UI-new</span><span>18 / 19</span></div>
+      </article>
+
+      <article class="slide">
+        <div class="topline"><div class="brand"><span class="mark"></span>Trân trọng cảm ơn</div><span>HUPH 2026</span></div>
+        <div class="content">
+          <h2>Một camera thông thường chưa thể thay thế chuyên gia, nhưng có thể trở thành công cụ hỗ trợ theo dõi phục hồi chức năng từ xa có căn cứ hơn.</h2>
+          <p class="lead">Em xin trân trọng cảm ơn Hội đồng Giám khảo, quý thầy cô và các bạn đã lắng nghe. Em rất mong nhận được góp ý và câu hỏi từ Hội đồng.</p>
+          <div class="quote">AI hỗ trợ bác sĩ nhìn nhanh hơn, có dữ liệu hơn và theo dõi người bệnh liên tục hơn.</div>
+        </div>
+        <div class="footer"><span>Rehab AI Monitor</span><span>19 / 19</span></div>
+      </article>
+
+      <div class="nav" aria-hidden="false">
+        <div class="touch-zone left" id="touchLeft" title="Chạm để về slide trước"></div>
+        <div class="touch-zone right" id="touchRight" title="Chạm để tới slide sau"></div>
+        <button class="nav-btn prev" id="prevBtn" aria-label="Slide trước">&lsaquo;</button>
+        <button class="nav-btn next" id="nextBtn" aria-label="Slide sau">&rsaquo;</button>
+      </div>
+      <div class="hint" id="hint">Vuốt ngang hoặc chạm mép trái/phải để tua slide</div>
+      <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+    </section>
+  </main>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const progress = document.getElementById('progress');
+    const counter = document.getElementById('counter');
+    const hint = document.getElementById('hint');
+    let index = 0;
+    let startX = 0;
+    let startY = 0;
+    let dragging = false;
+
+    function showHint() {
+      hint.classList.add('show');
+      window.clearTimeout(showHint.t);
+      showHint.t = window.setTimeout(() => hint.classList.remove('show'), 1800);
+    }
+
+    function go(nextIndex) {
+      const clamped = Math.max(0, Math.min(slides.length - 1, nextIndex));
+      if (clamped === index) {
+        showHint();
+        return;
+      }
+      slides[index].classList.remove('active');
+      index = clamped;
+      slides[index].classList.add('active');
+      progress.style.width = `${((index + 1) / slides.length) * 100}%`;
+      counter.textContent = `${String(index + 1).padStart(2, '0')} / ${slides.length}`;
+      history.replaceState(null, '', `#${index + 1}`);
+    }
+
+    function next() { go(index + 1); }
+    function prev() { go(index - 1); }
+
+    document.getElementById('nextBtn').addEventListener('click', next);
+    document.getElementById('prevBtn').addEventListener('click', prev);
+    document.getElementById('touchRight').addEventListener('click', next);
+    document.getElementById('touchLeft').addEventListener('click', prev);
+
+    document.addEventListener('keydown', (event) => {
+      if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(event.key)) {
+        event.preventDefault();
+        next();
+      }
+      if (['ArrowLeft', 'PageUp', 'Backspace'].includes(event.key)) {
+        event.preventDefault();
+        prev();
+      }
+      if (event.key === 'Home') go(0);
+      if (event.key === 'End') go(slides.length - 1);
+    });
+
+    const deck = document.getElementById('deck');
+    deck.addEventListener('touchstart', (event) => {
+      if (!event.touches.length) return;
+      startX = event.touches[0].clientX;
+      startY = event.touches[0].clientY;
+      dragging = true;
+    }, { passive: true });
+
+    deck.addEventListener('touchend', (event) => {
+      if (!dragging || !event.changedTouches.length) return;
+      const dx = event.changedTouches[0].clientX - startX;
+      const dy = event.changedTouches[0].clientY - startY;
+      dragging = false;
+      if (Math.abs(dx) > 54 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        dx < 0 ? next() : prev();
+      }
+    }, { passive: true });
+
+    deck.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      startX = event.clientX;
+      startY = event.clientY;
+      dragging = true;
+    });
+
+    deck.addEventListener('pointerup', (event) => {
+      if (!dragging) return;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      dragging = false;
+      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        dx < 0 ? next() : prev();
+      }
+    });
+
+    const fromHash = Number(location.hash.replace('#', ''));
+    if (Number.isFinite(fromHash) && fromHash >= 1 && fromHash <= slides.length) {
+      index = fromHash - 1;
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+    }
+    progress.style.width = `${((index + 1) / slides.length) * 100}%`;
+    counter.textContent = `${String(index + 1).padStart(2, '0')} / ${slides.length}`;
+    window.setTimeout(showHint, 600);
+  </script>
+</body>
+</html>
